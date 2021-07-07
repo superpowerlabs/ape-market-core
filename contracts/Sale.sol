@@ -12,7 +12,7 @@ import "./SANFT.sol";
 contract Sale {
 
   modifier onlySaleOwner() {
-    require(_setup.owner == msg.sender, "Caller is not sale owner");
+    require(_setup.owner == msg.sender, "Sale: Caller is not sale owner");
     _;
   }
 
@@ -30,9 +30,9 @@ contract Sale {
     // it's easier than setting up a saleEndTime, especially for testing.
     uint256 duration; // how long in seconds would the sale run.
     uint256 minAmount; // minimum about of token needs to be purchased for each invest transaction
-    uint256 capAmount; // the max number
-    uint256 remainingAmount;
-    uint256 price;
+    uint256 capAmount; // the max number, for recording purpose. not changed by contract
+    uint256 remainingAmount; // how much token are still up for sale
+    uint256 price; //
     IERC20 sellingToken; // the contract address of the token being offered in this sale
     IERC20 paymentToken;
     // owner is the one that creates the sale, receives the payments and
@@ -89,11 +89,11 @@ contract Sale {
   }
 
   function invest(uint256 amount) external virtual {
-    require(block.timestamp > _setup.saleBeginTime, 'Sale not started yet');
-    require(block.timestamp < _setup.saleBeginTime + _setup.duration, 'Sale ended already');
-    require(amount >= _setup.minAmount, 'Amount is too low');
-    require(amount <= _setup.remainingAmount, 'Amount is too high');
-    require(_approvedAmounts[msg.sender] >= amount, "Not enough approved amount to invest");
+    require(block.timestamp > _setup.saleBeginTime, 'Sale: Not started yet');
+    require(block.timestamp < _setup.saleBeginTime + _setup.duration, 'Sale: Ended already');
+    require(amount >= _setup.minAmount, 'Sale: Amount is too low');
+    require(amount <= _setup.remainingAmount, 'Sale: Amount is too high');
+    require(_approvedAmounts[msg.sender] >= amount, "Sale: Amount if above approved amount");
     uint256 totalPayment = amount.mul(_setup.price);
     uint256 buyerFee = totalPayment.mul(_setup.paymentFeePercentage).div(100);
     uint256 sellerFee = amount.mul(_setup.tokenFeePercentage).div(100);
@@ -104,8 +104,8 @@ contract Sale {
     _setup.saNFT.mint(_apeAdmin, this, sellerFee);
     _setup.remainingAmount = _setup.remainingAmount.sub(amount);
     _approvedAmounts[msg.sender] = _approvedAmounts[msg.sender].sub(amount);
-    console.log("Paying buyer fee", buyerFee);
-    console.log("Paying seller fee", sellerFee);
+    console.log("Sale: Paying buyer fee", buyerFee);
+    console.log("Sale: Paying seller fee", sellerFee);
   }
 
   function withdrawPayment(uint256 amount) external virtual onlySaleOwner {
@@ -113,13 +113,13 @@ contract Sale {
   }
 
   function withdrawToken(uint256 amount) external virtual onlySaleOwner {
-    require(amount < _setup.remainingAmount, "Cannot withdraw more than remaining");
+    require(amount < _setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
     _setup.sellingToken.transfer(msg.sender, amount);
   }
 
   function triggerTokenListing() external virtual onlySaleOwner {
     // require(block.timestamp > _setup.saleBeginTime + _setup.duration, "Sale not ended yet");
-    require(_setup.tokenListTimestamp == 0, "Token already listed");
+    require(_setup.tokenListTimestamp == 0, "Sale: Token already listed");
     _setup.tokenListTimestamp = block.timestamp;
   }
 
@@ -148,7 +148,7 @@ contract Sale {
       }
       vestedPercentage = vs[i].percentage;
     }
-    console.log("vested percent", vestedPercentage);
+    console.log("vested percentage", vestedPercentage);
     return vestedPercentage;
   }
 
@@ -168,7 +168,7 @@ contract Sale {
   }
 
   function vest(address sa_owner, uint256 vestedAmount) external virtual {
-    require(msg.sender == address(_setup.saNFT), "only SANFT can call this");
+    require(msg.sender == address(_setup.saNFT), "Sale: only SANFT can call vest");
     console.log("block time", block.timestamp);
     console.log("listing ts", _setup.tokenListTimestamp);
     _setup.sellingToken.transfer(sa_owner, vestedAmount);
