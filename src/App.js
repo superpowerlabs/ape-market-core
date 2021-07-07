@@ -78,7 +78,7 @@ function App() {
       //const transaction = await contract.balanceOf(signer)
       //await transaction.wait()
     }
-    }
+  }
 
   async function ShowABC() {
     if (typeof window.ethereum !== 'undefined') {
