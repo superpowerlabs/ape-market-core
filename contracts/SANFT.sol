@@ -6,12 +6,12 @@ import "./Ape.sol";
 
 contract SANFT is ERC721Enumerable {
   modifier onlyApeAdmin() {
-    require(_apeAdmin == msg.sender, "Caller is not ape admin");
+    require(_apeAdmin == msg.sender, "SANFT:Caller is not ape admin");
     _;
   }
 
   modifier onlyNFTOwner(uint256 saId) {
-    require(ownerOf(saId) == msg.sender, "Caller is not NFT owner");
+    require(ownerOf(saId) == msg.sender, "SANFT:Caller is not NFT owner");
     _;
   }
 
@@ -50,11 +50,6 @@ contract SANFT is ERC721Enumerable {
     return _sas[saId];
   }
 
-  struct Split {
-    address sale;
-    uint256 keptAmount;
-  }
-
   function split(uint256 saId, uint256[] memory keptAmounts) public virtual onlyNFTOwner(saId) feeRequired {
     if (vest(saId) == 0) {
       return;
@@ -63,11 +58,10 @@ contract SANFT is ERC721Enumerable {
     SubSA[] storage subSAs = sa.subSAs;
     _mint(msg.sender, _nextTokenId);
     SA storage newSA = _sas[_nextTokenId];
-    _nextTokenId += 1;
+    _nextTokenId ++;
     newSA.creationTime = block.timestamp;
     newSA.acquisitionTime = block.timestamp;
-    require(keptAmounts.length == sa.subSAs.length,
-      "SANFT.split: length of subSA does not match split");
+    require(keptAmounts.length == sa.subSAs.length, "SANFT: length of subSA does not match split");
     for (uint256 i = 0; i < keptAmounts.length; i++) {
       if (subSAs[i].remainingAmount < keptAmounts[i]) {
         revert("Split is incorrect");
@@ -84,9 +78,9 @@ contract SANFT is ERC721Enumerable {
   }
 
   function merge(uint256[] memory saIds) external virtual feeRequired {
-    require(saIds.length >= 2, "Too few SAs for merging");
+    require(saIds.length >= 2, "SANFT: Too few SAs for merging");
     for (uint256 i = 0; i < saIds.length; i++) {
-      require(ownerOf(saIds[i]) == msg.sender, "Only owner can merge sa");
+      require(ownerOf(saIds[i]) == msg.sender, "SANFT: Only owner can merge sa");
     }
     if (vest(saIds[0]) == 0) {
        return;
@@ -96,7 +90,7 @@ contract SANFT is ERC721Enumerable {
     // keep this in a variable since sa0.subSAs will change
     uint256 sa0Len = sa0.subSAs.length;
     for (uint256 i = 1; i < saIds.length; i++) {
-      require(saIds[0] != saIds[i], "SA can not merge to itself");
+      require(saIds[0] != saIds[i], "SANFT: SA can not merge to itself");
       if (vest(saIds[i]) == 0) {
         continue;
       }
@@ -165,7 +159,7 @@ contract SANFT is ERC721Enumerable {
   function mint(address to, Sale sale_, uint256 amount) external virtual {
     // note no one else should be able to call this, not even
     // admin or sale owner
-    require(address(sale_) == msg.sender, "Only sale contract can mint its own NFT!");
+    require(address(sale_) == msg.sender, "SANFT: Only sale contract can mint its own NFT!");
     _mint(to, _nextTokenId);
     console.log("Minted NFT", _nextTokenId, address(to), amount);
     SubSA memory simple = SubSA({sale : address(sale_), remainingAmount : amount, vestedPercentage : 0});
@@ -173,6 +167,6 @@ contract SANFT is ERC721Enumerable {
     sa.acquisitionTime = block.timestamp;
     sa.creationTime = block.timestamp;
     sa.subSAs.push(simple);
-    _nextTokenId += 1;
+    _nextTokenId ++;
   }
 }
