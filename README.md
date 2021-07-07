@@ -4,13 +4,22 @@
 
 ### clone the repository 
 
- `git clone https://github.com/royliu/ape_app ape_app_local`
+ `git clone -b zhiminhe https://github.com/hzmbeyond80/ape_app ape_app_test`
 
 replace ape_app_local with the name of target directory you would like to clone to, or leave it out to use ape_app
 
 ### install necessary packages
 
  `npm install`
+
+### start hardhat local node  
+`npx hardhat node`
+
+### set up meta mask local node 
+
+
+### import accounts 
+
 
 ### start app
 
