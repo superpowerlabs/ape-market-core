@@ -101,7 +101,7 @@ describe("Integration Test", function() {
   // using hardcoded numbers here to simplicity
   transaction = await tether.connect(investor1).approve(abcSale.address, 10000 * 2);
   await transaction.wait();
-  await expect(abcSale.connect(investor1).invest(10000)).to.be.revertedWith("Not enough approved amount to invest");
+  await expect(abcSale.connect(investor1).invest(10000)).to.be.revertedWith("Sale: Amount if above approved amount");
 
   console.log("Investor1 investing in ABC Sale with approval");
   // using hardcoded numbers here to simplicity
