@@ -39,7 +39,6 @@ contract Sale {
     // pays out tokens.  also the operator.  could be split into multiple
     // roles.  using one for simplification.
     address owner;
-    // mapping(address => VestingStep) vestingSchedule;
     // != 0 means the token has been listed at this timestamp, it will
     // be used as the base for vesting schedule
     uint256 tokenListTimestamp;
@@ -54,11 +53,6 @@ contract Sale {
   address private _apeAdmin;
 
   mapping(address => uint256) private _approvedAmounts;
-
-  // use vested percentage rather than vested timestamp to save calculation.
-  // if we allow vesting schedule to be mutable in the future, then
-  // the vestingsteps that's already passed have to be kept the same as original
-  mapping(address => uint256) private _lastVestedPercentages;
 
   // cannot have vesting schedule in setup due to solidity's
   // " Copying of type struct Sale.VestingStep memory[] memory to storage not yet supported."
@@ -75,6 +69,7 @@ contract Sale {
     _apeAdmin = msg.sender;
   }
 
+  // Sale creator needs to approve the transfer before calling this
   function launch() external virtual onlySaleOwner {
     _setup.sellingToken.transferFrom(_setup.owner, address(this), _setup.capAmount);
     _setup.remainingAmount = _setup.capAmount;
@@ -83,11 +78,12 @@ contract Sale {
     }
   }
 
+  // can be called repeated. unused amount can be forfeited by setting it to 0
   function approveInvestor(address investor, uint256 amount) external virtual onlySaleOwner {
     _approvedAmounts[investor] = amount;
-    // revoke approval?
   }
 
+  // Investor needs to approve the payment before calling this
   function invest(uint256 amount) external virtual {
     require(block.timestamp > _setup.saleBeginTime, 'Sale: Not started yet');
     require(block.timestamp < _setup.saleBeginTime + _setup.duration, 'Sale: Ended already');
@@ -113,6 +109,8 @@ contract Sale {
   }
 
   function withdrawToken(uint256 amount) external virtual onlySaleOwner {
+    // we cannot simply relying on the transfer to do the check, since some of the
+    // token are sold to investors.
     require(amount < _setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
     _setup.sellingToken.transfer(msg.sender, amount);
   }
@@ -136,10 +134,8 @@ contract Sale {
     if (_setup.tokenListTimestamp == 0) {// token not listed yet!
       return 0;
     }
-
     VestingStep[] storage vs = _vestingSchedule;
     uint256 vestedPercentage;
-
     for (uint256 i = 0; i < vs.length; i++) {
       uint256 ts = _setup.tokenListTimestamp.add(vs[i].timestamp);
       console.log("vesting ts", ts);
@@ -169,8 +165,6 @@ contract Sale {
 
   function vest(address sa_owner, uint256 vestedAmount) external virtual {
     require(msg.sender == address(_setup.saNFT), "Sale: only SANFT can call vest");
-    console.log("block time", block.timestamp);
-    console.log("listing ts", _setup.tokenListTimestamp);
     _setup.sellingToken.transfer(sa_owner, vestedAmount);
   }
 }
