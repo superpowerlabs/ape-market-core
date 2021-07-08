@@ -85,8 +85,8 @@ contract Sale {
 
   // Investor needs to approve the payment before calling this
   function invest(uint256 amount) external virtual {
-    require(block.timestamp > _setup.saleBeginTime, 'Sale: Not started yet');
-    require(block.timestamp < _setup.saleBeginTime + _setup.duration, 'Sale: Ended already');
+    require(block.timestamp >= _setup.saleBeginTime, 'Sale: Not started yet');
+    require(block.timestamp <= _setup.saleBeginTime + _setup.duration, 'Sale: Ended already');
     require(amount >= _setup.minAmount, 'Sale: Amount is too low');
     require(amount <= _setup.remainingAmount, 'Sale: Amount is too high');
     require(_approvedAmounts[msg.sender] >= amount, "Sale: Amount if above approved amount");
@@ -111,8 +111,9 @@ contract Sale {
   function withdrawToken(uint256 amount) external virtual onlySaleOwner {
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
-    require(amount < _setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
+    require(amount <= _setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
     _setup.sellingToken.transfer(msg.sender, amount);
+    _setup.remainingAmount -= amount;
   }
 
   function triggerTokenListing() external virtual onlySaleOwner {
