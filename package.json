@@ -23,9 +23,9 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test-frontend": "react-scripts test",
     "eject": "react-scripts eject",
-    "test-solidity": "npx hardhat test",
+    "test": "npx hardhat test",
     "compile": "npx hardhat compile",
     "lint": "solium -d contracts/"
   },
