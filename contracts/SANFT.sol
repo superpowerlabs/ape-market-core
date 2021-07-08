@@ -71,8 +71,7 @@ contract SANFT is ERC721Enumerable {
       }
       uint256 newSubSAAmount = subSAs[i].remainingAmount - keptAmounts[i];
       if(newSubSAAmount > 0) {
-        SubSA memory newSubSA = SubSA(subSAs[i].sale,
-          subSAs[i].remainingAmount - keptAmounts[i], 0);
+        SubSA memory newSubSA = SubSA(subSAs[i].sale, subSAs[i].remainingAmount - keptAmounts[i], 0);
         newSA.subSAs.push(newSubSA);
       }
       subSAs[i].remainingAmount = keptAmounts[i];
@@ -120,7 +119,7 @@ contract SANFT is ERC721Enumerable {
       SubSA[] memory newSubSAs = new SubSA[](sa.subSAs.length - numEmptySubSAs);
       uint256 subSAindex;
       for (uint256 i = 0; i < sa.subSAs.length; i++) {
-        if (sa.subSAs[i].remainingAmount >0) {
+        if (sa.subSAs[i].remainingAmount > 0) {
           newSubSAs[subSAindex++] = sa.subSAs[i];
         }
         delete sa.subSAs[i];
@@ -140,7 +139,7 @@ contract SANFT is ERC721Enumerable {
       require(ownerOf(saIds[i]) == msg.sender, "SANFT: Only owner can merge sa");
     }
     if (vest(saIds[0]) == 0) {
-       return 0;
+      return 0;
     }
 
     SA storage sa0 = _sas[saIds[0]];
@@ -175,7 +174,7 @@ contract SANFT is ERC721Enumerable {
 
   // return the number of non empty subSAs after vest.
   // if there is no non-empty subSAs, then SA will burned
-  function vest(uint256 saId) public virtual onlyNFTOwner(saId) returns(uint256) {
+  function vest(uint256 saId) public virtual onlyNFTOwner(saId) returns (uint256) {
     console.log("vesting", saId);
     SA storage sa = _sas[saId];
     uint256 numEmptySubSAs;
@@ -211,8 +210,8 @@ contract SANFT is ERC721Enumerable {
     _nextTokenId ++;
   }
 
-   function _burn(uint256 SAId) internal virtual override{
-     super._burn(SAId);
-     delete _sas[SAId];
-   }
+  function _burn(uint256 SAId) internal virtual override{
+    super._burn(SAId);
+    delete _sas[SAId];
+  }
 }

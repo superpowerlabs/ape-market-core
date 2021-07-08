@@ -13,16 +13,21 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.4.1",
     "hardhat": "^2.4.1",
+    "hardhat-gas-reporter": "^1.0.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
-    "web-vitals": "^1.0.1"
+    "web-vitals": "^1.0.1",
+    "solium": "^1.2.5"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "test-solidity": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "lint": "solium -d contracts/"
   },
   "eslintConfig": {
     "extends": [
