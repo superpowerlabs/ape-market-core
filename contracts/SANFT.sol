@@ -66,8 +66,7 @@ contract SANFT is ERC721Enumerable {
       if (subSAs[i].remainingAmount < keptAmounts[i]) {
         revert("Split is incorrect");
       }
-      SubSA memory newSubSA = SubSA(subSAs[i].sale,
-        subSAs[i].remainingAmount - keptAmounts[i], 0);
+      SubSA memory newSubSA = SubSA(subSAs[i].sale, subSAs[i].remainingAmount - keptAmounts[i], 0);
       newSA.subSAs.push(newSubSA);
       subSAs[i].remainingAmount = keptAmounts[i];
     }
@@ -83,7 +82,7 @@ contract SANFT is ERC721Enumerable {
       require(ownerOf(saIds[i]) == msg.sender, "SANFT: Only owner can merge sa");
     }
     if (vest(saIds[0]) == 0) {
-       return;
+      return;
     }
 
     SA storage sa0 = _sas[saIds[0]];
@@ -117,7 +116,7 @@ contract SANFT is ERC721Enumerable {
 
   // return the number of non empty subSAs after vest.
   // if there is no non-empty subSAs, then SA will burned
-  function vest(uint256 saId) public virtual onlyNFTOwner(saId) returns(uint256) {
+  function vest(uint256 saId) public virtual onlyNFTOwner(saId) returns (uint256) {
     console.log("vesting", saId);
     SA storage sa = _sas[saId];
     bool reprocessLast = false;
@@ -137,7 +136,7 @@ contract SANFT is ERC721Enumerable {
       sale.vest(ownerOf(saId), vestedAmount);
       console.log("vesting", saId, vestedAmount);
       if (vestedPercentage == 100) {
-        sa.subSAs[i] = sa.subSAs[sa.subSAs.length-1];
+        sa.subSAs[i] = sa.subSAs[sa.subSAs.length - 1];
         // reprocess current element in next round;
         reprocessLast = true;
         continue;

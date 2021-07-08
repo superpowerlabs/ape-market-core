@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/utils/math/SafeMath.sol';
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "hardhat/console.sol";
@@ -85,10 +85,10 @@ contract Sale {
 
   // Investor needs to approve the payment before calling this
   function invest(uint256 amount) external virtual {
-    require(block.timestamp > _setup.saleBeginTime, 'Sale: Not started yet');
-    require(block.timestamp < _setup.saleBeginTime + _setup.duration, 'Sale: Ended already');
-    require(amount >= _setup.minAmount, 'Sale: Amount is too low');
-    require(amount <= _setup.remainingAmount, 'Sale: Amount is too high');
+    require(block.timestamp > _setup.saleBeginTime, "Sale: Not started yet");
+    require(block.timestamp < _setup.saleBeginTime + _setup.duration, "Sale: Ended already");
+    require(amount >= _setup.minAmount, "Sale: Amount is too low");
+    require(amount <= _setup.remainingAmount, "Sale: Amount is too high");
     require(_approvedAmounts[msg.sender] >= amount, "Sale: Amount if above approved amount");
     uint256 totalPayment = amount.mul(_setup.price);
     uint256 buyerFee = totalPayment.mul(_setup.paymentFeePercentage).div(100);
