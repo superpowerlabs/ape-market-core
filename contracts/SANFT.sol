@@ -24,6 +24,7 @@ contract SANFT is ERC721Enumerable {
   address _apeAdmin;
   ERC20 _feeToken;
   uint256 _feeAmount; // the amount of fee in _feeToken charged for merge, split and transfer
+
   struct SubSA {
     address sale;
     uint256 remainingAmount;
@@ -50,9 +51,9 @@ contract SANFT is ERC721Enumerable {
     return _sas[saId];
   }
 
-  function split(uint256 saId, uint256[] memory keptAmounts) public virtual onlyNFTOwner(saId) feeRequired {
+  function split(uint256 saId, uint256[] memory keptAmounts) public virtual onlyNFTOwner(saId) feeRequired returns(uint256) {
     if (vest(saId) == 0) {
-      return;
+      return 0;
     }
     SA storage sa = _sas[saId];
     SubSA[] storage subSAs = sa.subSAs;
@@ -62,27 +63,84 @@ contract SANFT is ERC721Enumerable {
     newSA.creationTime = block.timestamp;
     newSA.acquisitionTime = block.timestamp;
     require(keptAmounts.length == sa.subSAs.length, "SANFT: length of subSA does not match split");
+    uint256 numEmptySubSAs;
     for (uint256 i = 0; i < keptAmounts.length; i++) {
-      if (subSAs[i].remainingAmount < keptAmounts[i]) {
-        revert("Split is incorrect");
+      require(subSAs[i].remainingAmount >= keptAmounts[i], "SANFT: Split is incorrect");
+      if (keptAmounts[i] == 0) {
+        numEmptySubSAs++;
       }
-      SubSA memory newSubSA = SubSA(subSAs[i].sale, subSAs[i].remainingAmount - keptAmounts[i], 0);
-      newSA.subSAs.push(newSubSA);
+      uint256 newSubSAAmount = subSAs[i].remainingAmount - keptAmounts[i];
+      if(newSubSAAmount > 0) {
+        SubSA memory newSubSA = SubSA(subSAs[i].sale,
+          subSAs[i].remainingAmount - keptAmounts[i], 0);
+        newSA.subSAs.push(newSubSA);
+      }
       subSAs[i].remainingAmount = keptAmounts[i];
     }
+    return cleanEmptySA(saId, numEmptySubSAs);
   }
 
   function _transfer(address from, address to, uint256 tokenId) internal virtual override feeRequired {
     super._transfer(from, to, tokenId);
+    _sas[tokenId].acquisitionTime = block.timestamp;
   }
 
-  function merge(uint256[] memory saIds) external virtual feeRequired {
+  // remove subSAs that had no token left.  The containing SA will also be burned if all of
+  // its sub SAs are empty.
+  function cleanEmptySA(uint256 saId, uint256 numEmptySubSAs) internal virtual returns(uint256) {
+    SA storage sa = _sas[saId];
+    if (numEmptySubSAs == 0) {
+      return sa.subSAs.length;
+    } else if (sa.subSAs.length == numEmptySubSAs) {
+      _burn(saId);
+      return 0;
+    }
+
+    if (numEmptySubSAs < sa.subSAs.length/2) { // empty is less than half, then shift elements
+      for (uint256 i = 0; i < sa.subSAs.length; i++) {
+        if (sa.subSAs[i].remainingAmount == 0) {
+          // find one subSA from the end that's not 100% vested
+          for(uint256 j = sa.subSAs.length - 1; j > i; j--) {
+            if(sa.subSAs[j].remainingAmount > 0) {
+              sa.subSAs[i] = sa.subSAs[j];
+            }
+            sa.subSAs.pop();
+          }
+          // cannot find such subSA
+          if (sa.subSAs[i].remainingAmount == 0) {
+            assert(sa.subSAs.length == i);
+            sa.subSAs.pop();
+          }
+        }
+      }
+      if (sa.subSAs.length == 0) {
+        _burn(saId);
+      }
+    } else { // empty is more than half, then create a new array
+      SubSA[] memory newSubSAs = new SubSA[](sa.subSAs.length - numEmptySubSAs);
+      uint256 subSAindex;
+      for (uint256 i = 0; i < sa.subSAs.length; i++) {
+        if (sa.subSAs[i].remainingAmount >0) {
+          newSubSAs[subSAindex++] = sa.subSAs[i];
+        }
+        delete sa.subSAs[i];
+      }
+      delete sa.subSAs;
+      assert (sa.subSAs.length == 0);
+      for (uint256 i = 0; i < newSubSAs.length; i++) {
+        sa.subSAs.push(newSubSAs[i]);
+      }
+    }
+    return sa.subSAs.length;
+  }
+
+  function merge(uint256[] memory saIds) external virtual feeRequired returns(uint256) {
     require(saIds.length >= 2, "SANFT: Too few SAs for merging");
     for (uint256 i = 0; i < saIds.length; i++) {
       require(ownerOf(saIds[i]) == msg.sender, "SANFT: Only owner can merge sa");
     }
     if (vest(saIds[0]) == 0) {
-      return;
+       return 0;
     }
 
     SA storage sa0 = _sas[saIds[0]];
@@ -112,6 +170,7 @@ contract SANFT is ERC721Enumerable {
       }
       _burn(saIds[i]);
     }
+    return sa0.subSAs.length;
   }
 
   // return the number of non empty subSAs after vest.
@@ -119,16 +178,8 @@ contract SANFT is ERC721Enumerable {
   function vest(uint256 saId) public virtual onlyNFTOwner(saId) returns (uint256) {
     console.log("vesting", saId);
     SA storage sa = _sas[saId];
-    bool reprocessLast = false;
+    uint256 numEmptySubSAs;
     for (uint256 i = 0; i < sa.subSAs.length; i++) {
-      if (reprocessLast) {
-        // delay the -- and pop to next iteration is necessary.
-        // if -- in last iteration, it will be negative for i = 0
-        // if pop in last iteration, it will end the loop premature
-        i--;
-        sa.subSAs.pop();
-        reprocessLast = false;
-      }
       SubSA storage subSA = sa.subSAs[i];
       Sale sale = Sale(subSA.sale);
       uint256 vestedPercentage = sale.getVestedPercentage();
@@ -136,23 +187,14 @@ contract SANFT is ERC721Enumerable {
       sale.vest(ownerOf(saId), vestedAmount);
       console.log("vesting", saId, vestedAmount);
       if (vestedPercentage == 100) {
-        sa.subSAs[i] = sa.subSAs[sa.subSAs.length - 1];
-        // reprocess current element in next round;
-        reprocessLast = true;
-        continue;
-      } else {
-        subSA.remainingAmount = subSA.remainingAmount.sub(vestedAmount);
-        subSA.vestedPercentage = vestedPercentage;
+        numEmptySubSAs++;
       }
+      // reprocess current element in next round;
+      subSA.remainingAmount = subSA.remainingAmount.sub(vestedAmount);
+      subSA.vestedPercentage = vestedPercentage;
     }
-    if (reprocessLast) {
-      sa.subSAs.pop();
-    }
-    if (sa.subSAs.length == 0) {
-      _burn(saId);
-      return 0;
-    }
-    return sa.subSAs.length;
+
+    return cleanEmptySA(saId, numEmptySubSAs);
   }
 
   function mint(address to, Sale sale_, uint256 amount) external virtual {
@@ -168,4 +210,9 @@ contract SANFT is ERC721Enumerable {
     sa.subSAs.push(simple);
     _nextTokenId ++;
   }
+
+   function _burn(uint256 SAId) internal virtual override{
+     super._burn(SAId);
+     delete _sas[SAId];
+   }
 }
