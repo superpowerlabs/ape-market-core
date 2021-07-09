@@ -60,7 +60,8 @@ describe("Integration Test", function() {
             minAmount: 100,
             capAmount: 20000,
             remainingAmount: 0,
-            price: 2,
+            pricingToken: 1,
+            pricingPayment: 2,
             sellingToken:  abc.address,
             paymentToken: tether.address,
             owner: abcOwner.address,
@@ -86,7 +87,7 @@ describe("Integration Test", function() {
   console.log("Deploying XYZ Sale");
   setup.owner = xyzOwner.address;
   setup.sellingToken = xyz.address;
-  setup.price = 1;
+  setup.pricingPayment = 1;
   xyzSale = await Sale.deploy(setup, vestingSchedule);
   console.log("XYZ Sale deployed to:", xyzSale.address);
 

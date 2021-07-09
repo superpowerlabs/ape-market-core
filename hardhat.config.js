@@ -1,7 +1,7 @@
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
 
-const env = require('./env.json')
+// const env = require('./env.json')
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -38,7 +38,7 @@ module.exports = {
         "rinkeby" : {...}
      }
      */
-    rinkeby: env.rinkeby,
+    // rinkeby: env.rinkeby,
   },
   gasReporter: {
     currency: 'USD'
