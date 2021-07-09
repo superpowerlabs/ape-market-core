@@ -17,6 +17,7 @@
 .env.development.local
 .env.test.local
 .env.production.local
+env.json
 
 npm-debug.log*
 yarn-debug.log*
@@ -30,3 +31,4 @@ node_modules
 cache
 
 /src/artifacts/
+/src/config/deployed.json
