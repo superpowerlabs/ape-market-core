@@ -126,7 +126,8 @@ async function main() {
 
 async function saveConfig(data) {
   const chainId = (await ethers.provider.getNetwork()).chainId
-  const jsonpath = path.resolve(__dirname, '../src/config/deployed.json')
+  const confDir = path.resolve(__dirname, '../src/config')
+  const jsonpath = path.resolve(confDir, 'deployed.json')
   if (!(await fs.pathExists(jsonpath))) {
     await fs.writeFile(jsonpath, "{}")
   }
