@@ -5,7 +5,6 @@
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
 const {expect} = require("chai");
-const hardhatConfig = require('../hardhat.config')
 
 const path = require('path')
 const fs = require('fs-extra')
