@@ -60,7 +60,7 @@ contract SANFT is ERC721Enumerable {
   // its sub SAs are empty and function returns false.
   function cleanEmptySA(SA storage sa, uint256 saId, uint256 numEmptySubSAs) internal virtual returns(bool) {
     bool emptySA = false;
-    if (sa.subSAs.length  == 0 || sa.subSAs.length == numEmptySubSAs) {
+    if (sa.subSAs.length == 0 || sa.subSAs.length == numEmptySubSAs) {
       console.log("SANFT: Simple empty SA", saId, sa.subSAs.length, numEmptySubSAs);
       emptySA = true;
     } else {
@@ -78,7 +78,7 @@ contract SANFT is ERC721Enumerable {
             }
             // cannot find such subSA
             if (sa.subSAs[i].remainingAmount == 0) {
-              assert(sa.subSAs.length -1 == i);
+              assert(sa.subSAs.length - 1 == i);
               sa.subSAs.pop();
             }
           }

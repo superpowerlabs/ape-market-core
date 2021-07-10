@@ -1,3 +1,5 @@
+pragma solidity ^0.8.3;
+
 import "../SANFT.sol";
 
 contract TestSANFT is SANFT {
@@ -16,7 +18,7 @@ contract TestSANFT is SANFT {
     assert(!_exists(0));
 
     // new array route
-    SubSA memory something  = SubSA({sale: address(0), remainingAmount: 10, vestedPercentage:90});
+    SubSA memory something = SubSA({sale: address(0), remainingAmount: 10, vestedPercentage:90});
     _mint(msg.sender, 0);
     sa.subSAs.push(empty);
     sa.subSAs.push(empty);
