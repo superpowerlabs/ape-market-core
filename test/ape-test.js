@@ -60,7 +60,7 @@ describe("Integration Test", function() {
             minAmount: 100,
             capAmount: 20000,
             remainingAmount: 0,
-            pricingToken: 1,
+            pricingToken: 1, // refer to code comments on how to set
             pricingPayment: 2,
             sellingToken:  abc.address,
             paymentToken: tether.address,
