@@ -26,11 +26,11 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: 1337
-    },
-    localhost: {
-      url: "http://localhost:8545",
-      chainId: 1337
+      chainId: 1337,
+      gas: 12000000,
+      blockGasLimit: 0x1fffffffffffff,
+      allowUnlimitedContractSize: true,
+      timeout: 1800000
     },
     // put whatever was here in the gitignored env.json in the root, like
     /*

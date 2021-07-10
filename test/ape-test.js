@@ -2,7 +2,7 @@ const hre = require("hardhat");
 const { expect } = require("chai");
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-describe("Integration Test", function() {
+describe("App Tests", function() {
   let apeOwner, tetherOwner, abcOwner, xyzOwner, investor1, investor2;
   hre.run('compile');
   // ****** IMPORTANT: The ordering of the tests reflects operation flows and needs
@@ -11,8 +11,6 @@ describe("Integration Test", function() {
     [apeOwner, tetherOwner, abcOwner, xyzOwner, investor1, investor2]
         = await ethers.getSigners();
     console.log("apeOwner", apeOwner.address);
-
-  console.log(network)
 
   let Tether, tether;
 
@@ -266,4 +264,13 @@ describe("Integration Test", function() {
 
   console.log("Withdraw token from sale");
   });
+
+  it("Unit Tests", async function() {
+    let TestSANFT, testSaNFT;
+    console.log("Deploying TestSANFA");
+    TestSANFT = await hre.ethers.getContractFactory("TestSANFT");
+    testSaNFT = await TestSANFT.deploy();
+    await testSaNFT.testCleanEmptySA();
+
+  })
 })
