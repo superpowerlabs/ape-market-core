@@ -77,11 +77,11 @@ describe("Integration Test", function() {
   console.log("ABC Sale deployed to:", abcSale.address);
 
   console.log("Launching ABC Sale");
-  transaction = await abc.connect(abcOwner).approve(abcSale.address, setup.capAmount);
+  transaction = await abc.connect(abcOwner).approve(abcSale.address, setup.capAmount * 1.05);
   await transaction.wait();
   transaction = await abcSale.connect(abcOwner).launch()
   await transaction.wait();
-  expect(await abc.balanceOf(abcSale.address)).to.equal(setup.capAmount);
+  expect(await abc.balanceOf(abcSale.address)).to.equal(setup.capAmount * 1.05);
 
   let xyzSale
   console.log("Deploying XYZ Sale");
@@ -92,15 +92,15 @@ describe("Integration Test", function() {
   console.log("XYZ Sale deployed to:", xyzSale.address);
 
   console.log("Launching XYZ Sale");
-  transaction = await xyz.connect(xyzOwner).approve(xyzSale.address, setup.capAmount);
+  transaction = await xyz.connect(xyzOwner).approve(xyzSale.address, setup.capAmount * 1.05);
   await transaction.wait();
   transaction = await xyzSale.connect(xyzOwner).launch()
   await transaction.wait();
-  expect(await xyz.balanceOf(xyzSale.address)).to.equal(setup.capAmount);
+  expect(await xyz.balanceOf(xyzSale.address)).to.equal(setup.capAmount * 1.05);
 
   console.log("Investor1 investing in ABC Sale without approval");
   // using hardcoded numbers here to simplicity
-  transaction = await tether.connect(investor1).approve(abcSale.address, 10000 * 2);
+  transaction = await tether.connect(investor1).approve(abcSale.address, 10000 * 2 * 1.1);
   await transaction.wait();
   await expect(abcSale.connect(investor1).invest(10000)).to.be.revertedWith("Sale: Amount if above approved amount");
 
@@ -115,9 +115,9 @@ describe("Integration Test", function() {
   let sa = await saNFT.getSA(saId);
   expect(await sa.subSAs[0].sale).to.equal(abcSale.address);
   // 5% fee
-  expect(await sa.subSAs[0].remainingAmount).to.equal(5700);
+  expect(await sa.subSAs[0].remainingAmount).to.equal(6000);
   // 10% fee
-  expect(await tether.balanceOf(abcSale.address)).to.equal(10800);
+  expect(await tether.balanceOf(abcSale.address)).to.equal(6000 * 2);
 
   console.log("Investor1 investing in ABC Sale with approval again");
   // using hardcoded numbers here to simplicity
@@ -129,13 +129,13 @@ describe("Integration Test", function() {
   sa = await saNFT.getSA(saId);
   expect(await sa.subSAs[0].sale).to.equal(abcSale.address);
   // 5% fee
-  expect(await sa.subSAs[0].remainingAmount).to.equal(3800);
+  expect(await sa.subSAs[0].remainingAmount).to.equal(4000);
   // 10% fee
-  expect(await tether.balanceOf(abcSale.address)).to.equal(18000);
+  expect(await tether.balanceOf(abcSale.address)).to.equal((6000 + 4000) * 2);
 
   console.log("Investor2 investing int XYZ Sale with approval");
   // using hardcoded numbers here to simplicity
-  transaction = await tether.connect(investor2).approve(xyzSale.address, 20000 * 1);
+  transaction = await tether.connect(investor2).approve(xyzSale.address, 20000 * 1 * 1.1);
   await transaction.wait();
   transaction = await xyzSale.connect(xyzOwner).approveInvestor(investor2.address, 20000);
   await transaction.wait();
@@ -146,9 +146,9 @@ describe("Integration Test", function() {
   sa = await saNFT.getSA(saId);
   expect(await sa.subSAs[0].sale).to.equal(xyzSale.address);
   // 5% fee
-  expect(await sa.subSAs[0].remainingAmount).to.equal(19000)
+  expect(await sa.subSAs[0].remainingAmount).to.equal(20000)
   // 10% fee
-  expect(await tether.balanceOf(xyzSale.address)).to.equal(18000);
+  expect(await tether.balanceOf(xyzSale.address)).to.equal(20000 * 1);
 
   console.log("Checking Ape Owner for investing fee");
   expect(await saNFT.balanceOf(apeOwner.address)).to.equal(3);
@@ -169,7 +169,7 @@ describe("Integration Test", function() {
   // before split
   nft = saNFT.tokenOfOwnerByIndex(investor2.address, 0);
   sa = await saNFT.getSA(nft);
-  expect(sa.subSAs[0].remainingAmount).to.equal(19000);
+  expect(sa.subSAs[0].remainingAmount).to.equal(20000);
   // do the split
   keptAmounts = [8000];
   transaction = await tether.connect(investor2).approve(saNFT.address, 100);
@@ -184,7 +184,7 @@ describe("Integration Test", function() {
   nft = await saNFT.tokenOfOwnerByIndex(investor2.address, 1);
   sa = await saNFT.getSA(nft);
   expect(sa.subSAs[0].sale).to.equal(xyzSale.address);
-  expect(sa.subSAs[0].remainingAmount).to.equal(11000);
+  expect(sa.subSAs[0].remainingAmount).to.equal(12000);
   // check for 100 fee collected
   expect(await tether.balanceOf(apeOwner.address)).to.equal(4100);
 
@@ -215,7 +215,7 @@ describe("Integration Test", function() {
   sa = await saNFT.getSA(nft);
   expect(sa.subSAs.length).to.equal(2);
   expect(sa.subSAs[0].sale).to.equal(abcSale.address);
-  expect(sa.subSAs[0].remainingAmount).to.equal(9500);
+  expect(sa.subSAs[0].remainingAmount).to.equal(10000);
   expect(sa.subSAs[1].sale).to.equal(xyzSale.address);
   expect(sa.subSAs[1].remainingAmount).to.equal(8000);
   expect(await tether.balanceOf(apeOwner.address)).to.equal(4300);
@@ -232,7 +232,7 @@ describe("Integration Test", function() {
   nft = saNFT.tokenOfOwnerByIndex(investor1.address, 0);
   sa = await saNFT.getSA(nft);
   expect(await abc.balanceOf(investor1.address)).to.equal(0);
-  expect(sa.subSAs[0].remainingAmount).to.equal(9500);
+  expect(sa.subSAs[0].remainingAmount).to.equal(10000);
 
   // move forward in time
   currentBlockTimeStamp = (await abcSale.currentBlockTimeStamp()).toNumber();
@@ -241,8 +241,8 @@ describe("Integration Test", function() {
   transaction = await saNFT.connect(investor1).vest(nft);
   await transaction.wait();
   sa = await saNFT.getSA(nft);
-  expect(await abc.balanceOf(investor1.address)).to.equal(4750);
-  expect(sa.subSAs[0].remainingAmount).to.equal(4750);
+  expect(await abc.balanceOf(investor1.address)).to.equal(5000);
+  expect(sa.subSAs[0].remainingAmount).to.equal(5000);
   expect(await xyz.balanceOf(investor1.address)).to.equal(4000);
   expect(sa.subSAs[1].remainingAmount).to.equal(4000);
 
@@ -254,15 +254,15 @@ describe("Integration Test", function() {
 
   await saNFT.connect(investor1).vest(nft);
 
-  expect(await abc.balanceOf(investor1.address)).to.equal(9500);
+  expect(await abc.balanceOf(investor1.address)).to.equal(10000);
   expect(await xyz.balanceOf(investor1.address)).to.equal(8000);
   // SAs should have been burned
   expect(await saNFT.balanceOf(investor1.address)).to.equal(0);
 
   console.log("Withdraw payment from sale");
-  await expect(abcSale.withdrawPayment(19000)).to.be.revertedWith("Caller is not sale owner");
+  await expect(abcSale.withdrawPayment(20000)).to.be.revertedWith("Caller is not sale owner");
   console.log("balance is", (await tether.balanceOf(abcSale.address)).toNumber());
-  await abcSale.connect(abcOwner).withdrawPayment(18000)
+  await abcSale.connect(abcOwner).withdrawPayment(20000)
 
   console.log("Withdraw token from sale");
   });

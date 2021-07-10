@@ -84,9 +84,10 @@ contract Sale {
   }
 
   // Sale creator calls this function to start the sale.
-  // Precondition: Sale creator needs to approve cap Amount of token before calling this
+  // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external virtual onlySaleOwner {
-    _setup.sellingToken.transferFrom(_setup.owner, address(this), _setup.capAmount);
+    uint256 fee = _setup.capAmount.mul(_setup.tokenFeePercentage).div(100);
+    _setup.sellingToken.transferFrom(_setup.owner, address(this), _setup.capAmount.add(fee));
     _setup.remainingAmount = _setup.capAmount;
     if (_setup.saleBeginTime == 0) {
       _setup.saleBeginTime = block.timestamp;
@@ -100,20 +101,20 @@ contract Sale {
   }
 
   // Invest amount into the sale.
-  // Investor needs to approve the payment amount need for purchase before calling this
+  // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external virtual {
     require(block.timestamp >= _setup.saleBeginTime, "Sale: Not started yet");
     require(block.timestamp <= _setup.saleBeginTime + _setup.duration, "Sale: Ended already");
     require(amount >= _setup.minAmount, "Sale: Amount is too low");
     require(amount <= _setup.remainingAmount, "Sale: Amount is too high");
     require(_approvedAmounts[msg.sender] >= amount, "Sale: Amount if above approved amount");
-    uint256 totalPayment = amount.mul(_setup.pricingPayment).div(_setup.pricingToken);
-    uint256 buyerFee = totalPayment.mul(_setup.paymentFeePercentage).div(100);
+    uint256 tokenPayment = amount.mul(_setup.pricingPayment).div(_setup.pricingToken);
+    uint256 buyerFee = tokenPayment.mul(_setup.paymentFeePercentage).div(100);
     uint256 sellerFee = amount.mul(_setup.tokenFeePercentage).div(100);
     _setup.paymentToken.transferFrom(msg.sender, _apeAdmin, buyerFee);
-    _setup.paymentToken.transferFrom(msg.sender, address(this), totalPayment.sub(buyerFee));
+    _setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
     // mint NFT
-    _setup.saNFT.mint(msg.sender, this, amount.sub(sellerFee));
+    _setup.saNFT.mint(msg.sender, this, amount);
     _setup.saNFT.mint(_apeAdmin, this, sellerFee);
     _setup.remainingAmount = _setup.remainingAmount.sub(amount);
     _approvedAmounts[msg.sender] = _approvedAmounts[msg.sender].sub(amount);
@@ -129,7 +130,8 @@ contract Sale {
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
     require(amount <= _setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
-    _setup.sellingToken.transfer(msg.sender, amount);
+    uint256 fee = _setup.capAmount.mul(_setup.tokenFeePercentage).div(100);
+    _setup.sellingToken.transfer(msg.sender, amount + fee);
     _setup.remainingAmount -= amount;
   }
 
