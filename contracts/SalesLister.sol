@@ -33,8 +33,8 @@ contract SalesLister is Ownable {
 
   struct SA {
     ListedSale[] listedSales;
-    uint256 creationTime; // when the SA is create = when it was first invested
-    uint256 acquisitionTime; // == creation for first owner. == transfer time for later owners
+    uint256 creationBlock; // when the SA is create = when it was first invested
+    uint256 acquisitionBlock; // == creation for first owner. == transfer time for later owners
   }
 
 
@@ -49,7 +49,7 @@ contract SalesLister is Ownable {
   }
 
   modifier SAExists(uint saId) {
-    require(_sas[saId].creationTime != 0, "SalesLister: SA does not exist");
+    require(_sas[saId].creationBlock != 0, "SalesLister: SA does not exist");
     _;
   }
 
@@ -153,12 +153,12 @@ contract SalesLister is Ownable {
   ) internal virtual
   returns (uint)
   {
-    require(_sas[saId].creationTime == 0, "SalesLister: SA already added");
+    require(_sas[saId].creationBlock == 0, "SalesLister: SA already added");
     ListedSale memory listedSale = ListedSale(saleAddress, remainingAmount, vestedPercentage);
     SA storage sa = _sas[saId];
     sa.listedSales.push(listedSale);
-    _sas[saId].creationTime = block.number;
-    _sas[saId].acquisitionTime = block.number;
+    _sas[saId].creationBlock = block.number;
+    _sas[saId].acquisitionBlock = block.number;
     emit SAAdded(saId, saleAddress, remainingAmount, vestedPercentage);
     return saId;
   }
@@ -175,8 +175,8 @@ contract SalesLister is Ownable {
   returns (bool)
   {
     if (_sas[saId].listedSales.length > 0) {
-      _sas[saId].creationTime = block.number;
-      _sas[saId].acquisitionTime = block.number;
+      _sas[saId].creationBlock = block.number;
+      _sas[saId].acquisitionBlock = block.number;
       return true;
     }
     return false;
