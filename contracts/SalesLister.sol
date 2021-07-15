@@ -49,19 +49,19 @@ contract SalesLister is Ownable {
   }
 
   modifier SAExists(uint saId) {
-    require(_sas[saId].creationTime != 0, 'SalesLister: SA does not exist');
+    require(_sas[saId].creationTime != 0, "SalesLister: SA does not exist");
     _;
   }
 
   modifier ListedSaleExists(uint saId, uint i) {
     bool exists;
-    for (uint j=0;j< _sas[saId].listedSales.length; j++) {
+    for (uint j = 0; j < _sas[saId].listedSales.length; j++) {
       if (j == i) {
         exists = true;
         break;
       }
     }
-    require(exists, 'SalesLister: Listed sale does not exist');
+    require(exists, "SalesLister: Listed sale does not exist");
     _;
   }
 
@@ -153,12 +153,12 @@ contract SalesLister is Ownable {
   ) internal virtual
   returns (uint)
   {
-    require(_sas[saId].creationTime == 0, 'SalesLister: SA already added');
+    require(_sas[saId].creationTime == 0, "SalesLister: SA already added");
     ListedSale memory listedSale = ListedSale(saleAddress, remainingAmount, vestedPercentage);
     SA storage sa = _sas[saId];
     sa.listedSales.push(listedSale);
-    _sas[saId].creationTime = block.timestamp;
-    _sas[saId].acquisitionTime = block.timestamp;
+    _sas[saId].creationTime = block.number;
+    _sas[saId].acquisitionTime = block.number;
     emit SAAdded(saId, saleAddress, remainingAmount, vestedPercentage);
     return saId;
   }
@@ -175,8 +175,8 @@ contract SalesLister is Ownable {
   returns (bool)
   {
     if (_sas[saId].listedSales.length > 0) {
-      _sas[saId].creationTime = block.timestamp;
-      _sas[saId].acquisitionTime = block.timestamp;
+      _sas[saId].creationTime = block.number;
+      _sas[saId].acquisitionTime = block.number;
       return true;
     }
     return false;
