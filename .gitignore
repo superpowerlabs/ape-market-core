@@ -32,3 +32,6 @@ cache
 
 /src/artifacts/
 /src/config/deployed.json
+
+# for now
+/sample-app
