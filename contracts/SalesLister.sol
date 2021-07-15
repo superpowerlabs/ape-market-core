@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./Sale.sol";
-//import "./ISalesLister.sol";
+import "./ISalesLister.sol";
 
 // for debugging only
 import "hardhat/console.sol";
@@ -17,26 +17,7 @@ import "hardhat/console.sol";
 */
 
 
-contract SalesLister is Ownable {
-
-  event FactorySet(address factory);
-
-  event SAAdded(uint saId, address initialSale, uint256 remainingAmount, uint256 vestedPercentage);
-  event SADeleted(uint saId);
-
-
-  struct ListedSale {
-    address sale;
-    uint256 remainingAmount;
-    uint256 vestedPercentage;
-  }
-
-  struct SA {
-    ListedSale[] listedSales;
-    uint256 creationBlock; // when the SA is create = when it was first invested
-    uint256 acquisitionBlock; // == creation for first owner. == transfer time for later owners
-  }
-
+contract SalesLister is ISalesLister, Ownable {
 
   address private _factory;
   mapping(uint256 => SA) internal _sas;
@@ -69,19 +50,19 @@ contract SalesLister is Ownable {
     setFactory(factory);
   }
 
-  function setFactory(address factory) public
+  function setFactory(address factory) public override
   onlyOwner
   {
     _factory = factory;
     emit FactorySet(factory);
   }
 
-  function getFactory() external view virtual returns (address)
+  function getFactory() external override view virtual returns (address)
   {
     return _factory;
   }
 
-  function getSA(uint saId) public virtual view
+  function getSA(uint saId) external override virtual view
   returns (SA memory)
   {
     return _sas[saId];
@@ -92,51 +73,51 @@ contract SalesLister is Ownable {
     address saleAddress,
     uint256 remainingAmount,
     uint256 vestedPercentage
-  ) external virtual
+  ) external override virtual
   onlyFactory
   returns (uint)
   {
     return _addSA(saId, saleAddress, remainingAmount, vestedPercentage);
   }
 
-  function deleteSA(uint saId) external virtual
+  function deleteSA(uint saId) external override virtual
   onlyFactory
   {
     return _deleteSA(saId);
   }
 
-  function updateSA(uint saId) public virtual
+  function updateSA(uint saId) external override virtual
   onlyFactory
   returns (bool)
   {
     return _updateSA(saId);
   }
 
-  function updateListedSale(uint saId, uint i, ListedSale memory sale) external
+  function updateListedSale(uint saId, uint i, ListedSale memory sale) external override
   onlyFactory
   {
     return _updateListedSale(saId, i, sale);
   }
 
-  function getListedSale(uint saId, uint i) external view
+  function getListedSale(uint saId, uint i) external override view
   returns (ListedSale memory)
   {
     return _sas[saId].listedSales[i];
   }
 
-  function deleteListedSale(uint saId, uint i) public virtual
+  function deleteListedSale(uint saId, uint i) external override virtual
   onlyFactory
   {
     _deleteListedSale(saId, i);
   }
 
-  function addNewSales(uint saId, ListedSale[] memory newSales) external virtual
+  function addNewSales(uint saId, ListedSale[] memory newSales) external override virtual
   onlyFactory
   {
     _addNewSales(saId, newSales);
   }
 
-  function deleteAllListedSales(uint saId) external virtual
+  function deleteAllListedSales(uint saId) external override virtual
   onlyFactory
   {
     _deleteAllListedSales(saId);
