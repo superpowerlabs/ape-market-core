@@ -4,7 +4,16 @@ if (process.env.GAS_REPORT === 'yes') {
   require("hardhat-gas-reporter");
 }
 
-// const env = require('./env.json')
+const path = require('path')
+const fs = require('fs-extra')
+
+let envPath = path.resolve(__dirname, 'env.json')
+if (!fs.existsSync(envPath)) {
+  fs.writeFileSync(envPath, '{"rinkeby":{"url":""}}')
+}
+// look at env-example.json for an example of env.json
+const env = require('./env.json')
+
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -35,13 +44,7 @@ module.exports = {
       allowUnlimitedContractSize: true,
       timeout: 1800000
     },
-    // put whatever was here in the gitignored env.json in the root, like
-    /*
-     {
-        "rinkeby" : {...}
-     }
-     */
-    // rinkeby: env.rinkeby,
+    rinkeby: env.rinkeby,
   },
   gasReporter: {
     currency: 'USD'
