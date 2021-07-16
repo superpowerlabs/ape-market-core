@@ -86,7 +86,7 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   function mint(address to, ISale sale, uint256 amount) external virtual
   {
-    // should instead the buyer be able to mint the contract?
+    // should instead the buyer be able to mint the token?
     require(address(sale) == msg.sender, "SAToken: Only sale contract can mint its own NFT!");
 
     _safeMint(to, _tokenIdCounter.current());
