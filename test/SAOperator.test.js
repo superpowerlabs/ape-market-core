@@ -216,6 +216,11 @@ describe("SAOperator", async function () {
     beforeEach(async function () {
       await initNetworkAndDeploy()
       await prePopulate()
+    })
+
+    it("should add an array of SAs", async function () {
+
+      let saId = 2
       newSAs = [
         {
           sale: sale3.address,
@@ -228,12 +233,6 @@ describe("SAOperator", async function () {
           vestedPercentage: 30
         }
       ]
-    })
-
-    it("should add an array of sales", async function () {
-
-      let saId = 2
-
       await operator.connect(factory).addNewSAs(saId, newSAs)
       assert.equal((await operator.getBundle(saId)).sas.length, 3)
       assert.equal((await operator.getBundle(saId)).sas[0].sale, sale1.address)
@@ -241,10 +240,61 @@ describe("SAOperator", async function () {
       assert.equal((await operator.getBundle(saId)).sas[2].sale, sale4.address)
     })
 
-    it("should throw adding an array of sales to a not existing sa", async function () {
+    it("should add an array of sales with just one SA", async function () {
+
+      let saId = 2
+      newSAs = [
+        {
+          sale: sale3.address,
+          remainingAmount: 100,
+          vestedPercentage: 0
+        }
+      ]
+      await operator.connect(factory).addNewSAs(saId, newSAs)
+      assert.equal((await operator.getBundle(saId)).sas.length, 2)
+      assert.equal((await operator.getBundle(saId)).sas[0].sale, sale1.address)
+      assert.equal((await operator.getBundle(saId)).sas[1].sale, sale3.address)
+    })
+
+    it("should throw adding an array of SAs to a not existing sa", async function () {
 
       await assertThrowsMessage(
           operator.connect(factory).addNewSAs(20, newSAs),
+          'SAOperator: Bundle does not exist')
+
+    })
+
+
+  })
+
+  describe('#addNewSA', async function () {
+
+    let newSAs
+
+    beforeEach(async function () {
+      await initNetworkAndDeploy()
+      await prePopulate()
+      newSA = {
+          sale: sale3.address,
+          remainingAmount: 100,
+          vestedPercentage: 0
+        }
+    })
+
+    it("should add an array of SAs", async function () {
+
+      let saId = 2
+
+      await operator.connect(factory).addNewSA(saId, newSA)
+      assert.equal((await operator.getBundle(saId)).sas.length, 2)
+      assert.equal((await operator.getBundle(saId)).sas[0].sale, sale1.address)
+      assert.equal((await operator.getBundle(saId)).sas[1].sale, sale3.address)
+    })
+
+    it("should throw adding a SA to a not existing sa", async function () {
+
+      await assertThrowsMessage(
+          operator.connect(factory).addNewSA(20, newSA),
           'SAOperator: Bundle does not exist')
 
     })

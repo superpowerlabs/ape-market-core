@@ -99,10 +99,16 @@ contract SAOperator is ISAOperator, Ownable {
     _deleteSA(bundleId, i);
   }
 
-  function addNewSAs(uint bundleId, SA[] memory newSales) external override virtual
+  function addNewSAs(uint bundleId, SA[] memory newSAs) external override virtual
   onlyFactory
   {
-    _addNewSales(bundleId, newSales);
+    _addNewSAs(bundleId, newSAs);
+  }
+
+  function addNewSA(uint bundleId, SA memory newSA) external override virtual
+  onlyFactory
+  {
+    _addNewSA(bundleId, newSA);
   }
 
   function deleteAllSAs(uint bundleId) external override virtual
@@ -164,7 +170,7 @@ contract SAOperator is ISAOperator, Ownable {
     delete _bundles[bundleId].sas[i];
   }
 
-  function _addNewSales(uint bundleId, SA[] memory newSAs) internal virtual
+  function _addNewSAs(uint bundleId, SA[] memory newSAs) internal virtual
   BundleExists(bundleId)
   {
     for (uint256 i = 0; i < newSAs.length; i++) {
@@ -174,7 +180,7 @@ contract SAOperator is ISAOperator, Ownable {
     _bundles[bundleId].creationBlock = block.number;
   }
 
-  function _addNewSale(uint bundleId, SA memory newSA) internal virtual
+  function _addNewSA(uint bundleId, SA memory newSA) internal virtual
   BundleExists(bundleId)
   {
       _bundles[bundleId].sas.push(newSA);

@@ -41,5 +41,7 @@ interface ISAOperator {
 
   function addNewSAs(uint bundleId, SA[] memory newSAs) external;
 
+  function addNewSA(uint bundleId, SA memory newSA) external;
+
   function deleteAllSAs(uint bundleId) external;
 }

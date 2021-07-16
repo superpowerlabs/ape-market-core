@@ -1,5 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
-// require("hardhat-gas-reporter");
+require("hardhat-gas-reporter");
 
 // const env = require('./env.json')
 
