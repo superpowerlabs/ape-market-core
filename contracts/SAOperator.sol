@@ -12,20 +12,20 @@ import "hardhat/console.sol";
 /*
   This contract manages the sales inside a smart agreement.
   The actual smart agreement nft will extend this contract.
-  Most functions will be managed internally and externally (by ApeFactory).
+  Most functions will be managed internally and externally (by ApeManager).
 
 */
 
 
 contract SAOperator is ISAOperator, Ownable {
 
-  address private _factory;
-  mapping(uint256 => Bundle) internal _bundles;
+  address private _manager;
+  mapping(uint256 => Bundle) private _bundles;
 
   // modifiers
 
-  modifier onlyFactory() {
-    require(_factory == msg.sender, "SAOperator: Caller is not an authorized factory");
+  modifier onlyManager() {
+    require(_manager == msg.sender, "SAOperator: Caller is not authorized");
     _;
   }
 
@@ -39,20 +39,20 @@ contract SAOperator is ISAOperator, Ownable {
     _;
   }
 
-  constructor(address factory) {
-    setFactory(factory);
-  }
-
-  function setFactory(address factory) public override
+//  constructor(address manager) {
+//    setManager(manager);
+//  }
+//
+  function setManager(address manager) public override
   onlyOwner
   {
-    _factory = factory;
-    emit FactorySet(factory);
+    _manager = manager;
+    emit ManagerSet(manager);
   }
 
-  function getFactory() external override view virtual returns (address)
+  function getManager() external override view virtual returns (address)
   {
-    return _factory;
+    return _manager;
   }
 
   function getBundle(uint bundleId) external override virtual view
@@ -62,27 +62,27 @@ contract SAOperator is ISAOperator, Ownable {
   }
 
   function addBundle(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external override virtual
-  onlyFactory
+  onlyManager
   returns (uint)
   {
     return _addBundle(bundleId, saleAddress, remainingAmount, vestedPercentage);
   }
 
   function deleteBundle(uint bundleId) external override virtual
-  onlyFactory
+  onlyManager
   {
     return _deleteBundle(bundleId);
   }
 
   function updateBundle(uint bundleId) external override virtual
-  onlyFactory
+  onlyManager
   returns (bool)
   {
     return _updateBundle(bundleId);
   }
 
   function updateSA(uint bundleId, uint i, SA memory sale) external override
-  onlyFactory
+  onlyManager
   {
     return _updateSA(bundleId, i, sale);
   }
@@ -94,25 +94,25 @@ contract SAOperator is ISAOperator, Ownable {
   }
 
   function deleteSA(uint bundleId, uint i) external override virtual
-  onlyFactory
+  onlyManager
   {
     _deleteSA(bundleId, i);
   }
 
   function addNewSAs(uint bundleId, SA[] memory newSAs) external override virtual
-  onlyFactory
+  onlyManager
   {
     _addNewSAs(bundleId, newSAs);
   }
 
   function addNewSA(uint bundleId, SA memory newSA) external override virtual
-  onlyFactory
+  onlyManager
   {
     _addNewSA(bundleId, newSA);
   }
 
   function deleteAllSAs(uint bundleId) external override virtual
-  onlyFactory
+  onlyManager
   {
     _deleteAllSAs(bundleId);
   }
@@ -150,7 +150,7 @@ contract SAOperator is ISAOperator, Ownable {
   returns (bool)
   {
     if (_bundles[bundleId].sas.length > 0) {
-      _bundles[bundleId].creationBlock = block.number;
+//      _bundles[bundleId].creationBlock = block.number;
       _bundles[bundleId].acquisitionBlock = block.number;
       return true;
     }
@@ -177,7 +177,7 @@ contract SAOperator is ISAOperator, Ownable {
       _bundles[bundleId].sas.push(newSAs[i]);
     }
     _bundles[bundleId].acquisitionBlock = block.number;
-    _bundles[bundleId].creationBlock = block.number;
+//    _bundles[bundleId].creationBlock = block.number;
   }
 
   function _addNewSA(uint bundleId, SA memory newSA) internal virtual
@@ -185,7 +185,7 @@ contract SAOperator is ISAOperator, Ownable {
   {
       _bundles[bundleId].sas.push(newSA);
       _bundles[bundleId].acquisitionBlock = block.number;
-      _bundles[bundleId].creationBlock = block.number;
+//      _bundles[bundleId].creationBlock = block.number;
   }
 
   function _deleteAllSAs(uint bundleId) internal virtual

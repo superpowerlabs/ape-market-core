@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 interface ISAOperator {
 
-  event FactorySet(address factory);
+  event ManagerSet(address manager);
 
   event BundleAdded(uint bundleId, address initialSale, uint256 remainingAmount, uint256 vestedPercentage);
   event BundleDeleted(uint bundleId);
@@ -21,9 +21,9 @@ interface ISAOperator {
   }
 
 
-  function setFactory(address factory) external;
+  function setManager(address manager) external;
 
-  function getFactory() external view returns (address);
+  function getManager() external view returns (address);
 
   function getBundle(uint bundleId) external view returns (Bundle memory);
 
