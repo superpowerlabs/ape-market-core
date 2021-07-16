@@ -26,6 +26,7 @@
     "test-frontend": "react-scripts test",
     "eject": "react-scripts eject",
     "test": "npx hardhat test",
+    "test:gas": "GAS_REPORT=yes npx hardhat test",
     "compile": "npx hardhat compile",
     "lint": "solium -d contracts/"
   },
