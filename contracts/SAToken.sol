@@ -21,7 +21,6 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
   Counters.Counter private _tokenIdCounter;
 
   address private _apeWallet;
-  IERC20 private _feeToken;
 
   mapping(uint => bool) private _paused;
 

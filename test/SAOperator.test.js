@@ -63,7 +63,7 @@ describe("SAOperator", async function () {
 
   })
 
-  describe('#addSA', async function () {
+  describe('#addBundle', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
