@@ -14,14 +14,7 @@ describe("SAOperator", async function () {
   let chainId
 
   before(async function () {
-    signers = await ethers.getSigners()
-    owner = signers[0]
-    factory = signers[1]
-    newFactory = signers[2]
-    sale1 = signers[3]
-    sale2 = signers[4]
-    sale3 = signers[5]
-    sale4 = signers[6]
+    [owner, factory, newFactory, sale1, sale2, sale3, sale4] = await ethers.getSigners()
   })
 
   async function getTimestamp() {
