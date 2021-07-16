@@ -29,10 +29,10 @@ describe("SAOperator", async function () {
 
   async function prePopulate() {
     let saId = 0
-    await operator.connect(factory).addSABox(saId++, sale1.address, 0, 100)
-    await operator.connect(factory).addSABox(saId++, sale2.address, 0, 100)
-    await operator.connect(factory).addSABox(saId++, sale1.address, 10, 90)
-    await operator.connect(factory).addSABox(saId++, sale2.address, 30, 50)
+    await operator.connect(factory).addBundle(saId++, sale1.address, 0, 100)
+    await operator.connect(factory).addBundle(saId++, sale2.address, 0, 100)
+    await operator.connect(factory).addBundle(saId++, sale1.address, 10, 90)
+    await operator.connect(factory).addBundle(saId++, sale2.address, 30, 50)
   }
 
   describe('#constructor & #getFactory', async function () {
@@ -72,26 +72,26 @@ describe("SAOperator", async function () {
 
       let saId = 3
 
-      await expect(operator.connect(factory).addSABox(saId, sale1.address, 0, 100))
-          .to.emit(operator, 'SABoxAdded')
+      await expect(operator.connect(factory).addBundle(saId, sale1.address, 0, 100))
+          .to.emit(operator, 'BundleAdded')
           .withArgs(saId, sale1.address, 0, 100)
-      assert.equal((await operator.getSABox(saId)).sas[0].sale, sale1.address)
+      assert.equal((await operator.getBundle(saId)).sas[0].sale, sale1.address)
     })
 
     it("should throw adding again the same sale id", async function () {
 
       let saId = 3
 
-      await operator.connect(factory).addSABox(saId, sale1.address, 0, 100)
+      await operator.connect(factory).addBundle(saId, sale1.address, 0, 100)
 
       await assertThrowsMessage(
-          operator.connect(factory).addSABox(saId, sale1.address, 20, 20),
-          'SAOperator: SABox already added')
+          operator.connect(factory).addBundle(saId, sale1.address, 20, 20),
+          'SAOperator: Bundle already added')
 
     })
   })
 
-  describe('#deleteSABox', async function () {
+  describe('#deleteBundle', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
@@ -100,11 +100,11 @@ describe("SAOperator", async function () {
     it("should delete a sale", async function () {
 
       let saId = 3
-      await operator.connect(factory).addSABox(saId, sale1.address, 0, 100)
-      await expect(operator.connect(factory).deleteSABox(saId))
-          .to.emit(operator, 'SABoxDeleted')
+      await operator.connect(factory).addBundle(saId, sale1.address, 0, 100)
+      await expect(operator.connect(factory).deleteBundle(saId))
+          .to.emit(operator, 'BundleDeleted')
           .withArgs(saId)
-      assert.isUndefined((await operator.getSABox(saId)).sas[0])
+      assert.isUndefined((await operator.getBundle(saId)).sas[0])
     })
 
     it("should throw deleting a not existing sa", async function () {
@@ -112,8 +112,8 @@ describe("SAOperator", async function () {
       let saId = 3
 
       await assertThrowsMessage(
-          operator.connect(factory).deleteSABox(saId),
-          'SAOperator: SABox does not exist')
+          operator.connect(factory).deleteBundle(saId),
+          'SAOperator: Bundle does not exist')
 
     })
 
@@ -130,7 +130,7 @@ describe("SAOperator", async function () {
 
       let saId = 2
 
-      assert.equal((await operator.getSABox(saId)).sas[0].sale, sale1.address)
+      assert.equal((await operator.getBundle(saId)).sas[0].sale, sale1.address)
 
       let newSA = {
         sale: sale3.address,
@@ -139,7 +139,7 @@ describe("SAOperator", async function () {
       }
 
       await operator.connect(factory).updateSA(saId, 0, newSA)
-      assert.equal((await operator.getSABox(saId)).sas[0].sale, sale3.address)
+      assert.equal((await operator.getBundle(saId)).sas[0].sale, sale3.address)
     })
 
     it("should throw updating a not existing sa", async function () {
@@ -152,7 +152,7 @@ describe("SAOperator", async function () {
 
       await assertThrowsMessage(
           operator.connect(factory).updateSA(10, 0, newSA),
-          'SAOperator: SABox does not exist')
+          'SAOperator: Bundle does not exist')
 
     })
 
@@ -180,22 +180,22 @@ describe("SAOperator", async function () {
       await prePopulate()
     })
 
-    it("should delete a listed sale from an SABox", async function () {
+    it("should delete a listed sale from an Bundle", async function () {
 
       let saId = 2
 
-      assert.equal((await operator.getSABox(saId)).sas[0].sale, sale1.address)
+      assert.equal((await operator.getBundle(saId)).sas[0].sale, sale1.address)
 
       await operator.connect(factory).deleteSA(saId, 0)
 
-      assert.equal((await operator.getSABox(saId)).sas[0].sale, addr0)
+      assert.equal((await operator.getBundle(saId)).sas[0].sale, addr0)
     })
 
     it("should throw deleting a listedSale of a not existing sa", async function () {
 
       await assertThrowsMessage(
           operator.connect(factory).deleteSA(10, 0),
-          'SAOperator: SABox does not exist')
+          'SAOperator: Bundle does not exist')
 
     })
 
@@ -235,17 +235,17 @@ describe("SAOperator", async function () {
       let saId = 2
 
       await operator.connect(factory).addNewSAs(saId, newSAs)
-      assert.equal((await operator.getSABox(saId)).sas.length, 3)
-      assert.equal((await operator.getSABox(saId)).sas[0].sale, sale1.address)
-      assert.equal((await operator.getSABox(saId)).sas[1].sale, sale3.address)
-      assert.equal((await operator.getSABox(saId)).sas[2].sale, sale4.address)
+      assert.equal((await operator.getBundle(saId)).sas.length, 3)
+      assert.equal((await operator.getBundle(saId)).sas[0].sale, sale1.address)
+      assert.equal((await operator.getBundle(saId)).sas[1].sale, sale3.address)
+      assert.equal((await operator.getBundle(saId)).sas[2].sale, sale4.address)
     })
 
     it("should throw adding an array of sales to a not existing sa", async function () {
 
       await assertThrowsMessage(
           operator.connect(factory).addNewSAs(20, newSAs),
-          'SAOperator: SABox does not exist')
+          'SAOperator: Bundle does not exist')
 
     })
 
@@ -280,22 +280,22 @@ describe("SAOperator", async function () {
       await operator.connect(factory).addNewSAs(saId, newSAs)
     })
 
-    it("should delete all listed sales of an SABox", async function () {
+    it("should delete all listed sales of an Bundle", async function () {
 
-      assert.equal((await operator.getSABox(saId)).sas[0].sale, sale1.address)
-      assert.equal((await operator.getSABox(saId)).sas[1].sale, sale2.address)
-      assert.equal((await operator.getSABox(saId)).sas[2].sale, sale3.address)
-      assert.equal((await operator.getSABox(saId)).sas[3].sale, sale4.address)
+      assert.equal((await operator.getBundle(saId)).sas[0].sale, sale1.address)
+      assert.equal((await operator.getBundle(saId)).sas[1].sale, sale2.address)
+      assert.equal((await operator.getBundle(saId)).sas[2].sale, sale3.address)
+      assert.equal((await operator.getBundle(saId)).sas[3].sale, sale4.address)
 
       await operator.connect(factory).deleteAllSAs(saId)
-      assert.equal((await operator.getSABox(saId)).sas.length, 0)
+      assert.equal((await operator.getBundle(saId)).sas.length, 0)
     })
 
     it("should throw adding an array of sales to a not existing sa", async function () {
 
       await assertThrowsMessage(
           operator.connect(factory).deleteAllSAs(20),
-          'SAOperator: SABox does not exist')
+          'SAOperator: Bundle does not exist')
 
     })
 
