@@ -29,20 +29,13 @@ contract SAOperator is ISAOperator, Ownable {
     _;
   }
 
-  modifier BundleExists(uint boxId) {
-    require(_bundles[boxId].creationBlock != 0, "SAOperator: Bundle does not exist");
+  modifier BundleExists(uint bundleId) {
+    require(_bundles[bundleId].creationBlock != 0, "SAOperator: Bundle does not exist");
     _;
   }
 
-  modifier SAExists(uint boxId, uint i) {
-    bool exists;
-    for (uint j = 0; j < _bundles[boxId].sas.length; j++) {
-      if (j == i) {
-        exists = true;
-        break;
-      }
-    }
-    require(exists, "SAOperator: SA does not exist");
+  modifier SAExists(uint bundleId, uint i) {
+    require(i < _bundles[bundleId].sas.length, "SAOperator: SA does not exist");
     _;
   }
 
@@ -62,137 +55,137 @@ contract SAOperator is ISAOperator, Ownable {
     return _factory;
   }
 
-  function getBundle(uint boxId) external override virtual view
+  function getBundle(uint bundleId) external override virtual view
   returns (Bundle memory)
   {
-    return _bundles[boxId];
+    return _bundles[bundleId];
   }
 
-  function addBundle(uint boxId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external override virtual
+  function addBundle(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external override virtual
   onlyFactory
   returns (uint)
   {
-    return _addBundle(boxId, saleAddress, remainingAmount, vestedPercentage);
+    return _addBundle(bundleId, saleAddress, remainingAmount, vestedPercentage);
   }
 
-  function deleteBundle(uint boxId) external override virtual
+  function deleteBundle(uint bundleId) external override virtual
   onlyFactory
   {
-    return _deleteBundle(boxId);
+    return _deleteBundle(bundleId);
   }
 
-  function updateBundle(uint boxId) external override virtual
+  function updateBundle(uint bundleId) external override virtual
   onlyFactory
   returns (bool)
   {
-    return _updateBundle(boxId);
+    return _updateBundle(bundleId);
   }
 
-  function updateSA(uint boxId, uint i, SA memory sale) external override
+  function updateSA(uint bundleId, uint i, SA memory sale) external override
   onlyFactory
   {
-    return _updateSA(boxId, i, sale);
+    return _updateSA(bundleId, i, sale);
   }
 
-  function getSA(uint boxId, uint i) external override view
+  function getSA(uint bundleId, uint i) external override view
   returns (SA memory)
   {
-    return _bundles[boxId].sas[i];
+    return _bundles[bundleId].sas[i];
   }
 
-  function deleteSA(uint boxId, uint i) external override virtual
+  function deleteSA(uint bundleId, uint i) external override virtual
   onlyFactory
   {
-    _deleteSA(boxId, i);
+    _deleteSA(bundleId, i);
   }
 
-  function addNewSAs(uint boxId, SA[] memory newSales) external override virtual
+  function addNewSAs(uint bundleId, SA[] memory newSales) external override virtual
   onlyFactory
   {
-    _addNewSales(boxId, newSales);
+    _addNewSales(bundleId, newSales);
   }
 
-  function deleteAllSAs(uint boxId) external override virtual
+  function deleteAllSAs(uint bundleId) external override virtual
   onlyFactory
   {
-    _deleteAllSAs(boxId);
+    _deleteAllSAs(bundleId);
   }
 
 
   // internal methods:
 
   function _addBundle(
-    uint boxId,
+    uint bundleId,
     address saleAddress,
     uint256 remainingAmount,
     uint256 vestedPercentage
   ) internal virtual
   returns (uint)
   {
-    require(_bundles[boxId].creationBlock == 0, "SAOperator: Bundle already added");
+    require(_bundles[bundleId].creationBlock == 0, "SAOperator: Bundle already added");
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
-    Bundle storage box = _bundles[boxId];
-    box.sas.push(listedSale);
-    _bundles[boxId].creationBlock = block.number;
-    _bundles[boxId].acquisitionBlock = block.number;
-    emit BundleAdded(boxId, saleAddress, remainingAmount, vestedPercentage);
-    return boxId;
+    Bundle storage bundle = _bundles[bundleId];
+    bundle.sas.push(listedSale);
+    _bundles[bundleId].creationBlock = block.number;
+    _bundles[bundleId].acquisitionBlock = block.number;
+    emit BundleAdded(bundleId, saleAddress, remainingAmount, vestedPercentage);
+    return bundleId;
   }
 
-  function _deleteBundle(uint boxId) internal virtual
-  BundleExists(boxId)
+  function _deleteBundle(uint bundleId) internal virtual
+  BundleExists(bundleId)
   {
-    delete _bundles[boxId];
-    emit BundleDeleted(boxId);
+    delete _bundles[bundleId];
+    emit BundleDeleted(bundleId);
   }
 
-  function _updateBundle(uint boxId) internal virtual
-  BundleExists(boxId)
+  function _updateBundle(uint bundleId) internal virtual
+  BundleExists(bundleId)
   returns (bool)
   {
-    if (_bundles[boxId].sas.length > 0) {
-      _bundles[boxId].creationBlock = block.number;
-      _bundles[boxId].acquisitionBlock = block.number;
+    if (_bundles[bundleId].sas.length > 0) {
+      _bundles[bundleId].creationBlock = block.number;
+      _bundles[bundleId].acquisitionBlock = block.number;
       return true;
     }
     return false;
   }
 
-  function _updateSA(uint boxId, uint i, SA memory sale) internal
-  BundleExists(boxId) SAExists(boxId, i)
+  function _updateSA(uint bundleId, uint i, SA memory sale) internal
+  BundleExists(bundleId) SAExists(bundleId, i)
   {
-    //    console.log("In %s %s", i, _sas[boxId].sas[i].sale);
-    _bundles[boxId].sas[i] = sale;
+    //    console.log("In %s %s", i, _sas[bundleId].sas[i].sale);
+    _bundles[bundleId].sas[i] = sale;
   }
 
-  function _deleteSA(uint boxId, uint i) internal virtual
-  BundleExists(boxId) SAExists(boxId, i)
+  function _deleteSA(uint bundleId, uint i) internal virtual
+  BundleExists(bundleId) SAExists(bundleId, i)
   {
-    delete _bundles[boxId].sas[i];
+    delete _bundles[bundleId].sas[i];
   }
 
-  function _addNewSales(uint boxId, SA[] memory newSAs) internal virtual
-  BundleExists(boxId)
+  function _addNewSales(uint bundleId, SA[] memory newSAs) internal virtual
+  BundleExists(bundleId)
   {
     for (uint256 i = 0; i < newSAs.length; i++) {
-      _bundles[boxId].sas.push(newSAs[i]);
+      _bundles[bundleId].sas.push(newSAs[i]);
     }
-    _bundles[boxId].acquisitionBlock = block.number;
-    _bundles[boxId].creationBlock = block.number;
+    _bundles[bundleId].acquisitionBlock = block.number;
+    _bundles[bundleId].creationBlock = block.number;
   }
 
-  function _addNewSale(uint boxId, SA memory newSA) internal virtual
-  BundleExists(boxId)
+  function _addNewSale(uint bundleId, SA memory newSA) internal virtual
+  BundleExists(bundleId)
   {
-      _bundles[boxId].sas.push(newSA);
-      _bundles[boxId].acquisitionBlock = block.number;
-      _bundles[boxId].creationBlock = block.number;
+      _bundles[bundleId].sas.push(newSA);
+      _bundles[bundleId].acquisitionBlock = block.number;
+      _bundles[bundleId].creationBlock = block.number;
   }
 
-  function _deleteAllSAs(uint boxId) internal virtual
-  BundleExists(boxId)
+  function _deleteAllSAs(uint bundleId) internal virtual
+  BundleExists(bundleId)
   {
-    delete _bundles[boxId].sas;
+    delete _bundles[bundleId].sas;
   }
 
 

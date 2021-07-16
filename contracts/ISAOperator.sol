@@ -5,8 +5,8 @@ interface ISAOperator {
 
   event FactorySet(address factory);
 
-  event BundleAdded(uint boxId, address initialSale, uint256 remainingAmount, uint256 vestedPercentage);
-  event BundleDeleted(uint boxId);
+  event BundleAdded(uint bundleId, address initialSale, uint256 remainingAmount, uint256 vestedPercentage);
+  event BundleDeleted(uint bundleId);
 
   struct SA {
     address sale;
@@ -25,21 +25,21 @@ interface ISAOperator {
 
   function getFactory() external view returns (address);
 
-  function getBundle(uint boxId) external view returns (Bundle memory);
+  function getBundle(uint bundleId) external view returns (Bundle memory);
 
-  function addBundle(uint boxId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external returns (uint);
+  function addBundle(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external returns (uint);
 
-  function deleteBundle(uint boxId) external;
+  function deleteBundle(uint bundleId) external;
 
-  function updateBundle(uint boxId) external returns (bool);
+  function updateBundle(uint bundleId) external returns (bool);
 
-  function updateSA(uint boxId, uint i, SA memory sale) external;
+  function updateSA(uint bundleId, uint i, SA memory sale) external;
 
-  function getSA(uint boxId, uint i) external view returns (SA memory);
+  function getSA(uint bundleId, uint i) external view returns (SA memory);
 
-  function deleteSA(uint boxId, uint i) external;
+  function deleteSA(uint bundleId, uint i) external;
 
-  function addNewSAs(uint boxId, SA[] memory newSAs) external;
+  function addNewSAs(uint bundleId, SA[] memory newSAs) external;
 
-  function deleteAllSAs(uint boxId) external;
+  function deleteAllSAs(uint bundleId) external;
 }
