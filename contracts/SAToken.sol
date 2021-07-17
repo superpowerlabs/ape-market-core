@@ -28,8 +28,6 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   mapping(uint => bool) private _paused;
 
-  uint256 private _nextTokenId = 1; // will be incremented after  use. 0 reserved for invalid sa
-
   constructor(
     address factoryAddress
   )
@@ -85,7 +83,10 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   function _transfer(address from, address to, uint256 tokenId) internal virtual override
   {
-    require(!isPaused(tokenId), "SAToken: Token is paused");
+    require(
+      !isPaused(tokenId),
+      "SAToken: Token is paused"
+    );
     super._transfer(from, to, tokenId);
     _updateBundle(tokenId);
   }
@@ -107,7 +108,10 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
   }
 
   function _isApprovedOrOwner(address spender, uint256 tokenId) internal override view virtual returns (bool) {
-    require(_exists(tokenId), "ERC721: operator query for nonexistent token");
+    require(
+      _exists(tokenId),
+      "ERC721: operator query for nonexistent token"
+    );
     if (isPaused(tokenId)) {
       return false;
     }

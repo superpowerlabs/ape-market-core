@@ -21,27 +21,30 @@ contract SAOperator is ISAOperator, Ownable {
   address private _manager;
   mapping(uint256 => Bundle) private _bundles;
 
-  // modifiers
-
   modifier onlyManager() {
-    require(_manager == msg.sender, "SAOperator: Caller is not authorized");
+    require(
+      _manager == msg.sender,
+      "SAOperator: Caller is not authorized"
+    );
     _;
   }
 
   modifier BundleExists(uint bundleId) {
-    require(_bundles[bundleId].creationBlock != 0, "SAOperator: Bundle does not exist");
+    require(
+      _bundles[bundleId].creationBlock != 0,
+      "SAOperator: Bundle does not exist"
+    );
     _;
   }
 
   modifier SAExists(uint bundleId, uint i) {
-    require(i < _bundles[bundleId].sas.length, "SAOperator: SA does not exist");
+    require(
+      i < _bundles[bundleId].sas.length,
+      "SAOperator: SA does not exist"
+    );
     _;
   }
 
-//  constructor(address manager) {
-//    setManager(manager);
-//  }
-//
   function setManager(address manager) public override
   onlyOwner
   {
@@ -127,7 +130,10 @@ contract SAOperator is ISAOperator, Ownable {
   ) internal virtual
   returns (uint)
   {
-    require(_bundles[bundleId].creationBlock == 0, "SAOperator: Bundle already added");
+    require(
+      _bundles[bundleId].creationBlock == 0,
+      "SAOperator: Bundle already added"
+    );
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     Bundle storage bundle = _bundles[bundleId];
     bundle.sas.push(listedSale);
@@ -149,7 +155,6 @@ contract SAOperator is ISAOperator, Ownable {
   returns (bool)
   {
     if (_bundles[bundleId].sas.length > 0) {
-//      _bundles[bundleId].creationBlock = block.number;
       _bundles[bundleId].acquisitionBlock = block.number;
       return true;
     }
@@ -159,7 +164,6 @@ contract SAOperator is ISAOperator, Ownable {
   function _updateSA(uint bundleId, uint i, SA memory sale) internal
   BundleExists(bundleId) SAExists(bundleId, i)
   {
-    //    console.log("In %s %s", i, _sas[bundleId].sas[i].sale);
     _bundles[bundleId].sas[i] = sale;
   }
 
@@ -176,15 +180,13 @@ contract SAOperator is ISAOperator, Ownable {
       _bundles[bundleId].sas.push(newSAs[i]);
     }
     _bundles[bundleId].acquisitionBlock = block.number;
-//    _bundles[bundleId].creationBlock = block.number;
   }
 
   function _addNewSA(uint bundleId, SA memory newSA) internal virtual
   BundleExists(bundleId)
   {
-      _bundles[bundleId].sas.push(newSA);
-      _bundles[bundleId].acquisitionBlock = block.number;
-//      _bundles[bundleId].creationBlock = block.number;
+    _bundles[bundleId].sas.push(newSA);
+    _bundles[bundleId].acquisitionBlock = block.number;
   }
 
   function _deleteAllSAs(uint bundleId) internal virtual
