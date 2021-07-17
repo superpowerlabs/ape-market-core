@@ -58,14 +58,14 @@ contract SAToken is ERC721, ERC721Enumerable, AccessControl {
     delete _paused[tokenId];
   }
 
-  function pauseBatch(uint[] tokenIds) external
+  function pauseBatch(uint[] memory tokenIds) external
   onlyRole(PAUSER_ROLE) {
     for (uint i = 0; i < tokenIds.length; i++) {
       _paused[tokenIds[i]] = true;
     }
   }
 
-  function unpauseBatch(uint[] tokenIds) external
+  function unpauseBatch(uint[] memory tokenIds) external
   onlyRole(PAUSER_ROLE) {
     for (uint i = 0; i < tokenIds.length; i++) {
       delete _paused[tokenIds[i]];
