@@ -75,8 +75,6 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
   }
 
   function _transfer(address from, address to, uint256 tokenId) internal virtual override
-  // here there was a fee required, but I think that the fees should be paid when using the SAManager
-  // if not we go off-standard
   {
     require(!isPaused(tokenId), "SAToken: Token is paused");
     super._transfer(from, to, tokenId);
@@ -85,9 +83,7 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   function mint(address to, ISale sale, uint256 amount) external virtual
   {
-    // should instead the buyer be able to mint the token?
     require(address(sale) == msg.sender, "SAToken: Only sale contract can mint its own NFT!");
-
     _safeMint(to, _tokenIdCounter.current());
     _addBundle(_tokenIdCounter.current(), address(sale), amount, 0);
     _tokenIdCounter.increment();

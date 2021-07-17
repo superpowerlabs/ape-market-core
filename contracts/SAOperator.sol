@@ -13,7 +13,6 @@ import "hardhat/console.sol";
   This contract manages the sales inside a smart agreement.
   The actual smart agreement nft will extend this contract.
   Most functions will be managed internally and externally (by ApeManager).
-
 */
 
 
