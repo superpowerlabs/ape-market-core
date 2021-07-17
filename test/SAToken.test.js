@@ -5,15 +5,20 @@ describe("SAToken", async function () {
 
   let SAToken
   let token
+  let SaleMock
+  let saleMock
+  let fakeSale
+  let FactoryMock
+  let factoryMock
 
-  let owner, manager, sale, apeFactory, newFactory
+  let owner, manager, sale, apeFactory, newFactory, buyer, buyer2
   let addr0 = '0x0000000000000000000000000000000000000000'
 
   let timestamp
   let chainId
 
   before(async function () {
-    [owner, manager, sale, apeFactory, newFactory] = await ethers.getSigners()
+    [owner, manager, sale, apeFactory, newFactory, fakeSale, buyer, buyer2] = await ethers.getSigners()
   })
 
   async function getTimestamp() {
@@ -21,10 +26,21 @@ describe("SAToken", async function () {
   }
 
   async function initNetworkAndDeploy() {
+    SaleMock = await ethers.getContractFactory("SaleMock")
+    saleMock = await SaleMock.deploy()
+    await saleMock.deployed()
+    fakeSale = await SaleMock.deploy()
+    await fakeSale.deployed()
+    FactoryMock = await ethers.getContractFactory("FactoryMock")
+    factoryMock = await FactoryMock.deploy()
+    await factoryMock.deployed()
+    await factoryMock.setLegitSale(saleMock.address)
     SAToken = await ethers.getContractFactory("SAToken")
-    token = await SAToken.deploy(apeFactory.address)
+    token = await SAToken.deploy(factoryMock.address)
     await token.deployed()
-    await token.setManager(manager.address)
+    await saleMock.setToken(token.address)
+    await fakeSale.setToken(token.address)
+    // await token.setManager(manager.address)
   }
 
   describe('#constructor & #updateFactory', async function () {
@@ -34,42 +50,50 @@ describe("SAToken", async function () {
     })
 
     it("should verify that the apeFactory is correctly set", async function () {
-      assert.equal((await token.factory()), apeFactory.address)
+      assert.equal((await token.factory()), factoryMock.address)
     })
 
-    it("should verify that apeFactory is not the owner if specified", async function () {
+    it("should set and verify that newFactory is the new factory", async function () {
       await token.updateFactory(newFactory.address)
       assert.equal((await token.factory()), newFactory.address)
     })
 
-
   })
 
-  // describe('#mint', async function () {
-  //
-  //   beforeEach(async function () {
-  //     await initNetworkAndDeploy()
-  //   })
-  //
-  //   it("should mint a token if a sale does it", async function () {
-  //
-  //     await expect(operator.connect(manager).addBundle(saId, sale.address, 0, 100))
-  //         .to.emit(operator, 'BundleAdded')
-  //         .withArgs(saId, sale.address, 0, 100)
-  //     assert.equal((await operator.getBundle(saId)).sas[0].sale, sale.address)
-  //   })
-  //
-  //   it("should throw adding again the same sale id", async function () {
-  //
-  //     let saId = 3
-  //
-  //     await operator.connect(manager).addBundle(saId, sale.address, 0, 100)
-  //
-  //     await assertThrowsMessage(
-  //         operator.connect(manager).addBundle(saId, sale.address, 20, 20),
-  //         'SAToken: Bundle already added')
-  //
-  //   })
-  // })
+  describe('#mint', async function () {
+
+    beforeEach(async function () {
+      await initNetworkAndDeploy()
+    })
+
+    it("should allow saleMock to mint a token ", async function () {
+
+      await expect(saleMock.mintToken(buyer.address, 100))
+          .to.emit(token, 'Transfer')
+          .withArgs(addr0, buyer.address, 0)
+      assert.equal(await token.ownerOf(0), buyer.address)
+
+      await expect(saleMock.mintToken(buyer2.address, 50))
+          .to.emit(token, 'Transfer')
+          .withArgs(addr0, buyer2.address, 1)
+      assert.equal(await token.ownerOf(1), buyer2.address)
+    })
+
+    it("should throw if a not legit sale try to mint a token", async function () {
+
+      await assertThrowsMessage(
+          fakeSale.mintToken(buyer.address, 100),
+          'SAToken: Only legit sales can mint its own NFT!')
+
+    })
+
+    it("should throw if a non-contract try to mint a token", async function () {
+
+      await assertThrowsMessage(
+          token.connect(buyer2).mint(buyer.address, 100),
+          'SAToken: The caller is not a contract')
+
+    })
+  })
 
 })

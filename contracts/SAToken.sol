@@ -47,6 +47,8 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
   }
 
   function updateFactory(address factoryAddress) external virtual onlyOwner {
+    // Note: the factory should use an external, immutable storage
+    // so that we can update the factory without losing information
     _factory = IApeFactory(factoryAddress);
   }
 
@@ -79,7 +81,8 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   function mint(address to, uint256 amount) external virtual
   {
-    require(_factory.isLegitSale(msg.sender), "SAToken: Only sale contract can mint its own NFT!");
+    require(isContract(msg.sender), "SAToken: The caller is not a contract");
+    require(_factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
     _safeMint(to, _tokenIdCounter.current());
     _addBundle(_tokenIdCounter.current(), msg.sender, amount, 0);
     _tokenIdCounter.increment();
@@ -97,6 +100,14 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
     }
     address owner = ERC721.ownerOf(tokenId);
     return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
+  }
+
+  // from OpenZeppelin Address.sol
+  function isContract(address account) internal view returns (bool) {
+    uint256 size;
+    // solium-disable-next-line security/no-inline-assembly
+    assembly { size := extcodesize(account) }
+    return size > 0;
   }
 
 }
