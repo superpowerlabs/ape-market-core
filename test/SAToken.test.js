@@ -1,7 +1,7 @@
 const {expect, assert} = require("chai")
 const {assertThrowsMessage} = require('./helpers')
 
-describe.only("SAToken", async function () {
+describe("SAToken", async function () {
 
   let SAStorage
   let storage
