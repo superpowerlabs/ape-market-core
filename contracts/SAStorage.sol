@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./Sale.sol";
-import "./ISAOperator.sol";
+import "./ISAStorage.sol";
 
 // for debugging only
 import "hardhat/console.sol";
@@ -16,36 +16,24 @@ import "hardhat/console.sol";
 */
 
 
-contract SAOperator is ISAOperator, Ownable {
+contract SAStorage is ISAStorage, AccessControl {
 
-  address private _manager;
+  bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+
   mapping(uint256 => Bundle) private _bundles;
 
-  modifier onlyManager() {
-    require(_manager == msg.sender, "SAOperator: Caller is not authorized");
-    _;
-  }
-
   modifier BundleExists(uint bundleId) {
-    require(_bundles[bundleId].creationBlock != 0, "SAOperator: Bundle does not exist");
+    require(_bundles[bundleId].creationBlock != 0, "SAStorage: Bundle does not exist");
     _;
   }
 
   modifier SAExists(uint bundleId, uint i) {
-    require(i < _bundles[bundleId].sas.length, "SAOperator: SA does not exist");
+    require(i < _bundles[bundleId].sas.length, "SAStorage: SA does not exist");
     _;
   }
 
-  function setManager(address manager) public override
-  onlyOwner
-  {
-    _manager = manager;
-    emit ManagerSet(manager);
-  }
-
-  function getManager() external override view virtual returns (address)
-  {
-    return _manager;
+  constructor() {
+    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
   }
 
   function getBundle(uint bundleId) external override virtual view
@@ -55,27 +43,27 @@ contract SAOperator is ISAOperator, Ownable {
   }
 
   function addBundle(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   returns (uint)
   {
     return _addBundle(bundleId, saleAddress, remainingAmount, vestedPercentage);
   }
 
   function deleteBundle(uint bundleId) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     return _deleteBundle(bundleId);
   }
 
   function updateBundle(uint bundleId) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   returns (bool)
   {
     return _updateBundle(bundleId);
   }
 
   function updateSA(uint bundleId, uint i, SA memory sale) external override
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     return _updateSA(bundleId, i, sale);
   }
@@ -87,25 +75,25 @@ contract SAOperator is ISAOperator, Ownable {
   }
 
   function deleteSA(uint bundleId, uint i) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     _deleteSA(bundleId, i);
   }
 
   function addNewSAs(uint bundleId, SA[] memory newSAs) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     _addNewSAs(bundleId, newSAs);
   }
 
   function addNewSA(uint bundleId, SA memory newSA) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     _addNewSA(bundleId, newSA);
   }
 
   function deleteAllSAs(uint bundleId) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     _deleteAllSAs(bundleId);
   }
@@ -121,7 +109,7 @@ contract SAOperator is ISAOperator, Ownable {
   ) internal virtual
   returns (uint)
   {
-    require(_bundles[bundleId].creationBlock == 0, "SAOperator: Bundle already added");
+    require(_bundles[bundleId].creationBlock == 0, "SAStorage: Bundle already added");
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     Bundle storage bundle = _bundles[bundleId];
     bundle.sas.push(listedSale);
