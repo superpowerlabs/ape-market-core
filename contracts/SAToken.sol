@@ -17,10 +17,6 @@ interface IApeFactory {
   function isLegitSale(address sale) external view returns (bool);
 }
 
-interface ISale {
-}
-
-
 contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   using SafeMath for uint256;
@@ -94,14 +90,14 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
     _updateBundle(tokenId);
   }
 
-  function mint(address to, ISale sale, uint256 amount) external virtual
+  function mint(address to, uint256 amount) external virtual
   {
     require(
-      _factory.isLegitSale(address(sale)) && address(sale) == msg.sender,
+      _factory.isLegitSale(msg.sender),
       "SAToken: Only sale contract can mint its own NFT!"
     );
     _safeMint(to, _tokenIdCounter.current());
-    _addBundle(_tokenIdCounter.current(), address(sale), amount, 0);
+    _addBundle(_tokenIdCounter.current(), msg.sender, amount, 0);
     _tokenIdCounter.increment();
   }
 
