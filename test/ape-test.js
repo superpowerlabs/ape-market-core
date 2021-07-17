@@ -53,8 +53,6 @@ describe("App Tests", function() {
   console.log("Setting up ABC Sale");
   Sale = await hre.ethers.getContractFactory("Sale");
   setup = { saNFT: saNFT.address,
-            saleBeginTime: 0,
-            duration: 1000000,
             minAmount: 100,
             capAmount: 20000,
             remainingAmount: 0,
