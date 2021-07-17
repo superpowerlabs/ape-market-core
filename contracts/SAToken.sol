@@ -7,11 +7,19 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-import "./ISale.sol";
 import "./SAOperator.sol";
 
 // for debugging only
 //import "hardhat/console.sol";
+
+interface IApeFactory {
+
+  function isLegitSale(address sale) external view returns (bool);
+}
+
+interface ISale {
+}
+
 
 contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
@@ -20,20 +28,18 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   Counters.Counter private _tokenIdCounter;
 
-  address private _apeWallet;
+  IApeFactory private _factory;
 
   mapping(uint => bool) private _paused;
 
   uint256 private _nextTokenId = 1; // will be incremented after  use. 0 reserved for invalid sa
 
-  constructor(address apeWallet)
+  constructor(
+    address factoryAddress
+  )
   ERC721("Smart Agreement", "SA")
   {
-    if (apeWallet == address(0)) {
-      _apeWallet = msg.sender;
-    } else {
-      _apeWallet = apeWallet;
-    }
+    _factory = IApeFactory(factoryAddress);
   }
 
   function pause(uint tokenId) external onlyManager {
@@ -48,10 +54,17 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
     return _paused[tokenId];
   }
 
-  function updateApeWallet(address apeWallet)
+  function updateFactory(address factoryAddress)
   external virtual
   onlyOwner {
-    _apeWallet = apeWallet;
+    _factory = IApeFactory(factoryAddress);
+  }
+
+  function factory()
+  external virtual view
+  returns (address)
+  {
+    return address(_factory);
   }
 
   function _baseURI() internal view virtual override returns (string memory) {
@@ -83,7 +96,10 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   function mint(address to, ISale sale, uint256 amount) external virtual
   {
-    require(address(sale) == msg.sender, "SAToken: Only sale contract can mint its own NFT!");
+    require(
+      _factory.isLegitSale(address(sale)) && address(sale) == msg.sender,
+      "SAToken: Only sale contract can mint its own NFT!"
+    );
     _safeMint(to, _tokenIdCounter.current());
     _addBundle(_tokenIdCounter.current(), address(sale), amount, 0);
     _tokenIdCounter.increment();
