@@ -28,9 +28,7 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   mapping(uint => bool) private _paused;
 
-  constructor(
-    address factoryAddress
-  )
+  constructor(address factoryAddress)
   ERC721("Smart Agreement", "SA")
   {
     _factory = IApeFactory(factoryAddress);
@@ -48,16 +46,11 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
     return _paused[tokenId];
   }
 
-  function updateFactory(address factoryAddress)
-  external virtual
-  onlyOwner {
+  function updateFactory(address factoryAddress) external virtual onlyOwner {
     _factory = IApeFactory(factoryAddress);
   }
 
-  function factory()
-  external virtual view
-  returns (address)
-  {
+  function factory() external virtual view returns (address){
     return address(_factory);
   }
 
@@ -65,16 +58,12 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
     return "https://metadata.ape.market/smart-agreement/";
   }
 
-  function _beforeTokenTransfer(address from, address to, uint256 tokenId)
-  internal
-  override(ERC721, ERC721Enumerable)
-  {
+  function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal
+  override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
   }
 
-  function supportsInterface(bytes4 interfaceId)
-  public
-  view
+  function supportsInterface(bytes4 interfaceId) public view
   override(ERC721, ERC721Enumerable)
   returns (bool)
   {
@@ -83,20 +72,14 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
 
   function _transfer(address from, address to, uint256 tokenId) internal virtual override
   {
-    require(
-      !isPaused(tokenId),
-      "SAToken: Token is paused"
-    );
+    require(!isPaused(tokenId), "SAToken: Token is paused");
     super._transfer(from, to, tokenId);
     _updateBundle(tokenId);
   }
 
   function mint(address to, uint256 amount) external virtual
   {
-    require(
-      _factory.isLegitSale(msg.sender),
-      "SAToken: Only sale contract can mint its own NFT!"
-    );
+    require(_factory.isLegitSale(msg.sender), "SAToken: Only sale contract can mint its own NFT!");
     _safeMint(to, _tokenIdCounter.current());
     _addBundle(_tokenIdCounter.current(), msg.sender, amount, 0);
     _tokenIdCounter.increment();
@@ -108,10 +91,7 @@ contract SAToken is ERC721, ERC721Enumerable, SAOperator {
   }
 
   function _isApprovedOrOwner(address spender, uint256 tokenId) internal override view virtual returns (bool) {
-    require(
-      _exists(tokenId),
-      "ERC721: operator query for nonexistent token"
-    );
+    require(_exists(tokenId), "ERC721: operator query for nonexistent token");
     if (isPaused(tokenId)) {
       return false;
     }

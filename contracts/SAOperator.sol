@@ -22,26 +22,17 @@ contract SAOperator is ISAOperator, Ownable {
   mapping(uint256 => Bundle) private _bundles;
 
   modifier onlyManager() {
-    require(
-      _manager == msg.sender,
-      "SAOperator: Caller is not authorized"
-    );
+    require(_manager == msg.sender, "SAOperator: Caller is not authorized");
     _;
   }
 
   modifier BundleExists(uint bundleId) {
-    require(
-      _bundles[bundleId].creationBlock != 0,
-      "SAOperator: Bundle does not exist"
-    );
+    require(_bundles[bundleId].creationBlock != 0, "SAOperator: Bundle does not exist");
     _;
   }
 
   modifier SAExists(uint bundleId, uint i) {
-    require(
-      i < _bundles[bundleId].sas.length,
-      "SAOperator: SA does not exist"
-    );
+    require(i < _bundles[bundleId].sas.length, "SAOperator: SA does not exist");
     _;
   }
 
@@ -130,10 +121,7 @@ contract SAOperator is ISAOperator, Ownable {
   ) internal virtual
   returns (uint)
   {
-    require(
-      _bundles[bundleId].creationBlock == 0,
-      "SAOperator: Bundle already added"
-    );
+    require(_bundles[bundleId].creationBlock == 0, "SAOperator: Bundle already added");
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     Bundle storage bundle = _bundles[bundleId];
     bundle.sas.push(listedSale);
