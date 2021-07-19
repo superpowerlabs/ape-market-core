@@ -133,8 +133,6 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
     uint256 numEmptySubSAs = 0;
     for (uint256 i = 0; i < bundle.sas.length; i++) {
       ISAStorage.SA memory sa = bundle.sas[i];
-//      uint vestedPercentage;
-//      uint vestedAmount;
       Sale2 sale = Sale2(sa.sale);
       uint256 vestedPercentage = sale.getVestedPercentage();
       uint256 vestedAmount = sale.getVestedAmount(vestedPercentage, sa.vestedPercentage, sa.remainingAmount);
