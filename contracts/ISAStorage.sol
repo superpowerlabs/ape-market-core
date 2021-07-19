@@ -37,4 +37,6 @@ interface ISAStorage {
   function addNewSA(uint bundleId, SA memory newSA) external;
 
   function deleteAllSAs(uint bundleId) external;
+
+  function cleanEmptySAs(uint256 tokenId, uint256 numEmptySAs) external returns(bool);
 }

@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./Ape.sol";
 import "./SANFT.sol";
 
-contract Sale {
+contract Sale{
 
   modifier onlySaleOwner() {
     require(_setup.owner == msg.sender, "Sale: Caller is not sale owner");
@@ -21,7 +21,8 @@ contract Sale {
 
   // One step in the vesting schedule
   struct VestingStep {
-    uint256 timestamp; // how many seconds needs to pass after the token is listed.
+    uint256 timestamp;
+    // how many seconds needs to pass after the token is listed.
     // how much percentage of token should be vested/unlocked at current step.
     // note it is accumulative, the last step should equal to 100%
     uint256 percentage;

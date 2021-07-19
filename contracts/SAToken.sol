@@ -7,26 +7,30 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
+import "./ISAToken.sol";
+import "./ISAStorage.sol";
 
 // for debugging only
-//import "hardhat/console.sol";
-
-interface ISAStorage {
-
-  function addBundle(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external returns (uint);
-
-  function deleteBundle(uint bundleId) external;
-
-  function updateBundle(uint bundleId) external returns (bool);
-
-}
+import "hardhat/console.sol";
 
 interface IApeFactory {
 
   function isLegitSale(address sale) external view returns (bool);
 }
 
-contract SAToken is ERC721, ERC721Enumerable, AccessControl {
+interface Sale2 {
+
+  function getVestedPercentage() external view returns (uint256);
+
+  function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
+
+  function vest(address sa_owner, ISAStorage.SA memory sa) external;
+}
+
+
+contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
 
   using SafeMath for uint256;
   using Counters for Counters.Counter;
@@ -48,45 +52,45 @@ contract SAToken is ERC721, ERC721Enumerable, AccessControl {
     _storage = ISAStorage(storageAddress);
   }
 
-  function pause(uint tokenId) external
+  function pause(uint tokenId) external override
   onlyRole(PAUSER_ROLE) {
     _paused[tokenId] = true;
   }
 
-  function unpause(uint tokenId) external
+  function unpause(uint tokenId) external override
   onlyRole(PAUSER_ROLE) {
     delete _paused[tokenId];
   }
 
-  function pauseBatch(uint[] memory tokenIds) external
+  function pauseBatch(uint[] memory tokenIds) external override
   onlyRole(PAUSER_ROLE) {
     for (uint i = 0; i < tokenIds.length; i++) {
       _paused[tokenIds[i]] = true;
     }
   }
 
-  function unpauseBatch(uint[] memory tokenIds) external
+  function unpauseBatch(uint[] memory tokenIds) external override
   onlyRole(PAUSER_ROLE) {
     for (uint i = 0; i < tokenIds.length; i++) {
       delete _paused[tokenIds[i]];
     }
   }
 
-  function isPaused(uint tokenId) public view returns (bool){
+  function isPaused(uint tokenId) public view override returns (bool){
     return _paused[tokenId];
   }
 
-  function updateFactory(address factoryAddress) external virtual
+  function updateFactory(address factoryAddress) external override virtual
   onlyRole(DEFAULT_ADMIN_ROLE) {
     _factory = IApeFactory(factoryAddress);
   }
 
-  function updateStorage(address storageAddress) external virtual
+  function updateStorage(address storageAddress) external override virtual
   onlyRole(DEFAULT_ADMIN_ROLE) {
     _storage = ISAStorage(storageAddress);
   }
 
-  function factory() external virtual view returns (address){
+  function factory() external virtual view override returns (address){
     return address(_factory);
   }
 
@@ -111,12 +115,43 @@ contract SAToken is ERC721, ERC721Enumerable, AccessControl {
     _storage.updateBundle(tokenId);
   }
 
-  function mint(address to, uint256 amount) external virtual {
+  function mint(address to, uint256 amount) external override virtual {
     require(isContract(msg.sender), "SAToken: The caller is not a contract");
     require(_factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
     _safeMint(to, _tokenIdCounter.current());
     _storage.addBundle(_tokenIdCounter.current(), msg.sender, amount, 0);
     _tokenIdCounter.increment();
+  }
+
+  // vest return the number of non empty sas after vest.
+  // if there is no non-empty sas, then SA will burned
+  function vest(uint256 tokenId) public virtual
+  returns (bool) {
+    require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
+    console.log("vesting", tokenId);
+    ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
+    uint256 numEmptySubSAs = 0;
+    for (uint256 i = 0; i < bundle.sas.length; i++) {
+      ISAStorage.SA memory sa = bundle.sas[i];
+//      uint vestedPercentage;
+//      uint vestedAmount;
+      Sale2 sale = Sale2(sa.sale);
+      uint256 vestedPercentage = sale.getVestedPercentage();
+      uint256 vestedAmount = sale.getVestedAmount(vestedPercentage, sa.vestedPercentage, sa.remainingAmount);
+      sale.vest(ownerOf(tokenId), sa);
+      console.log("vesting", tokenId, vestedAmount);
+      if (vestedPercentage == 100) {
+        numEmptySubSAs++;
+      }
+      // reprocess current element in next round;
+      sa.remainingAmount = sa.remainingAmount.sub(vestedAmount);
+      sa.vestedPercentage = vestedPercentage;
+    }
+    bool result = _storage.cleanEmptySAs(tokenId, numEmptySubSAs);
+    if (!result) {
+      _burn(tokenId);
+    }
+    return result;
   }
 
   function _burn(uint256 tokenId) internal virtual override {

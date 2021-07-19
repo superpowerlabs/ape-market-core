@@ -36,7 +36,7 @@ contract SAStorage is ISAStorage, AccessControl {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
   }
 
-  function getBundle(uint bundleId) external override virtual view
+  function getBundle(uint bundleId) public override virtual view
   returns (Bundle memory)
   {
     return _bundles[bundleId];
@@ -96,6 +96,12 @@ contract SAStorage is ISAStorage, AccessControl {
   onlyRole(MANAGER_ROLE)
   {
     _deleteAllSAs(bundleId);
+  }
+
+  function cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) external virtual override
+  BundleExists(bundleId) onlyRole(MANAGER_ROLE)
+  returns(bool) {
+    return _cleanEmptySAs(bundleId, numEmptySAs);
   }
 
 
@@ -171,5 +177,57 @@ contract SAStorage is ISAStorage, AccessControl {
     delete _bundles[bundleId].sas;
   }
 
+  // remove SAs that had no token left.  The containing Bundle will also be burned if all of
+  // its SAs are empty and function returns false.
+  function _cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) internal virtual
+  returns(bool) {
+    bool emptyBundle = false;
+    Bundle storage bundle = _bundles[bundleId];
+    if (bundle.sas.length == 0 || bundle.sas.length == numEmptySAs) {
+      console.log("SANFT: Simple empty Bundle", bundleId, bundle.sas.length, numEmptySAs);
+      emptyBundle = true;
+    } else {
+      console.log("SANFT: Regular process");
+      if (numEmptySAs < bundle.sas.length/2) { // empty is less than half, then shift elements
+        console.log("SANFT: Taking the shift route", bundle.sas.length, numEmptySAs);
+        for (uint256 i = 0; i < bundle.sas.length; i++) {
+          if (bundle.sas[i].remainingAmount == 0) {
+            // find one SA from the end that's not 100% vested
+            for(uint256 j = bundle.sas.length - 1; j > i; j--) {
+              if(bundle.sas[j].remainingAmount > 0) {
+                bundle.sas[i] = bundle.sas[j];
+              }
+              bundle.sas.pop();
+            }
+            // cannot find such SA
+            if (bundle.sas[i].remainingAmount == 0) {
+              assert(bundle.sas.length - 1 == i);
+              bundle.sas.pop();
+            }
+          }
+        }
+      } else { // empty is more than half, then create a new array
+        console.log("Taking the new array route", bundle.sas.length, numEmptySAs);
+        SA[] memory newSAs = new SA[](bundle.sas.length - numEmptySAs);
+        uint256 SAindex;
+        for (uint256 i = 0; i < bundle.sas.length; i++) {
+          if (bundle.sas[i].remainingAmount > 0) {
+            newSAs[SAindex++] = bundle.sas[i];
+          }
+          delete bundle.sas[i];
+        }
+        delete bundle.sas;
+        assert (bundle.sas.length == 0);
+        for (uint256 i = 0; i < newSAs.length; i++) {
+          bundle.sas.push(newSAs[i]);
+        }
+      }
+    }
+    if (emptyBundle || bundle.sas.length == 0) {
+      _deleteBundle(bundleId);
+      return false;
+    }
+    return true;
+  }
 
 }
