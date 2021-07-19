@@ -67,8 +67,17 @@ contract Sale2 is AccessControl {
     _;
   }
 
-  constructor() {
+  constructor(Setup memory setup_, VestingStep[] memory schedule) {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    _setup = setup_;
+    for (uint256 i = 0; i < schedule.length; i++) {
+      if (i > 0) {
+        require(schedule[i].percentage > schedule[i - 1].percentage, "Sale: Vest percentage should be monotonic increasing");
+      }
+      _vestingSchedule.push(schedule[i]);
+    }
+    require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
+    grantRole(SALE_OWNER_ROLE, _setup.owner);
   }
 
   function setApeWallet(address apeWallet_) external
@@ -86,19 +95,6 @@ contract Sale2 is AccessControl {
       require(_setup.owner == account, "Sale: Direct grant not allowed for sale owner");
     }
     super.grantRole(role, account);
-  }
-
-  function setup(Setup memory setup_, VestingStep[] memory schedule) external
-  onlyRole(DEFAULT_ADMIN_ROLE) {
-    _setup = setup_;
-    for (uint256 i = 0; i < schedule.length; i++) {
-      if (i > 0) {
-        require(schedule[i].percentage > schedule[i - 1].percentage, "Sale: Vest percentage should be monotonic increasing");
-      }
-      _vestingSchedule.push(schedule[i]);
-    }
-    require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
-    grantRole(SALE_OWNER_ROLE, _setup.owner);
   }
 
   // Sale creator calls this function to start the sale.

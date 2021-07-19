@@ -51,22 +51,12 @@ contract ApeFactory is AccessControl {
     Sale2.VestingStep[] memory schedule
   ) external
   onlyRole(FACTORY_ADMIN_ROLE)
-  returns(address saleAddress) {
+  returns(address) {
     require(address(_storage) != address(0), "ApeFactory: SAStorage not set yet");
-
-    // deploy the new sale contract:
-    bytes memory bytecode = type(Sale2).creationCode;
-    bytes32 salt = keccak256(abi.encodePacked(_msgSender(), _factoryAdmin, address(0)));
-    // solium-disable-next-line security/no-inline-assembly
-    assembly {
-      saleAddress := create2(0, add(bytecode, 48), mload(bytecode), salt)
-    }
-
-    Sale2 sale = Sale2(saleAddress);
-    sale.grantRole(sale.SALE_OWNER_ROLE(), saleAddress);
-    sale.setup(setup, schedule);
-    _sales[saleAddress] = true;
-    emit NewSale(saleAddress);
-    return saleAddress;
+    Sale2 sale = new Sale2(setup, schedule);
+    sale.grantRole(sale.SALE_OWNER_ROLE(), setup.owner);
+    _sales[address(sale)] = true;
+    emit NewSale(address(sale));
+    return address(sale);
   }
 }
