@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface ISAOperator {
-
-  event ManagerSet(address manager);
+interface ISAStorage {
 
   event BundleAdded(uint bundleId, address initialSale, uint256 remainingAmount, uint256 vestedPercentage);
   event BundleDeleted(uint bundleId);
@@ -19,11 +17,6 @@ interface ISAOperator {
     uint256 creationBlock;
     uint256 acquisitionBlock;
   }
-
-
-  function setManager(address manager) external;
-
-  function getManager() external view returns (address);
 
   function getBundle(uint bundleId) external view returns (Bundle memory);
 
@@ -44,4 +37,6 @@ interface ISAOperator {
   function addNewSA(uint bundleId, SA memory newSA) external;
 
   function deleteAllSAs(uint bundleId) external;
+
+  function cleanEmptySAs(uint256 tokenId, uint256 numEmptySAs) external returns(bool);
 }

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./Sale.sol";
-import "./ISAOperator.sol";
+import "./ISAStorage.sol";
 
 // for debugging only
 import "hardhat/console.sol";
@@ -16,66 +16,54 @@ import "hardhat/console.sol";
 */
 
 
-contract SAOperator is ISAOperator, Ownable {
+contract SAStorage is ISAStorage, AccessControl {
 
-  address private _manager;
+  bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+
   mapping(uint256 => Bundle) private _bundles;
 
-  modifier onlyManager() {
-    require(_manager == msg.sender, "SAOperator: Caller is not authorized");
-    _;
-  }
-
   modifier BundleExists(uint bundleId) {
-    require(_bundles[bundleId].creationBlock != 0, "SAOperator: Bundle does not exist");
+    require(_bundles[bundleId].creationBlock != 0, "SAStorage: Bundle does not exist");
     _;
   }
 
   modifier SAExists(uint bundleId, uint i) {
-    require(i < _bundles[bundleId].sas.length, "SAOperator: SA does not exist");
+    require(i < _bundles[bundleId].sas.length, "SAStorage: SA does not exist");
     _;
   }
 
-  function setManager(address manager) public override
-  onlyOwner
-  {
-    _manager = manager;
-    emit ManagerSet(manager);
+  constructor() {
+    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
   }
 
-  function getManager() external override view virtual returns (address)
-  {
-    return _manager;
-  }
-
-  function getBundle(uint bundleId) external override virtual view
+  function getBundle(uint bundleId) public override virtual view
   returns (Bundle memory)
   {
     return _bundles[bundleId];
   }
 
   function addBundle(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   returns (uint)
   {
     return _addBundle(bundleId, saleAddress, remainingAmount, vestedPercentage);
   }
 
   function deleteBundle(uint bundleId) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     return _deleteBundle(bundleId);
   }
 
   function updateBundle(uint bundleId) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   returns (bool)
   {
     return _updateBundle(bundleId);
   }
 
   function updateSA(uint bundleId, uint i, SA memory sale) external override
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     return _updateSA(bundleId, i, sale);
   }
@@ -87,27 +75,33 @@ contract SAOperator is ISAOperator, Ownable {
   }
 
   function deleteSA(uint bundleId, uint i) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     _deleteSA(bundleId, i);
   }
 
   function addNewSAs(uint bundleId, SA[] memory newSAs) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     _addNewSAs(bundleId, newSAs);
   }
 
   function addNewSA(uint bundleId, SA memory newSA) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     _addNewSA(bundleId, newSA);
   }
 
   function deleteAllSAs(uint bundleId) external override virtual
-  onlyManager
+  onlyRole(MANAGER_ROLE)
   {
     _deleteAllSAs(bundleId);
+  }
+
+  function cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) external virtual override
+  BundleExists(bundleId) onlyRole(MANAGER_ROLE)
+  returns(bool) {
+    return _cleanEmptySAs(bundleId, numEmptySAs);
   }
 
 
@@ -121,7 +115,7 @@ contract SAOperator is ISAOperator, Ownable {
   ) internal virtual
   returns (uint)
   {
-    require(_bundles[bundleId].creationBlock == 0, "SAOperator: Bundle already added");
+    require(_bundles[bundleId].creationBlock == 0, "SAStorage: Bundle already added");
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     Bundle storage bundle = _bundles[bundleId];
     bundle.sas.push(listedSale);
@@ -183,5 +177,57 @@ contract SAOperator is ISAOperator, Ownable {
     delete _bundles[bundleId].sas;
   }
 
+  // remove SAs that had no token left.  The containing Bundle will also be burned if all of
+  // its SAs are empty and function returns false.
+  function _cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) internal virtual
+  returns(bool) {
+    bool emptyBundle = false;
+    Bundle storage bundle = _bundles[bundleId];
+    if (bundle.sas.length == 0 || bundle.sas.length == numEmptySAs) {
+      console.log("SANFT: Simple empty Bundle", bundleId, bundle.sas.length, numEmptySAs);
+      emptyBundle = true;
+    } else {
+      console.log("SANFT: Regular process");
+      if (numEmptySAs < bundle.sas.length/2) { // empty is less than half, then shift elements
+        console.log("SANFT: Taking the shift route", bundle.sas.length, numEmptySAs);
+        for (uint256 i = 0; i < bundle.sas.length; i++) {
+          if (bundle.sas[i].remainingAmount == 0) {
+            // find one SA from the end that's not 100% vested
+            for(uint256 j = bundle.sas.length - 1; j > i; j--) {
+              if(bundle.sas[j].remainingAmount > 0) {
+                bundle.sas[i] = bundle.sas[j];
+              }
+              bundle.sas.pop();
+            }
+            // cannot find such SA
+            if (bundle.sas[i].remainingAmount == 0) {
+              assert(bundle.sas.length - 1 == i);
+              bundle.sas.pop();
+            }
+          }
+        }
+      } else { // empty is more than half, then create a new array
+        console.log("Taking the new array route", bundle.sas.length, numEmptySAs);
+        SA[] memory newSAs = new SA[](bundle.sas.length - numEmptySAs);
+        uint256 SAindex;
+        for (uint256 i = 0; i < bundle.sas.length; i++) {
+          if (bundle.sas[i].remainingAmount > 0) {
+            newSAs[SAindex++] = bundle.sas[i];
+          }
+          delete bundle.sas[i];
+        }
+        delete bundle.sas;
+        assert (bundle.sas.length == 0);
+        for (uint256 i = 0; i < newSAs.length; i++) {
+          bundle.sas.push(newSAs[i]);
+        }
+      }
+    }
+    if (emptyBundle || bundle.sas.length == 0) {
+      _deleteBundle(bundleId);
+      return false;
+    }
+    return true;
+  }
 
 }
