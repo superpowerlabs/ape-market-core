@@ -32,9 +32,6 @@ contract Sale {
   // This struct contains the basic information about the sale.
   struct Setup {
     SANFT saNFT; // The deployed address of SANFT contract
-    uint256 saleBeginTime; // use 0 to start as soon as contract is deployed
-    // it's easier than setting up a saleEndTime, especially for testing.
-    uint256 duration; // how long in seconds would the sale run.
     uint256 minAmount; // minimum about of token needs to be purchased for each invest transaction
     uint256 capAmount; // the max number, for recording purpose. not changed by contract
     uint256 remainingAmount; // how much token are still up for sale
@@ -89,9 +86,6 @@ contract Sale {
     uint256 fee = _setup.capAmount.mul(_setup.tokenFeePercentage).div(100);
     _setup.sellingToken.transferFrom(_setup.owner, address(this), _setup.capAmount.add(fee));
     _setup.remainingAmount = _setup.capAmount;
-    if (_setup.saleBeginTime == 0) {
-      _setup.saleBeginTime = block.timestamp;
-    }
   }
 
   // Sale creator calls this function to approve investor.
@@ -103,8 +97,6 @@ contract Sale {
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external virtual {
-    require(block.timestamp >= _setup.saleBeginTime, "Sale: Not started yet");
-    require(block.timestamp <= _setup.saleBeginTime + _setup.duration, "Sale: Ended already");
     require(amount >= _setup.minAmount, "Sale: Amount is too low");
     require(amount <= _setup.remainingAmount, "Sale: Amount is too high");
     require(_approvedAmounts[msg.sender] >= amount, "Sale: Amount if above approved amount");
@@ -136,7 +128,6 @@ contract Sale {
   }
 
   function triggerTokenListing() external virtual onlySaleOwner {
-    // require(block.timestamp > _setup.saleBeginTime + _setup.duration, "Sale not ended yet");
     require(_setup.tokenListTimestamp == 0, "Sale: Token already listed");
     _setup.tokenListTimestamp = block.timestamp;
   }
