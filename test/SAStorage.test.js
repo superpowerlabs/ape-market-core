@@ -122,96 +122,6 @@ describe("SAStorage", async function () {
 
   })
 
-  describe('#updateSA', async function () {
-
-    beforeEach(async function () {
-      await initNetworkAndDeploy()
-      await prePopulate()
-    })
-
-    it("should update a sale", async function () {
-
-      let saId = 2
-
-      assert.equal((await storage.getBundle(saId)).sas[0].sale, sale1.address)
-
-      let newSA = {
-        sale: sale3.address,
-        remainingAmount: 100,
-        vestedPercentage: 0
-      }
-
-      await storage.connect(manager).updateSA(saId, 0, newSA)
-      assert.equal((await storage.getBundle(saId)).sas[0].sale, sale3.address)
-    })
-
-    it("should throw updating a not existing sa", async function () {
-
-      let newSA = {
-        sale: sale3.address,
-        remainingAmount: 100,
-        vestedPercentage: 0
-      }
-
-      await assertThrowsMessage(
-          storage.connect(manager).updateSA(10, 0, newSA),
-          'SAStorage: Bundle does not exist')
-
-    })
-
-    it("should throw updating a not existing listed sale", async function () {
-
-      let newSA = {
-        sale: sale3.address,
-        remainingAmount: 100,
-        vestedPercentage: 0
-      }
-
-      await assertThrowsMessage(
-          storage.connect(manager).updateSA(2, 2, newSA),
-          'SAStorage: SA does not exist')
-
-    })
-
-  })
-
-
-  describe('#deleteSA', async function () {
-
-    beforeEach(async function () {
-      await initNetworkAndDeploy()
-      await prePopulate()
-    })
-
-    it("should delete a listed sale from an Bundle", async function () {
-
-      let saId = 2
-
-      assert.equal((await storage.getBundle(saId)).sas[0].sale, sale1.address)
-
-      await storage.connect(manager).deleteSA(saId, 0)
-
-      assert.equal((await storage.getBundle(saId)).sas[0].sale, addr0)
-    })
-
-    it("should throw deleting a listedSale of a not existing sa", async function () {
-
-      await assertThrowsMessage(
-          storage.connect(manager).deleteSA(10, 0),
-          'SAStorage: Bundle does not exist')
-
-    })
-
-    it("should throw deleting a not existing listed sale", async function () {
-
-      await assertThrowsMessage(
-          storage.connect(manager).deleteSA(2, 2),
-          'SAStorage: SA does not exist')
-
-    })
-
-  })
-
   describe('#addNewSAs', async function () {
 
     let newSAs
@@ -305,6 +215,87 @@ describe("SAStorage", async function () {
 
   })
 
+  describe('#updateSA', async function () {
+
+    beforeEach(async function () {
+      await initNetworkAndDeploy()
+      await prePopulate()
+    })
+
+    it("should update a sale", async function () {
+
+      let saId = 2
+
+      assert.equal((await storage.getBundle(saId)).sas[0].sale, sale1.address)
+
+      let newSA = {
+        sale: sale3.address,
+        remainingAmount: 100,
+        vestedPercentage: 0
+      }
+
+      await storage.connect(manager).addNewSA(saId, newSA)
+      await storage.connect(manager).updateSA(saId, 1, 50, 50)
+      assert.equal((await storage.getBundle(saId)).sas[1].remainingAmount, 50)
+    })
+
+    it("should throw updating a not existing sa", async function () {
+
+      await assertThrowsMessage(
+          storage.connect(manager).updateSA(10, 0, 50, 50),
+          'SAStorage: Bundle does not exist')
+
+    })
+
+    it("should throw updating a not existing listed sale", async function () {
+
+      await assertThrowsMessage(
+          storage.connect(manager).updateSA(2, 2, 50, 50),
+          'SAStorage: SA does not exist')
+
+    })
+
+  })
+
+
+
+  describe('#deleteSA', async function () {
+
+    beforeEach(async function () {
+      await initNetworkAndDeploy()
+      await prePopulate()
+    })
+
+    it("should delete a listed sale from an Bundle", async function () {
+
+      let saId = 2
+
+      assert.equal((await storage.getBundle(saId)).sas[0].sale, sale1.address)
+
+      await storage.connect(manager).deleteSA(saId, 0)
+
+      assert.equal((await storage.getBundle(saId)).sas[0].sale, addr0)
+    })
+
+    it("should throw deleting a listedSale of a not existing sa", async function () {
+
+      await assertThrowsMessage(
+          storage.connect(manager).deleteSA(10, 0),
+          'SAStorage: Bundle does not exist')
+
+    })
+
+    it("should throw deleting a not existing listed sale", async function () {
+
+      await assertThrowsMessage(
+          storage.connect(manager).deleteSA(2, 2),
+          'SAStorage: SA does not exist')
+
+    })
+
+  })
+
+
   describe('#deleteAllSAs', async function () {
 
     let newSAs
@@ -355,7 +346,4 @@ describe("SAStorage", async function () {
 
   })
 
-
-
-
-})
+  })
