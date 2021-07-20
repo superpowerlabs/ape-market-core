@@ -1,0 +1,12 @@
+pragma solidity 0.8;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract TetherMock is ERC20 {
+
+  constructor ()
+  ERC20("Tether", "USDT") {
+    _mint(msg.sender, 1000000);
+  }
+
+}

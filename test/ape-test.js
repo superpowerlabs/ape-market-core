@@ -2,7 +2,7 @@ const hre = require("hardhat");
 const { expect } = require("chai");
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-describe("App Tests", function() {
+describe.skip("App Tests", function() {
   let apeOwner, tetherOwner, abcOwner, xyzOwner, investor1, investor2;
   hre.run('compile');
   // ****** IMPORTANT: The ordering of the tests reflects operation flows and needs

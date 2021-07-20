@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-import "./Sale.sol";
 import "./ISAStorage.sol";
 
 // for debugging only
@@ -18,12 +18,14 @@ import "hardhat/console.sol";
 
 contract SAStorage is ISAStorage, AccessControl {
 
+  using SafeMath for uint256;
+
   bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
   mapping(uint256 => Bundle) private _bundles;
 
   modifier BundleExists(uint bundleId) {
-    require(_bundles[bundleId].creationBlock != 0, "SAStorage: Bundle does not exist");
+    require(_bundles[bundleId].creationTimestamp != 0, "SAStorage: Bundle does not exist");
     _;
   }
 
@@ -62,10 +64,10 @@ contract SAStorage is ISAStorage, AccessControl {
     return _updateBundle(bundleId);
   }
 
-  function updateSA(uint bundleId, uint i, SA memory sale) external override
+  function updateSA(uint bundleId, uint i, uint vestedPercentage, uint vestedAmount) external override
   onlyRole(MANAGER_ROLE)
   {
-    return _updateSA(bundleId, i, sale);
+    return _updateSA(bundleId, i, vestedPercentage, vestedAmount);
   }
 
   function getSA(uint bundleId, uint i) external override view
@@ -115,12 +117,12 @@ contract SAStorage is ISAStorage, AccessControl {
   ) internal virtual
   returns (uint)
   {
-    require(_bundles[bundleId].creationBlock == 0, "SAStorage: Bundle already added");
+    require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     Bundle storage bundle = _bundles[bundleId];
     bundle.sas.push(listedSale);
-    _bundles[bundleId].creationBlock = block.number;
-    _bundles[bundleId].acquisitionBlock = block.number;
+    _bundles[bundleId].creationTimestamp = block.timestamp;
+    _bundles[bundleId].acquisitionTimestamp = block.timestamp;
     emit BundleAdded(bundleId, saleAddress, remainingAmount, vestedPercentage);
     return bundleId;
   }
@@ -137,16 +139,20 @@ contract SAStorage is ISAStorage, AccessControl {
   returns (bool)
   {
     if (_bundles[bundleId].sas.length > 0) {
-      _bundles[bundleId].acquisitionBlock = block.number;
+      _bundles[bundleId].acquisitionTimestamp = block.timestamp;
       return true;
     }
     return false;
   }
 
-  function _updateSA(uint bundleId, uint i, SA memory sale) internal
-  BundleExists(bundleId) SAExists(bundleId, i)
-  {
-    _bundles[bundleId].sas[i] = sale;
+  function _updateSA(uint bundleId, uint i, uint vestedPercentage, uint vestedAmount) internal
+  BundleExists(bundleId) SAExists(bundleId, i) {
+    if (vestedPercentage == 100) {
+      _deleteSA(bundleId, i);
+    } else {
+      _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.sub(vestedAmount);
+      _bundles[bundleId].sas[i].vestedPercentage = vestedPercentage;
+    }
   }
 
   function _deleteSA(uint bundleId, uint i) internal virtual
@@ -161,14 +167,14 @@ contract SAStorage is ISAStorage, AccessControl {
     for (uint256 i = 0; i < newSAs.length; i++) {
       _bundles[bundleId].sas.push(newSAs[i]);
     }
-    _bundles[bundleId].acquisitionBlock = block.number;
+    _bundles[bundleId].acquisitionTimestamp = block.timestamp;
   }
 
   function _addNewSA(uint bundleId, SA memory newSA) internal virtual
   BundleExists(bundleId)
   {
     _bundles[bundleId].sas.push(newSA);
-    _bundles[bundleId].acquisitionBlock = block.number;
+    _bundles[bundleId].acquisitionTimestamp = block.timestamp;
   }
 
   function _deleteAllSAs(uint bundleId) internal virtual
@@ -177,8 +183,8 @@ contract SAStorage is ISAStorage, AccessControl {
     delete _bundles[bundleId].sas;
   }
 
-  // remove SAs that had no token left.  The containing Bundle will also be burned if all of
-  // its SAs are empty and function returns false.
+  // _cleanEmptySAs looks not very useful.
+  // We will verify and possibly optimize it later.
   function _cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) internal virtual
   returns(bool) {
     bool emptyBundle = false;

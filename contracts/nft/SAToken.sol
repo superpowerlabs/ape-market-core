@@ -15,18 +15,18 @@ import "./ISAStorage.sol";
 // for debugging only
 import "hardhat/console.sol";
 
-interface IApeFactory {
+interface ISaleFactory {
 
   function isLegitSale(address sale) external view returns (bool);
 }
 
-interface Sale2 {
+interface ISaleMin {
 
   function getVestedPercentage() external view returns (uint256);
 
   function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
 
-  function vest(address sa_owner, ISAStorage.SA memory sa) external;
+  function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint, uint);
 }
 
 
@@ -41,14 +41,14 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
 
   ISAStorage private _storage;
 
-  IApeFactory private _factory;
+  ISaleFactory private _factory;
 
   mapping(uint => bool) private _paused;
 
   constructor(address factoryAddress, address storageAddress)
   ERC721("Smart Agreement", "SA") {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    _factory = IApeFactory(factoryAddress);
+    _factory = ISaleFactory(factoryAddress);
     _storage = ISAStorage(storageAddress);
   }
 
@@ -82,7 +82,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
 
   function updateFactory(address factoryAddress) external override virtual
   onlyRole(DEFAULT_ADMIN_ROLE) {
-    _factory = IApeFactory(factoryAddress);
+    _factory = ISaleFactory(factoryAddress);
   }
 
   function updateStorage(address storageAddress) external override virtual
@@ -133,23 +133,20 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
     uint256 numEmptySubSAs = 0;
     for (uint256 i = 0; i < bundle.sas.length; i++) {
       ISAStorage.SA memory sa = bundle.sas[i];
-      Sale2 sale = Sale2(sa.sale);
-      uint256 vestedPercentage = sale.getVestedPercentage();
-      uint256 vestedAmount = sale.getVestedAmount(vestedPercentage, sa.vestedPercentage, sa.remainingAmount);
-      sale.vest(ownerOf(tokenId), sa);
+      ISaleMin sale = ISaleMin(sa.sale);
+      (uint256 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
       console.log("vesting", tokenId, vestedAmount);
       if (vestedPercentage == 100) {
         numEmptySubSAs++;
       }
-      // reprocess current element in next round;
-      sa.remainingAmount = sa.remainingAmount.sub(vestedAmount);
-      sa.vestedPercentage = vestedPercentage;
+      _storage.updateSA(tokenId, i, vestedPercentage, vestedAmount);
     }
-    bool result = _storage.cleanEmptySAs(tokenId, numEmptySubSAs);
-    if (!result) {
+    if (numEmptySubSAs == bundle.sas.length) {
+      _storage.deleteBundle(tokenId);
       _burn(tokenId);
+      return false;
     }
-    return result;
+    return true;
   }
 
   function _burn(uint256 tokenId) internal virtual override {
@@ -173,5 +170,10 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
     assembly {size := extcodesize(account)}
     return size > 0;
   }
+
+//  function cleanSA(uint tokenId) external {
+//    require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
+////    _storage.cleanEmptySAs(tokenId, numEmptySubSAs);
+//  }
 
 }

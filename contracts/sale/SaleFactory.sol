@@ -3,26 +3,26 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./Sale2.sol";
-import "./ISAStorage.sol";
+import "./Sale.sol";
 
 // for debugging only
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
-contract ApeFactory is AccessControl {
+contract SaleFactory is AccessControl {
 
   event NewSale(address saleAddress);
+
+  address private _lastSaleAddress;
 
   bytes32 public constant FACTORY_ADMIN_ROLE = keccak256("FACTORY_ADMIN_ROLE");
 
   mapping (address => bool) private _sales;
+  address[] private _allSales;
 
-  ISAStorage private _storage;
 
   address private _factoryAdmin;
 
-  constructor(address storageAddress) {
-    _storage = ISAStorage(storageAddress);
+  constructor() {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
   }
 
@@ -46,17 +46,29 @@ contract ApeFactory is AccessControl {
     return _sales[sale];
   }
 
+  function lastSale() external view returns (address) {
+    return _allSales[_allSales.length - 1];
+  }
+
+  function getSale(uint i) external view returns (address) {
+    return _allSales[i];
+  }
+
+  function getAllSales() external view returns (address[] memory) {
+    return _allSales;
+  }
+
   function newSale(
-    Sale2.Setup memory setup,
-    Sale2.VestingStep[] memory schedule
+    Sale.Setup memory setup,
+    Sale.VestingStep[] memory schedule
   ) external
   onlyRole(FACTORY_ADMIN_ROLE)
-  returns(address) {
-    require(address(_storage) != address(0), "ApeFactory: SAStorage not set yet");
-    Sale2 sale = new Sale2(setup, schedule);
+  {
+    Sale sale = new Sale(setup, schedule);
     sale.grantRole(sale.SALE_OWNER_ROLE(), setup.owner);
-    _sales[address(sale)] = true;
-    emit NewSale(address(sale));
-    return address(sale);
+    address addr = address(sale);
+    _allSales.push(addr);
+    _sales[addr] = true;
+    emit NewSale(addr);
   }
 }

@@ -1,27 +1,34 @@
 const {expect, assert} = require("chai")
 const {assertThrowsMessage} = require('./helpers')
 
-describe("SAToken", async function () {
+const saleJson = require('../src/artifacts/contracts/sale/Sale.sol/Sale.json')
 
+describe.only("SAToken", async function () {
+
+  let Token
+  let sellingToken
+  let Tether
+  let tether
   let SAStorage
   let storage
   let SAToken
-  let token
-  let SaleMock
-  let saleMock
+  let satoken
+  let Sale
+  let sale
   let fakeSale
-  let FactoryMock
-  let factoryMock
+  let SaleFactory
+  let factory
   let PAUSER_ROLE
+  let saleAddress
 
-  let owner, manager, sale, apeFactory, newFactory, buyer, buyer2
+  let owner, factoryAdmin, newFactoryAdmin, seller, buyer, buyer2
   let addr0 = '0x0000000000000000000000000000000000000000'
 
   let timestamp
   let chainId
 
   before(async function () {
-    [owner, manager, sale, apeFactory, newFactory, fakeSale, buyer, buyer2] = await ethers.getSigners()
+    [owner, factoryAdmin, newFactoryAdmin, fakeSale, seller, buyer, buyer2] = await ethers.getSigners()
   })
 
   async function getTimestamp() {
@@ -29,25 +36,69 @@ describe("SAToken", async function () {
   }
 
   async function initNetworkAndDeploy() {
+
     SAStorage = await ethers.getContractFactory("SAStorage")
     storage = await SAStorage.deploy()
     await storage.deployed()
-    SaleMock = await ethers.getContractFactory("SaleMock")
-    saleMock = await SaleMock.deploy()
-    await saleMock.deployed()
-    fakeSale = await SaleMock.deploy()
-    await fakeSale.deployed()
-    FactoryMock = await ethers.getContractFactory("FactoryMock")
-    factoryMock = await FactoryMock.deploy()
-    await factoryMock.deployed()
-    await factoryMock.setLegitSale(saleMock.address)
+
+    SaleFactory = await ethers.getContractFactory("SaleFactory")
+    factory = await SaleFactory.deploy()
+    await factory.deployed()
+    factory.grantFactoryRole(factoryAdmin.address)
+
     SAToken = await ethers.getContractFactory("SAToken")
-    token = await SAToken.deploy(factoryMock.address, storage.address)
-    await token.deployed()
-    await saleMock.setToken(token.address)
-    await fakeSale.setToken(token.address)
-    await storage.grantRole(await storage.MANAGER_ROLE(), token.address)
-    await token.grantRole(await token.PAUSER_ROLE(), manager.address)
+    satoken = await SAToken.deploy(factory.address, storage.address)
+    await satoken.deployed()
+
+    Token = await ethers.getContractFactory("Token")
+    sellingToken = await Token.connect(seller).deploy("Abc Token", "ABC")
+    await sellingToken.deployed()
+
+    Tether = await ethers.getContractFactory("TetherMock")
+    tether = await Tether.deploy()
+    await tether.deployed()
+    await (await tether.transfer(buyer.address, 40000)).wait()
+    await (await tether.transfer(buyer2.address, 50000)).wait()
+
+    const saleSetup = {
+      satoken: satoken.address,
+      minAmount: 100,
+      capAmount: 20000,
+      remainingAmount: 0,
+      pricingToken: 1,
+      pricingPayment: 2,
+      sellingToken: sellingToken.address,
+      paymentToken: tether.address,
+      owner: seller.address,
+      tokenListTimestamp: 0,
+      tokenFeePercentage: 5,
+      paymentFeePercentage: 10,
+      tokenIsTransferable: true
+    };
+    const saleVestingSchedule = [
+      {
+        timestamp: 10,
+        percentage: 50
+      },
+      {
+        timestamp: 1000,
+        percentage: 100
+      }]
+
+
+    await factory.connect(factoryAdmin).newSale(
+        saleSetup,
+        saleVestingSchedule
+    )
+
+    saleAddress = await factory.lastSale()
+    sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
+
+    Sale = await ethers.getContractFactory("Sale")
+    fakeSale = await Sale.deploy(saleSetup, saleVestingSchedule)
+    await fakeSale.deployed()
+
+    await storage.grantRole(await storage.MANAGER_ROLE(), satoken.address)
   }
 
   describe('#constructor & #updateFactory', async function () {
@@ -57,12 +108,12 @@ describe("SAToken", async function () {
     })
 
     it("should verify that the apeFactory is correctly set", async function () {
-      assert.equal((await token.factory()), factoryMock.address)
+      assert.equal((await satoken.factory()), factory.address)
     })
 
     it("should set and verify that newFactory is the new factory", async function () {
-      await token.updateFactory(newFactory.address)
-      assert.equal((await token.factory()), newFactory.address)
+      await satoken.updateFactory(newFactoryAdmin.address)
+      assert.equal((await satoken.factory()), newFactoryAdmin.address)
     })
 
   })
@@ -75,15 +126,15 @@ describe("SAToken", async function () {
 
     it("should allow saleMock to mint a token ", async function () {
 
-      await expect(saleMock.mintToken(buyer.address, 100))
-          .to.emit(token, 'Transfer')
+      await expect(sale.mintToken(buyer.address, 100))
+          .to.emit(satoken, 'Transfer')
           .withArgs(addr0, buyer.address, 0)
-      assert.equal(await token.ownerOf(0), buyer.address)
+      assert.equal(await satoken.ownerOf(0), buyer.address)
 
-      await expect(saleMock.mintToken(buyer2.address, 50))
-          .to.emit(token, 'Transfer')
+      await expect(sale.mintToken(buyer2.address, 50))
+          .to.emit(satoken, 'Transfer')
           .withArgs(addr0, buyer2.address, 1)
-      assert.equal(await token.ownerOf(1), buyer2.address)
+      assert.equal(await satoken.ownerOf(1), buyer2.address)
     })
 
     it("should throw if a not legit sale try to mint a token", async function () {
@@ -97,7 +148,7 @@ describe("SAToken", async function () {
     it("should throw if a non-contract try to mint a token", async function () {
 
       await assertThrowsMessage(
-          token.connect(buyer2).mint(buyer.address, 100),
+          satoken.connect(buyer2).mint(buyer.address, 100),
           'SAToken: The caller is not a contract')
 
     })

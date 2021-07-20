@@ -14,8 +14,8 @@ interface ISAStorage {
 
   struct Bundle {
     SA[] sas;
-    uint256 creationBlock;
-    uint256 acquisitionBlock;
+    uint256 creationTimestamp;
+    uint256 acquisitionTimestamp;
   }
 
   function getBundle(uint bundleId) external view returns (Bundle memory);
@@ -26,7 +26,7 @@ interface ISAStorage {
 
   function updateBundle(uint bundleId) external returns (bool);
 
-  function updateSA(uint bundleId, uint i, SA memory sale) external;
+  function updateSA(uint bundleId, uint i, uint vestedPercentage, uint vestedAmount) external;
 
   function getSA(uint bundleId, uint i) external view returns (SA memory);
 
@@ -38,5 +38,5 @@ interface ISAStorage {
 
   function deleteAllSAs(uint bundleId) external;
 
-  function cleanEmptySAs(uint256 tokenId, uint256 numEmptySAs) external returns(bool);
+  function cleanEmptySAs(uint256 tokenId, uint256 numEmptySAs) external returns (bool);
 }
