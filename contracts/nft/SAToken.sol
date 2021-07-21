@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./ISAToken.sol";
 import "./ISAStorage.sol";
@@ -36,6 +35,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
   using Counters for Counters.Counter;
 
   bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+  bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
   Counters.Counter private _tokenIdCounter;
 
@@ -125,7 +125,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
 
   // vest return the number of non empty sas after vest.
   // if there is no non-empty sas, then SA will burned
-  function vest(uint256 tokenId) public virtual
+  function vest(uint256 tokenId) public virtual override
   returns (bool) {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
     console.log("vesting", tokenId);
@@ -149,6 +149,11 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
     return true;
   }
 
+  function burn(uint256 tokenId) external virtual override
+  onlyRole(MANAGER_ROLE) {
+    _burn(tokenId);
+  }
+
   function _burn(uint256 tokenId) internal virtual override {
     super._burn(tokenId);
     _storage.deleteBundle(tokenId);
@@ -159,7 +164,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
     if (isPaused(tokenId)) {
       return false;
     }
-    address owner = ERC721.ownerOf(tokenId);
+    address owner = ownerOf(tokenId);
     return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
   }
 
@@ -170,10 +175,5 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
     assembly {size := extcodesize(account)}
     return size > 0;
   }
-
-//  function cleanSA(uint tokenId) external {
-//    require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
-////    _storage.cleanEmptySAs(tokenId, numEmptySubSAs);
-//  }
 
 }

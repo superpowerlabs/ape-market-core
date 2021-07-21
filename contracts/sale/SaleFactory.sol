@@ -1,9 +1,35 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./Sale.sol";
+
+import "hardhat/console.sol";
+
+interface ISale {
+
+  struct VestingStep {
+    uint256 timestamp;
+    uint256 percentage;
+  }
+
+  struct Setup {
+    address satoken;
+    uint256 minAmount;
+    uint256 capAmount;
+    uint256 remainingAmount;
+    uint256 pricingToken;
+    uint256 pricingPayment;
+    address sellingToken;
+    address paymentToken;
+    address owner;
+    uint256 tokenListTimestamp;
+    uint256 tokenFeePercentage;
+    uint256 paymentFeePercentage;
+    bool isTokenTransferable;
+  }
+
+  function grantRole(bytes32 role, address account) external;
+}
 
 // for debugging only
 import "hardhat/console.sol";
@@ -16,14 +42,15 @@ contract SaleFactory is AccessControl {
 
   bytes32 public constant FACTORY_ADMIN_ROLE = keccak256("FACTORY_ADMIN_ROLE");
 
-  mapping (address => bool) private _sales;
+  mapping(address => bool) private _sales;
   address[] private _allSales;
-
+  address private _sampleSale;
 
   address private _factoryAdmin;
 
-  constructor() {
+  constructor(address sampleSale) {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    _sampleSale = sampleSale;
   }
 
   function grantRole(bytes32 role, address account) public virtual override {
@@ -58,17 +85,39 @@ contract SaleFactory is AccessControl {
     return _allSales;
   }
 
+  function getDeployedBytecode(address _addr) public view returns (bytes memory o_code) {
+    assembly {
+      let size := extcodesize(_addr)
+      o_code := mload(0x40)
+      mstore(0x40, add(o_code, and(add(add(size, 0x20), 0x1f), not(0x1f))))
+      mstore(o_code, size)
+      extcodecopy(_addr, add(o_code, 0x20), 0, size)
+    }
+  }
+
   function newSale(
-    Sale.Setup memory setup,
-    Sale.VestingStep[] memory schedule
+    ISale.Setup memory setup,
+    ISale.VestingStep[] memory schedule
   ) external
   onlyRole(FACTORY_ADMIN_ROLE)
   {
-    Sale sale = new Sale(setup, schedule);
-    sale.grantRole(sale.SALE_OWNER_ROLE(), setup.owner);
-    address addr = address(sale);
+    bytes memory deployedByteCode = getDeployedBytecode(_sampleSale);
+    bytes memory bytecode = abi.encodePacked(deployedByteCode, abi.encode(setup, schedule));
+    address addr;
+    bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp, block.number));
+
+    assembly {
+      addr := create2(callvalue(), add(bytecode, 0x20), mload(bytecode), salt)
+      if iszero(extcodesize(addr)) {
+        revert(0, 0)
+      }
+    }
+    ISale sale = ISale(addr);
+    sale.grantRole(keccak256("SALE_OWNER_ROLE"), setup.owner);
+    //    address addr = address(sale);
     _allSales.push(addr);
     _sales[addr] = true;
     emit NewSale(addr);
   }
+
 }

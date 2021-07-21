@@ -28,6 +28,10 @@ interface ISAStorage {
 
   function updateSA(uint bundleId, uint i, uint vestedPercentage, uint vestedAmount) external;
 
+  function changeSA(uint bundleId, uint i, uint diff, bool increase) external;
+
+  function popSA(uint bundleId) external;
+
   function getSA(uint bundleId, uint i) external view returns (SA memory);
 
   function deleteSA(uint bundleId, uint i) external;

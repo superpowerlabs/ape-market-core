@@ -70,6 +70,18 @@ contract SAStorage is ISAStorage, AccessControl {
     return _updateSA(bundleId, i, vestedPercentage, vestedAmount);
   }
 
+  function changeSA(uint bundleId, uint i, uint diff, bool increase) external override
+  onlyRole(MANAGER_ROLE)
+  {
+    return _changeSA(bundleId, i, diff, increase);
+  }
+
+  function popSA(uint bundleId) external override
+  onlyRole(MANAGER_ROLE)
+  {
+    return _popSA(bundleId);
+  }
+
   function getSA(uint bundleId, uint i) external override view
   returns (SA memory)
   {
@@ -153,6 +165,21 @@ contract SAStorage is ISAStorage, AccessControl {
       _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.sub(vestedAmount);
       _bundles[bundleId].sas[i].vestedPercentage = vestedPercentage;
     }
+  }
+
+  function _changeSA(uint bundleId, uint i, uint diff, bool increase) internal
+  BundleExists(bundleId) SAExists(bundleId, i) {
+    if (increase) {
+      _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.add(diff);
+    } else {
+      _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.sub(diff);
+    }
+  }
+
+  function _popSA(uint bundleId) internal virtual
+  BundleExists(bundleId)
+  {
+    _bundles[bundleId].sas.pop();
   }
 
   function _deleteSA(uint bundleId, uint i) internal virtual

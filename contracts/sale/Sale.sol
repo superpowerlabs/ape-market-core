@@ -2,20 +2,15 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../nft/ISAToken.sol";
-import "../nft/ISAStorage.sol";
 import "./ISale.sol";
 
 contract Sale is ISale, AccessControl {
 
   using SafeMath for uint256;
-  using SafeERC20 for IERC20;
 
   bytes32 public constant SALE_OWNER_ROLE = keccak256("SALE_OWNER_ROLE");
 
@@ -37,6 +32,10 @@ contract Sale is ISale, AccessControl {
     }
     require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
     grantRole(SALE_OWNER_ROLE, _setup.owner);
+  }
+
+  function getPaymentToken() external view override returns (address){
+    return address(_setup.paymentToken);
   }
 
   function setApeWallet(address apeWallet_) external override
@@ -84,8 +83,9 @@ contract Sale is ISale, AccessControl {
     _setup.paymentToken.transferFrom(msg.sender, _apeWallet, buyerFee);
     _setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
     // mint NFT
-    _setup.satoken.mint(msg.sender, amount);
-    _setup.satoken.mint(_apeWallet, sellerFee);
+    ISAToken nft = ISAToken(_setup.satoken);
+    nft.mint(msg.sender, amount);
+    nft.mint(_apeWallet, sellerFee);
     _setup.remainingAmount = _setup.remainingAmount.sub(amount);
     _approvedAmounts[msg.sender] = _approvedAmounts[msg.sender].sub(amount);
     console.log("Sale: Paying buyer fee", buyerFee);
@@ -117,11 +117,6 @@ contract Sale is ISale, AccessControl {
     return (_setup.tokenListTimestamp != 0);
   }
 
-  //  // for testing only
-  //  function currentBlockTimeStamp() external view returns (uint256) {
-  //    return block.timestamp;
-  //  }
-  //
   function getVestedPercentage() public virtual view override returns (uint256) {
     if (_setup.tokenListTimestamp == 0) {// token not listed yet!
       return 0;

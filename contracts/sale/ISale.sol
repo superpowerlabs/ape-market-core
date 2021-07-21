@@ -19,6 +19,7 @@ interface ISale {
 
   // This struct contains the basic information about the sale.
   struct Setup {
+    // TODO: should this be "address satoken" instead?
     ISAToken satoken; // The deployed address of SANFT contract
 //    uint256 saleBeginTime; // use 0 to start as soon as contract is deployed
     // it's easier than setting up a saleEndTime, especially for testing.
@@ -46,6 +47,8 @@ interface ISale {
     uint256 paymentFeePercentage;
     bool isTokenTransferable;
   }
+
+  function getPaymentToken() external view returns (address);
 
   function setApeWallet(address apeWallet_) external;
 

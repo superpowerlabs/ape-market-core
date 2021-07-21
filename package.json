@@ -27,7 +27,7 @@
     "eject": "react-scripts eject",
     "test": "npx hardhat test",
     "test:gas": "GAS_REPORT=yes npx hardhat test",
-    "compile": "npx hardhat compile",
+    "compile": "rm -rf cache && rm -rf src/artifacts && npx hardhat compile",
     "lint": "solium -d contracts/"
   },
   "eslintConfig": {

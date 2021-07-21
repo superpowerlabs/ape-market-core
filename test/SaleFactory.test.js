@@ -15,6 +15,8 @@ describe("SaleFactory", async function () {
   let satoken
   let SaleFactory
   let factory
+  let Sale
+  let sampleSale
 
   let saleSetup
   let saleVestingSchedule
@@ -35,12 +37,41 @@ describe("SaleFactory", async function () {
 
   async function initNetworkAndDeploy() {
 
+    saleSetup = {
+      satoken: addr0,
+      minAmount: 1,
+      capAmount: 10,
+      remainingAmount: 0,
+      pricingToken: 1,
+      pricingPayment: 2,
+      sellingToken: addr0,
+      paymentToken: addr0,
+      owner: seller.address,
+      tokenListTimestamp: 0,
+      tokenFeePercentage: 1,
+      paymentFeePercentage: 1,
+      tokenIsTransferable: true
+    };
+    saleVestingSchedule = [
+      {
+        timestamp: 10,
+        percentage: 50
+      },
+      {
+        timestamp: 1000,
+        percentage: 100
+      }]
+
+    Sale = await ethers.getContractFactory("Sale")
+    sampleSale = await Sale.deploy(saleSetup, saleVestingSchedule)
+    await sampleSale.deployed()
+
     SAStorage = await ethers.getContractFactory("SAStorage")
     storage = await SAStorage.deploy()
     await storage.deployed()
 
     SaleFactory = await ethers.getContractFactory("SaleFactory")
-    factory = await SaleFactory.deploy()
+    factory = await SaleFactory.deploy(sampleSale.address)
     await factory.deployed()
     factory.grantFactoryRole(factoryAdmin.address)
 
@@ -101,6 +132,13 @@ describe("SaleFactory", async function () {
           timestamp: 1000,
           percentage: 100
         }]
+
+    })
+
+    it.only("should create a not legit sale to check the gas consumption", async function () {
+      Sale = await ethers.getContractFactory("Sale")
+      sale = await Sale.deploy(saleSetup, saleVestingSchedule)
+      await sale.deployed()
     })
 
     it("should create a new sale", async function () {
