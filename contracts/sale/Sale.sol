@@ -7,12 +7,13 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "hardhat/console.sol";
 
 import "./ISale.sol";
+import "../access/LevelAccess.sol";
 
-contract Sale is ISale, AccessControl {
+contract Sale is ISale, LevelAccess {
 
   using SafeMath for uint256;
 
-  bytes32 public constant SALE_OWNER_ROLE = keccak256("SALE_OWNER_ROLE");
+  uint public constant SALE_OWNER_ROLE = 3;
 
   VestingStep[] _vestingSchedule;
 

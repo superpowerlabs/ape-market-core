@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 //import "@openzeppelin/contracts/access/AccessControl.sol";
 
-import "../access/Leveleable.sol";
+import "../access/LevelAccess.sol";
 import "./ISAStorage.sol";
 
 // for debugging only
@@ -18,11 +18,11 @@ import "hardhat/console.sol";
 
 
 contract SAStorage is ISAStorage,
-Leveleable // grant manager level 2
+LevelAccess // grant manager level 2
 {
 
   using SafeMath for uint256;
-  uint public MANAGER_LEVEL = 2;
+  uint public constant MANAGER_LEVEL = 2;
 
   mapping(uint256 => Bundle) private _bundles;
 
