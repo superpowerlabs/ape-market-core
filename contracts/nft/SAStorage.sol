@@ -16,9 +16,9 @@ import "hardhat/console.sol";
 */
 
 
-contract SAStorage is ISAStorage,
-LevelAccess // grant manager level 2
-{
+contract SAStorage is ISAStorage, LevelAccess {
+  // after deploying, we must grant SAToken and SAManager with MANAGER_LEVEL
+  // so that they can handle the Bundle/SA storage
 
   using SafeMath for uint256;
   uint public constant MANAGER_LEVEL = 2;

@@ -30,16 +30,16 @@ describe.skip("App Tests", function() {
   console.log((await tether.balanceOf(investor2.address)).toNumber());
   expect(await tether.balanceOf(investor2.address)).to.equal(50000);
 
-  let Token, abc;
+  let ERC20Token, abc;
   console.log("Deploying ABC");
-  Token = await hre.ethers.getContractFactory("Token");
-  abc = await Token.connect(abcOwner).deploy("ABC", "ABC");
+  ERC20Token = await hre.ethers.getContractFactory("ERC20Token");
+  abc = await ERC20Token.connect(abcOwner).deploy("ABC", "ABC");
   await abc.deployed();
   console.log("ABC deployed to:", abc.address);
 
   let xyz;
   console.log("Deploying XYZ");
-  xyz = await Token.connect(xyzOwner).deploy("XYZ", "XYZ");
+  xyz = await ERC20Token.connect(xyzOwner).deploy("XYZ", "XYZ");
   await xyz.deployed();
   console.log("XYZ deployed to:", xyz.address);
 

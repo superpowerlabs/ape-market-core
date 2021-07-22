@@ -85,7 +85,7 @@ contract SAManager is LevelAccess {
   }
 
   function merge(uint256[] memory tokenIds, bool vestTokensBefore) external virtual
-  // TODO: lets assume for now that they pay with the feetoken used in the primary SA
+  // TODO: for now that they pay with the feetoken used in the primary SA
   // we must decide how to handle these cases
   feeRequired(tokenIds[0]) {
     require(tokenIds.length >= 2, "SAManager: Not enough SAs for merging");
