@@ -5,14 +5,10 @@ describe("SAStorage", async function () {
 
   let SAStorage
   let storage
-  let signers
-  let MANAGER_ROLE
+  let MANAGER_LEVEL
 
   let owner, manager, newManager, sale1, sale2, sale3, sale4
   let addr0 = '0x0000000000000000000000000000000000000000'
-
-  let timestamp
-  let chainId
 
   before(async function () {
     [owner, manager, newManager, sale1, sale2, sale3, sale4] = await ethers.getSigners()
@@ -26,8 +22,8 @@ describe("SAStorage", async function () {
     SAStorage = await ethers.getContractFactory("SAStorage")
     storage = await SAStorage.deploy()
     await storage.deployed()
-    MANAGER_ROLE = await storage.MANAGER_ROLE()
-    await storage.grantRole(MANAGER_ROLE, manager.address)
+    MANAGER_LEVEL = await storage.MANAGER_LEVEL()
+    await storage.grantLevel(MANAGER_LEVEL, manager.address)
   }
 
   async function prePopulate() {
@@ -45,7 +41,7 @@ describe("SAStorage", async function () {
     })
 
     it("should verify that the manager is correctly set", async function () {
-      assert.isTrue(await storage.hasRole(MANAGER_ROLE, manager.address))
+      assert.isTrue(await storage.hasLevel(MANAGER_LEVEL, manager.address))
     })
 
   })
@@ -57,10 +53,10 @@ describe("SAStorage", async function () {
     })
 
     it("should update the manager", async function () {
-      await expect(storage.grantRole(MANAGER_ROLE, newManager.address))
-          .to.emit(storage, 'RoleGranted')
-          .withArgs(MANAGER_ROLE, newManager.address, owner.address)
-      assert.isTrue(await storage.hasRole(MANAGER_ROLE, newManager.address))
+      await expect(storage.grantLevel(MANAGER_LEVEL, newManager.address))
+          .to.emit(storage, 'LevelSet')
+          .withArgs(MANAGER_LEVEL, newManager.address)
+      assert.isTrue(await storage.hasLevel(MANAGER_LEVEL, newManager.address))
     })
 
   })

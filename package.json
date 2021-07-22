@@ -49,6 +49,7 @@
     ]
   },
   "devDependencies": {
-    "@ethersproject/contracts": "^5.4.0"
+    "@ethersproject/contracts": "^5.4.0",
+    "hardhat-contract-sizer": "^2.0.3"
   }
 }

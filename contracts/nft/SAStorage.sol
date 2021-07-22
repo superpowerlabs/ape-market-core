@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+//import "@openzeppelin/contracts/access/AccessControl.sol";
 
+import "../access/Leveleable.sol";
 import "./ISAStorage.sol";
 
 // for debugging only
@@ -16,11 +17,12 @@ import "hardhat/console.sol";
 */
 
 
-contract SAStorage is ISAStorage, AccessControl {
+contract SAStorage is ISAStorage,
+Leveleable // grant manager level 2
+{
 
   using SafeMath for uint256;
-
-  bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+  uint public MANAGER_LEVEL = 2;
 
   mapping(uint256 => Bundle) private _bundles;
 
@@ -34,10 +36,6 @@ contract SAStorage is ISAStorage, AccessControl {
     _;
   }
 
-  constructor() {
-    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-  }
-
   function getBundle(uint bundleId) public override virtual view
   returns (Bundle memory)
   {
@@ -45,39 +43,39 @@ contract SAStorage is ISAStorage, AccessControl {
   }
 
   function addBundle(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external override virtual
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   returns (uint)
   {
     return _addBundle(bundleId, saleAddress, remainingAmount, vestedPercentage);
   }
 
   function deleteBundle(uint bundleId) external override virtual
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   {
     return _deleteBundle(bundleId);
   }
 
   function updateBundle(uint bundleId) external override virtual
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   returns (bool)
   {
     return _updateBundle(bundleId);
   }
 
   function updateSA(uint bundleId, uint i, uint vestedPercentage, uint vestedAmount) external override
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   {
     return _updateSA(bundleId, i, vestedPercentage, vestedAmount);
   }
 
   function changeSA(uint bundleId, uint i, uint diff, bool increase) external override
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   {
     return _changeSA(bundleId, i, diff, increase);
   }
 
   function popSA(uint bundleId) external override
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   {
     return _popSA(bundleId);
   }
@@ -89,31 +87,31 @@ contract SAStorage is ISAStorage, AccessControl {
   }
 
   function deleteSA(uint bundleId, uint i) external override virtual
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   {
     _deleteSA(bundleId, i);
   }
 
   function addNewSAs(uint bundleId, SA[] memory newSAs) external override virtual
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   {
     _addNewSAs(bundleId, newSAs);
   }
 
   function addNewSA(uint bundleId, SA memory newSA) external override virtual
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   {
     _addNewSA(bundleId, newSA);
   }
 
   function deleteAllSAs(uint bundleId) external override virtual
-  onlyRole(MANAGER_ROLE)
+  onlyLevel(MANAGER_LEVEL)
   {
     _deleteAllSAs(bundleId);
   }
 
   function cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) external virtual override
-  BundleExists(bundleId) onlyRole(MANAGER_ROLE)
+  BundleExists(bundleId) onlyLevel(MANAGER_LEVEL)
   returns(bool) {
     return _cleanEmptySAs(bundleId, numEmptySAs);
   }
