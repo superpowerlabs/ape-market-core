@@ -17,8 +17,8 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
-    "web-vitals": "^1.0.1",
-    "solium": "^1.2.5"
+    "solium": "^1.2.5",
+    "web-vitals": "^1.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -27,7 +27,9 @@
     "eject": "react-scripts eject",
     "test": "npx hardhat test",
     "test:gas": "GAS_REPORT=yes npx hardhat test",
+    "clear": "rm -rf cache && rm -rf src/artifacts",
     "compile": "npx hardhat compile",
+    "size": "npm run clear && npm run compile && npx hardhat size-contracts",
     "lint": "solium -d contracts/"
   },
   "eslintConfig": {
@@ -47,5 +49,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@ethersproject/contracts": "^5.4.0",
+    "hardhat-contract-sizer": "^2.0.3"
   }
 }

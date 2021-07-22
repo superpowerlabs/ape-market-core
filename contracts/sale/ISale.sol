@@ -1,10 +1,10 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface ISmartAgreementMinimal {
-  function mint(address to, ISale sale_, uint256 amount) external;
-}
+import "../nft/ISAStorage.sol";
+import "../nft/ISAToken.sol";
 
 interface ISale {
 
@@ -19,10 +19,11 @@ interface ISale {
 
   // This struct contains the basic information about the sale.
   struct Setup {
-    ISmartAgreementMinimal saNFT; // The deployed address of SANFT contract
-    uint256 saleBeginTime; // use 0 to start as soon as contract is deployed
+    // TODO: should this be "address satoken" instead?
+    ISAToken satoken; // The deployed address of SANFT contract
+//    uint256 saleBeginTime; // use 0 to start as soon as contract is deployed
     // it's easier than setting up a saleEndTime, especially for testing.
-    uint256 duration; // how long in seconds would the sale run.
+//    uint256 duration; // how long in seconds would the sale run.
     uint256 minAmount; // minimum about of token needs to be purchased for each invest transaction
     uint256 capAmount; // the max number, for recording purpose. not changed by contract
     uint256 remainingAmount; // how much token are still up for sale
@@ -44,9 +45,16 @@ interface ISale {
     uint256 tokenListTimestamp;
     uint256 tokenFeePercentage;
     uint256 paymentFeePercentage;
+    bool isTokenTransferable;
   }
 
-  // Sale creator calls this function to start the sale.
+  function getPaymentToken() external view returns (address);
+
+  function setApeWallet(address apeWallet_) external;
+
+  function apeWallet() external view returns (address);
+
+// Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external;
 
@@ -70,5 +78,5 @@ interface ISale {
 
   function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
 
-  function vest(address sa_owner, uint256 vestedAmount) external;
+  function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint, uint);
 }

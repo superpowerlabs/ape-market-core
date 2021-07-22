@@ -3,6 +3,8 @@ const {assertThrowsMessage} = require('./helpers')
 
 describe("SAToken", async function () {
 
+  let SAStorage
+  let storage
   let SAToken
   let token
   let SaleMock
@@ -10,6 +12,7 @@ describe("SAToken", async function () {
   let fakeSale
   let FactoryMock
   let factoryMock
+  let PAUSER_ROLE
 
   let owner, manager, sale, apeFactory, newFactory, buyer, buyer2
   let addr0 = '0x0000000000000000000000000000000000000000'
@@ -26,6 +29,9 @@ describe("SAToken", async function () {
   }
 
   async function initNetworkAndDeploy() {
+    SAStorage = await ethers.getContractFactory("SAStorage")
+    storage = await SAStorage.deploy()
+    await storage.deployed()
     SaleMock = await ethers.getContractFactory("SaleMock")
     saleMock = await SaleMock.deploy()
     await saleMock.deployed()
@@ -36,11 +42,12 @@ describe("SAToken", async function () {
     await factoryMock.deployed()
     await factoryMock.setLegitSale(saleMock.address)
     SAToken = await ethers.getContractFactory("SAToken")
-    token = await SAToken.deploy(factoryMock.address)
+    token = await SAToken.deploy(factoryMock.address, storage.address)
     await token.deployed()
     await saleMock.setToken(token.address)
     await fakeSale.setToken(token.address)
-    // await token.setManager(manager.address)
+    await storage.grantLevel(await storage.MANAGER_LEVEL(), token.address)
+    await token.grantLevel(await token.PAUSER_LEVEL(), manager.address)
   }
 
   describe('#constructor & #updateFactory', async function () {
@@ -95,5 +102,7 @@ describe("SAToken", async function () {
 
     })
   })
+
+  // will test the vest function when testing the sales
 
 })

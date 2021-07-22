@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../SAToken.sol";
+import "../nft/SAToken.sol";
 
 contract SaleMock {
 
@@ -13,4 +14,5 @@ contract SaleMock {
   function mintToken(address to, uint256 amount) external {
     token.mint(to, amount);
   }
+
 }

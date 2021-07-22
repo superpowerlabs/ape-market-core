@@ -1,4 +1,5 @@
-require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-waffle")
+require('hardhat-contract-sizer')
 
 if (process.env.GAS_REPORT === 'yes') {
   require("hardhat-gas-reporter");
@@ -33,6 +34,12 @@ task("accounts", "Prints the list of accounts", async () => {
  */
 module.exports = {
   solidity: "0.8.3",
+  settings: {
+    optimizer: {
+      enabled: true,
+      runs: 200
+    }
+  },
   paths: {
     artifacts: './src/artifacts',
   },
