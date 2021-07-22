@@ -2,9 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-//import "@openzeppelin/contracts/access/AccessControl.sol";
 
-import "../access/LevelAccess.sol";
+import "../utils/LevelAccess.sol";
 import "./ISAStorage.sol";
 
 // for debugging only

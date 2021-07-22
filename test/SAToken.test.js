@@ -46,8 +46,8 @@ describe("SAToken", async function () {
     await token.deployed()
     await saleMock.setToken(token.address)
     await fakeSale.setToken(token.address)
-    await storage.grantRole(await storage.MANAGER_ROLE(), token.address)
-    await token.grantRole(await token.PAUSER_ROLE(), manager.address)
+    await storage.grantLevel(await storage.MANAGER_LEVEL(), token.address)
+    await token.grantLevel(await token.PAUSER_LEVEL(), manager.address)
   }
 
   describe('#constructor & #updateFactory', async function () {

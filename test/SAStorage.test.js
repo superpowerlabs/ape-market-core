@@ -23,6 +23,7 @@ describe("SAStorage", async function () {
     storage = await SAStorage.deploy()
     await storage.deployed()
     MANAGER_LEVEL = await storage.MANAGER_LEVEL()
+    // console.log(MANAGER_LEVEL.toNumber())
     await storage.grantLevel(MANAGER_LEVEL, manager.address)
   }
 
@@ -55,9 +56,8 @@ describe("SAStorage", async function () {
     it("should update the manager", async function () {
       await expect(storage.grantLevel(MANAGER_LEVEL, newManager.address))
           .to.emit(storage, 'LevelSet')
-          .withArgs(MANAGER_LEVEL, newManager.address)
+          .withArgs(MANAGER_LEVEL, newManager.address, owner.address)
       assert.equal((await storage.levels(newManager.address)).toNumber(), MANAGER_LEVEL)
-      // assert.isTrue(await storage.hasLevel(MANAGER_LEVEL, newManager.address))
     })
 
   })

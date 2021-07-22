@@ -3,11 +3,10 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./ISAStorage.sol";
 import "../sale/ISale.sol";
-
+import "../utils/LevelAccess.sol";
 
 interface ISATokenOptimized {
 
@@ -37,7 +36,7 @@ interface ISATokenOptimized {
 
 }
 
-contract SAManager is AccessControl {
+contract SAManager is LevelAccess {
 
   using SafeMath for uint256;
 
@@ -66,18 +65,17 @@ contract SAManager is AccessControl {
   }
 
   constructor(address tokenAddress, address storageAddress){
-    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _token = ISATokenOptimized(tokenAddress);
     _storage = ISAStorage(storageAddress);
   }
 
   function updateToken(address newTokenAddress) external
-  onlyRole(DEFAULT_ADMIN_ROLE) {
+  onlyLevel(OWNER_LEVEL) {
     _token = ISATokenOptimized(newTokenAddress);
   }
 
   function setApeWallet(address apeWallet_) external
-  onlyRole(DEFAULT_ADMIN_ROLE) {
+  onlyLevel(OWNER_LEVEL) {
     _apeWallet = apeWallet_;
   }
 

@@ -6,10 +6,10 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 
 import "./ISAToken.sol";
 import "./ISAStorage.sol";
+import "../utils/LevelAccess.sol";
 
 // for debugging only
 import "hardhat/console.sol";
@@ -29,13 +29,13 @@ interface ISaleMin {
 }
 
 
-contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
+contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
 
   using SafeMath for uint256;
   using Counters for Counters.Counter;
 
-  bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-  bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+  uint public constant MANAGER_LEVEL = 2;
+  uint public constant PAUSER_LEVEL = 4;
 
   Counters.Counter private _tokenIdCounter;
 
@@ -47,30 +47,29 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
 
   constructor(address factoryAddress, address storageAddress)
   ERC721("Smart Agreement", "SA") {
-    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _factory = ISaleFactory(factoryAddress);
     _storage = ISAStorage(storageAddress);
   }
 
   function pause(uint tokenId) external override
-  onlyRole(PAUSER_ROLE) {
+  onlyLevel(PAUSER_LEVEL) {
     _paused[tokenId] = true;
   }
 
   function unpause(uint tokenId) external override
-  onlyRole(PAUSER_ROLE) {
+  onlyLevel(PAUSER_LEVEL) {
     delete _paused[tokenId];
   }
 
   function pauseBatch(uint[] memory tokenIds) external override
-  onlyRole(PAUSER_ROLE) {
+  onlyLevel(PAUSER_LEVEL) {
     for (uint i = 0; i < tokenIds.length; i++) {
       _paused[tokenIds[i]] = true;
     }
   }
 
   function unpauseBatch(uint[] memory tokenIds) external override
-  onlyRole(PAUSER_ROLE) {
+  onlyLevel(PAUSER_LEVEL) {
     for (uint i = 0; i < tokenIds.length; i++) {
       delete _paused[tokenIds[i]];
     }
@@ -81,12 +80,12 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
   }
 
   function updateFactory(address factoryAddress) external override virtual
-  onlyRole(DEFAULT_ADMIN_ROLE) {
+  onlyLevel(OWNER_LEVEL) {
     _factory = ISaleFactory(factoryAddress);
   }
 
   function updateStorage(address storageAddress) external override virtual
-  onlyRole(DEFAULT_ADMIN_ROLE) {
+  onlyLevel(OWNER_LEVEL) {
     _storage = ISAStorage(storageAddress);
   }
 
@@ -102,11 +101,13 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
   override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
     require(!isPaused(tokenId), "SAToken: Token is paused");
-    _storage.updateBundle(tokenId);
+    if (from != address(0)) {
+      _storage.updateBundle(tokenId);
+    }
   }
 
   function supportsInterface(bytes4 interfaceId) public view
-  override(ERC721, ERC721Enumerable, AccessControl)
+  override(ERC721, ERC721Enumerable)
   returns (bool) {
     return super.supportsInterface(interfaceId);
   }
@@ -146,7 +147,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
   }
 
   function burn(uint256 tokenId) external virtual override
-  onlyRole(MANAGER_ROLE) {
+  onlyLevel(MANAGER_LEVEL) {
     _burn(tokenId);
   }
 
