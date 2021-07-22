@@ -41,7 +41,7 @@ describe("SAStorage", async function () {
     })
 
     it("should verify that the manager is correctly set", async function () {
-      assert.isTrue(await storage.hasLevel(MANAGER_LEVEL, manager.address))
+      assert.equal((await storage.levels(manager.address)).toNumber(), MANAGER_LEVEL)
     })
 
   })
@@ -56,7 +56,8 @@ describe("SAStorage", async function () {
       await expect(storage.grantLevel(MANAGER_LEVEL, newManager.address))
           .to.emit(storage, 'LevelSet')
           .withArgs(MANAGER_LEVEL, newManager.address)
-      assert.isTrue(await storage.hasLevel(MANAGER_LEVEL, newManager.address))
+      assert.equal((await storage.levels(newManager.address)).toNumber(), MANAGER_LEVEL)
+      // assert.isTrue(await storage.hasLevel(MANAGER_LEVEL, newManager.address))
     })
 
   })

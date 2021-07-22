@@ -28,6 +28,8 @@ interface ISale {
     bool isTokenTransferable;
   }
 
+  function initialize(Setup memory setup_, VestingStep[] memory schedule) external;
+
   function grantRole(bytes32 role, address account) external;
 }
 
@@ -36,7 +38,7 @@ import "hardhat/console.sol";
 
 contract SaleFactory is AccessControl {
 
-  event NewSale(address saleAddress);
+  event NewSale(address saleAddress, bytes32 salt);
 
   address private _lastSaleAddress;
 
@@ -101,23 +103,26 @@ contract SaleFactory is AccessControl {
   ) external
   onlyRole(FACTORY_ADMIN_ROLE)
   {
-    bytes memory deployedByteCode = getDeployedBytecode(_sampleSale);
-    bytes memory bytecode = abi.encodePacked(deployedByteCode, abi.encode(setup, schedule));
+    bytes memory bytecode = getDeployedBytecode(_sampleSale);
+//    console.log("Size %s", deployedBytecode.length);
+//    bytes memory bytecode = abi.encodePacked(deployedBytecode, abi.encode(setup, schedule));
+    console.log("Size %s", bytecode.length);
+    bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp));
     address addr;
-    bytes32 salt = keccak256(abi.encodePacked(msg.sender, block.timestamp, block.number));
-
     assembly {
-      addr := create2(callvalue(), add(bytecode, 0x20), mload(bytecode), salt)
+      addr := create2(0, add(bytecode, 0x20), mload(bytecode), salt)
+//      addr := create2(0, add(code, 0x20), mload(code), salt)
       if iszero(extcodesize(addr)) {
         revert(0, 0)
       }
     }
     ISale sale = ISale(addr);
+    sale.initialize(setup, schedule);
     sale.grantRole(keccak256("SALE_OWNER_ROLE"), setup.owner);
     //    address addr = address(sale);
     _allSales.push(addr);
     _sales[addr] = true;
-    emit NewSale(addr);
+    emit NewSale(addr, salt);
   }
 
 }

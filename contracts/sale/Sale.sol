@@ -21,8 +21,13 @@ contract Sale is ISale, AccessControl {
   mapping(address => uint256) private _approvedAmounts;
 
 
-  constructor(Setup memory setup_, VestingStep[] memory schedule) {
+  constructor() {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+  }
+
+  function initialize(Setup memory setup_, VestingStep[] memory schedule) public
+  onlyRole(DEFAULT_ADMIN_ROLE) {
+    require(_setup.owner == address(0), "Sale: already set up");
     _setup = setup_;
     for (uint256 i = 0; i < schedule.length; i++) {
       if (i > 0) {

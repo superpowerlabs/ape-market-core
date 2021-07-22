@@ -3,7 +3,7 @@ const {assertThrowsMessage} = require('./helpers')
 
 const saleJson = require('../src/artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe("SaleFactory", async function () {
+describe.only("SaleFactory", async function () {
 
   let Token
   let sellingToken
@@ -63,7 +63,7 @@ describe("SaleFactory", async function () {
       }]
 
     Sale = await ethers.getContractFactory("Sale")
-    sampleSale = await Sale.deploy(saleSetup, saleVestingSchedule)
+    sampleSale = await Sale.deploy()
     await sampleSale.deployed()
 
     SAStorage = await ethers.getContractFactory("SAStorage")
@@ -135,13 +135,7 @@ describe("SaleFactory", async function () {
 
     })
 
-    it.only("should create a not legit sale to check the gas consumption", async function () {
-      Sale = await ethers.getContractFactory("Sale")
-      sale = await Sale.deploy(saleSetup, saleVestingSchedule)
-      await sale.deployed()
-    })
-
-    it("should create a new sale", async function () {
+    it.only("should create a new sale", async function () {
 
       await expect(factory.connect(factoryAdmin).newSale(saleSetup,saleVestingSchedule))
           .to.emit(factory, "NewSale")
@@ -161,6 +155,12 @@ describe("SaleFactory", async function () {
           factory.newSale(saleSetup,saleVestingSchedule),
           'is missing role')
 
+    })
+
+    it("should create a not legit sale to check the gas consumption", async function () {
+      Sale = await ethers.getContractFactory("Sale")
+      sale = await Sale.deploy()
+      await sale.deployed()
     })
 
   })
