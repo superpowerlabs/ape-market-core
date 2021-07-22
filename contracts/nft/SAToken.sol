@@ -101,18 +101,14 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, AccessControl {
   function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal
   override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
+    require(!isPaused(tokenId), "SAToken: Token is paused");
+    _storage.updateBundle(tokenId);
   }
 
   function supportsInterface(bytes4 interfaceId) public view
   override(ERC721, ERC721Enumerable, AccessControl)
   returns (bool) {
     return super.supportsInterface(interfaceId);
-  }
-
-  function _transfer(address from, address to, uint256 tokenId) internal virtual override {
-    require(!isPaused(tokenId), "SAToken: Token is paused");
-    super._transfer(from, to, tokenId);
-    _storage.updateBundle(tokenId);
   }
 
   function mint(address to, uint256 amount) external override virtual {

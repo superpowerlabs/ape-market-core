@@ -86,14 +86,15 @@ contract SAManager is AccessControl {
     return _apeWallet;
   }
 
-  function merge(uint256[] memory tokenIds, bool vestTokensBeforeMerging) external virtual
-  // lets assume for now that they pay with the feetoken used in the primary SA
+  function merge(uint256[] memory tokenIds, bool vestTokensBefore) external virtual
+  // TODO: lets assume for now that they pay with the feetoken used in the primary SA
+  // we must decide how to handle these cases
   feeRequired(tokenIds[0]) {
     require(tokenIds.length >= 2, "SAManager: Not enough SAs for merging");
     for (uint256 i = 0; i < tokenIds.length; i++) {
-      require(_token.ownerOf(tokenIds[i]) == msg.sender, "SAManager: Only owner can merge bundle");
+      require(_token.ownerOf(tokenIds[i]) == msg.sender, "SAManager: Only owner can merge tokens");
     }
-    if (vestTokensBeforeMerging && !_token.vest(tokenIds[0])) {
+    if (vestTokensBefore && !_token.vest(tokenIds[0])) {
       return;
     }
 
@@ -102,7 +103,7 @@ contract SAManager is AccessControl {
     uint256 bundle0Len = bundle0.sas.length;
     for (uint256 i = 1; i < tokenIds.length; i++) {
       require(tokenIds[0] != tokenIds[i], "SAManager: Bundle can not merge to itself");
-      if (vestTokensBeforeMerging && !_token.vest(tokenIds[i])) {
+      if (vestTokensBefore && !_token.vest(tokenIds[i])) {
         continue;
       }
       ISAStorage.Bundle memory bundle1 = _storage.getBundle(tokenIds[i]);
@@ -127,12 +128,15 @@ contract SAManager is AccessControl {
     }
   }
 
-//  function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual onlyNFTOwner(tokenId) feeRequired {
-//    if (!vest(tokenId)) {
+//  function split(uint256 tokenId, uint256[] memory keptAmounts, bool vestTokensBefore) public virtual feeRequired {
+//
+//    require(_token.ownerOf(tokenIds[i]) == msg.sender, "SAManager: Only owner can split a token");
+//
+//    if (vestTokensBefore && !_token.vest(tokenId)) {
 //      return;
 //    }
-//    ISAStorage.Bundle storage bundle = _bundles[tokenId];
-//    ISAStorage.SA[] storage sas = bundle.sas;
+//    ISAStorage.Bundle memory bundle = _bundles[tokenId];
+//    ISAStorage.SA[] memory sas = bundle.sas;
 //
 //    require(keptAmounts.length == bundle.sas.length, "SANFT: length of sa does not match split");
 //    uint256 numEmptySAs;
@@ -154,7 +158,59 @@ contract SAManager is AccessControl {
 //      _bundles[_nextTokenId].acquisitionTime = block.timestamp;
 //      _mint(msg.sender, _nextTokenId++);
 //    }
-////    cleanEmptySAs(bundle, tokenId, numEmptySAs);
+//  }
+
+  // remove subSAs that had no token left.  The containing SA will also be burned if all of
+  // its sub SAs are empty and function returns false.
+//  function cleanEmptySA(SA storage sa, uint256 saId, uint256 numEmptySubSAs) internal virtual returns(bool) {
+//    bool emptySA = false;
+//    if (sa.subSAs.length == 0 || sa.subSAs.length == numEmptySubSAs) {
+//      console.log("SANFT: Simple empty SA", saId, sa.subSAs.length, numEmptySubSAs);
+//      emptySA = true;
+//    } else {
+//      console.log("SANFT: Regular process");
+//      if (numEmptySubSAs < sa.subSAs.length/2) { // empty is less than half, then shift elements
+//        console.log("SANFT: Taking the shift route", sa.subSAs.length, numEmptySubSAs);
+//        for (uint256 i = 0; i < sa.subSAs.length; i++) {
+//          if (sa.subSAs[i].remainingAmount == 0) {
+//            // find one subSA from the end that's not 100% vested
+//            for(uint256 j = sa.subSAs.length - 1; j > i; j--) {
+//              if(sa.subSAs[j].remainingAmount > 0) {
+//                sa.subSAs[i] = sa.subSAs[j];
+//              }
+//              sa.subSAs.pop();
+//            }
+//            // cannot find such subSA
+//            if (sa.subSAs[i].remainingAmount == 0) {
+//              assert(sa.subSAs.length - 1 == i);
+//              sa.subSAs.pop();
+//            }
+//          }
+//        }
+//      } else { // empty is more than half, then create a new array
+//        console.log("Taking the new array route", sa.subSAs.length, numEmptySubSAs);
+//        SubSA[] memory newSubSAs = new SubSA[](sa.subSAs.length - numEmptySubSAs);
+//        uint256 subSAindex;
+//        for (uint256 i = 0; i < sa.subSAs.length; i++) {
+//          if (sa.subSAs[i].remainingAmount > 0) {
+//            newSubSAs[subSAindex++] = sa.subSAs[i];
+//          }
+//          delete sa.subSAs[i];
+//        }
+//        delete sa.subSAs;
+//        assert (sa.subSAs.length == 0);
+//        for (uint256 i = 0; i < newSubSAs.length; i++) {
+//          sa.subSAs.push(newSubSAs[i]);
+//        }
+//      }
+//    }
+//    if (emptySA || sa.subSAs.length == 0) {
+//      _burn(saId);
+//      delete _sas[saId].subSAs;
+//      delete _sas[saId];
+//      return false;
+//    }
+//    return true;
 //  }
 
 }
