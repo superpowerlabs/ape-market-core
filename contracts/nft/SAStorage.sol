@@ -35,6 +35,10 @@ contract SAStorage is ISAStorage, LevelAccess {
     _;
   }
 
+  constructor() {
+    _revertMessages[MANAGER_LEVEL] = "SAStorage: caller is not a manager";
+  }
+
   function getBundle(uint bundleId) public override virtual view
   returns (Bundle memory)
   {

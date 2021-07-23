@@ -299,7 +299,7 @@ describe.only("Integration Test", function() {
       console.log("Withdraw payment from sale");
       await assertThrowsMessage(
           abcSale.connect(xyzOwner).withdrawPayment(20000),
-          "Sale: caller is not the owner"
+          "Sale: caller is not the seller"
       )
 
       console.log("balance is", (await tether.balanceOf(abcSale.address)).toNumber());

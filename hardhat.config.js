@@ -54,7 +54,8 @@ module.exports = {
     rinkeby: env.rinkeby,
   },
   gasReporter: {
-    currency: 'USD'
+    currency: 'USD',
+    coinmarketcap: env.coinmarketcap
   }
 };
 
