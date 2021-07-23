@@ -37,9 +37,7 @@ contract SAManager is LevelAccess {
   uint256 _feeAmount; // the amount of fee in _feeToken charged for merge, split and transfer
 
   modifier feeRequired() {
-    console.log(1);
     _feeToken.transferFrom(msg.sender, _apeWallet, _feeAmount);
-    console.log(2);
     _;
   }
 
