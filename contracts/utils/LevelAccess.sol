@@ -10,7 +10,7 @@ contract LevelAccess {
   mapping(address => uint) public levels;
 
   modifier onlyLevel(uint level) {
-    require(levels[msg.sender] == level, "LevelAccess: forbidden");
+    require(levels[msg.sender] == level, "LevelAccess: access forbidden");
     _;
   }
 

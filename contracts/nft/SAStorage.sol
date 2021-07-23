@@ -170,6 +170,7 @@ contract SAStorage is ISAStorage, LevelAccess {
       _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.add(diff);
     } else {
       _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.sub(diff);
+      console.log("Remaining %s", _bundles[bundleId].sas[i].remainingAmount);
     }
   }
 

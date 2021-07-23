@@ -46,7 +46,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   mapping(uint => bool) private _paused;
 
   constructor(address factoryAddress, address storageAddress)
-  ERC721("Smart Agreement", "SA") {
+  ERC721("SA NFT Token", "SANFT") {
     _factory = ISaleFactory(factoryAddress);
     _storage = ISAStorage(storageAddress);
   }
@@ -116,8 +116,21 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     require(isContract(msg.sender), "SAToken: The caller is not a contract");
     require(_factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
     _safeMint(to, _tokenIdCounter.current());
+    console.log("Minted %s", _tokenIdCounter.current());
     _storage.addBundle(_tokenIdCounter.current(), msg.sender, amount, 0);
     _tokenIdCounter.increment();
+  }
+
+  function mintWithExistingBundle(address to) external override virtual
+  onlyLevel(MANAGER_LEVEL) {
+    require(_storage.getBundle(_tokenIdCounter.current()).sas[0].sale != address(0), "SAToken: Bundle does not exists");
+    console.log("Minted %s", _tokenIdCounter.current());
+    _safeMint(to, _tokenIdCounter.current());
+    _tokenIdCounter.increment();
+  }
+
+  function nextTokenId() external view virtual override returns(uint) {
+    return _tokenIdCounter.current();
   }
 
   // vest return the number of non empty sas after vest.
@@ -139,7 +152,6 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
       _storage.updateSA(tokenId, i, vestedPercentage, vestedAmount);
     }
     if (numEmptySubSAs == bundle.sas.length) {
-      _storage.deleteBundle(tokenId);
       _burn(tokenId);
       return false;
     }

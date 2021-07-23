@@ -21,6 +21,10 @@ interface ISAToken {
 
   function mint(address to, uint256 amount) external;
 
+  function mintWithExistingBundle(address to) external;
+
+  function nextTokenId() external view returns(uint);
+
   function burn(uint256 tokenId) external;
 
   function vest(uint256 tokenId) external returns (bool);

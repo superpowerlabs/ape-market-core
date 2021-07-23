@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "hardhat/console.sol";
 
 import "./ISale.sol";
+//import "./SaleLib.sol";
 import "../utils/LevelAccess.sol";
 
 contract Sale is ISale, LevelAccess {
@@ -20,8 +21,12 @@ contract Sale is ISale, LevelAccess {
   address private _apeWallet;
   mapping(address => uint256) private _approvedAmounts;
 
+  modifier onlySaleOwner() {
+    require(levels[msg.sender] == SALE_OWNER_LEVEL, "Sale: caller is not the owner");
+    _;
+  }
 
-  constructor(Setup memory setup_, VestingStep[] memory schedule){
+  constructor(Setup memory setup_, VestingStep[] memory schedule, address apeWallet_){
     _setup = setup_;
     for (uint256 i = 0; i < schedule.length; i++) {
       if (i > 0) {
@@ -31,14 +36,19 @@ contract Sale is ISale, LevelAccess {
     }
     require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
     grantLevel(SALE_OWNER_LEVEL, _setup.owner);
+    _apeWallet = apeWallet_;
+  }
+
+  function getSetup() public view returns (Setup memory, VestingStep[] memory) {
+    return (_setup, _vestingSchedule);
   }
 
   function getPaymentToken() external view override returns (address){
     return address(_setup.paymentToken);
   }
 
-  function setApeWallet(address apeWallet_) external override
-  onlyLevel(OWNER_LEVEL) {
+  function changeApeWallet(address apeWallet_) external override
+  onlySaleOwner {
     _apeWallet = apeWallet_;
   }
 
@@ -50,7 +60,7 @@ contract Sale is ISale, LevelAccess {
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external virtual override
-  onlyLevel(SALE_OWNER_LEVEL) {
+  onlySaleOwner {
     uint256 fee = _setup.capAmount.mul(_setup.tokenFeePercentage).div(100);
     _setup.sellingToken.transferFrom(_setup.owner, address(this), _setup.capAmount.add(fee));
     _setup.remainingAmount = _setup.capAmount;
@@ -59,7 +69,7 @@ contract Sale is ISale, LevelAccess {
   // Sale creator calls this function to approve investor.
   // can be called repeated. unused amount can be forfeited by setting it to 0
   function approveInvestor(address investor, uint256 amount) external virtual override
-  onlyLevel(SALE_OWNER_LEVEL) {
+  onlySaleOwner {
     _approvedAmounts[investor] = amount;
   }
 
@@ -85,12 +95,12 @@ contract Sale is ISale, LevelAccess {
   }
 
   function withdrawPayment(uint256 amount) external virtual override
-  onlyLevel(SALE_OWNER_LEVEL) {
+  onlySaleOwner {
     _setup.paymentToken.transfer(msg.sender, amount);
   }
 
   function withdrawToken(uint256 amount) external virtual override
-  onlyLevel(SALE_OWNER_LEVEL) {
+  onlySaleOwner {
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
     require(amount <= _setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
@@ -100,7 +110,7 @@ contract Sale is ISale, LevelAccess {
   }
 
   function triggerTokenListing() external virtual override
-  onlyLevel(SALE_OWNER_LEVEL) {
+  onlySaleOwner {
     require(_setup.tokenListTimestamp == 0, "Sale: Token already listed");
     _setup.tokenListTimestamp = block.timestamp;
   }
@@ -110,6 +120,7 @@ contract Sale is ISale, LevelAccess {
   }
 
   function getVestedPercentage() public virtual view override returns (uint256) {
+//    return SaleLib.getVestedPercentage(_setup, _vestingSchedule);
     if (_setup.tokenListTimestamp == 0) {// token not listed yet!
       return 0;
     }
@@ -131,7 +142,7 @@ contract Sale is ISale, LevelAccess {
     uint256 vestedPercentage,
     uint256 lastVestedPercentage,
     uint256 lockedAmount) public virtual view override returns (uint256) {
-
+//    return SaleLib.getVestedAmount(vestedPercentage, lastVestedPercentage, lockedAmount);
     uint256 vestedAmount;
     if (vestedPercentage == 100) {
       vestedAmount = lockedAmount;
