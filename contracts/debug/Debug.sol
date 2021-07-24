@@ -53,6 +53,8 @@ contract Debug {
   Setup private _setup;
   Setup2 private _setup2;
 
+  bool private _notTransferable;
+
   function setSetup(Setup memory setup_) external {
     _setup = setup_;
   }
@@ -79,6 +81,16 @@ contract Debug {
     }
   }
 
+  function transferability(bool isTokenTransferable) external {
+    if (_setup.isTokenTransferable != isTokenTransferable) {
+      _setup.isTokenTransferable = isTokenTransferable;
+    }
+  }
 
+  function transferability2(bool isTokenTransferable) external {
+    if (_setup2.isTokenTransferable != isTokenTransferable) {
+      _setup2.isTokenTransferable = isTokenTransferable;
+    }
+  }
 
 }

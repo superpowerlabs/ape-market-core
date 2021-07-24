@@ -63,6 +63,7 @@ describe.only("Debug", function() {
 
       await debug.setSetup(saleSetup);
       await debug.setVesting(saleVestingSchedule);
+      await debug.transferability(false);
 
     })
 
@@ -72,6 +73,7 @@ describe.only("Debug", function() {
 
       await debug.setSetup2(saleSetup);
       await debug.setVesting2(saleVestingSchedule);
+      await debug.transferability2(false);
 
     })
 
