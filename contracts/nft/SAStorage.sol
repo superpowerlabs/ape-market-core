@@ -47,6 +47,12 @@ contract SAStorage is ISAStorage, LevelAccess {
     _addBundleWithSA(bundleId, saleAddress, remainingAmount, vestedPercentage);
   }
 
+  function newBundle(uint bundleId) external override virtual
+  onlyLevel(MANAGER_LEVEL)
+  {
+    _newBundle(bundleId);
+  }
+
 //  function swapAndDeleteBundle(uint bundleId, uint newBundleId) external override virtual
 //  onlyLevel(MANAGER_LEVEL) bundleExists(bundleId){
 //    require(_bundles[newBundleId].creationTimestamp == 0, "SAStorage: new bundle already exists");
@@ -133,20 +139,20 @@ contract SAStorage is ISAStorage, LevelAccess {
   ) internal virtual
   {
     require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
-    _newBundle(bundleId, saleAddress);
+    _newBundle(bundleId);
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     _addNewSA(bundleId, listedSale);
+    emit BundleAdded(bundleId, saleAddress);
   }
 
   function _newBundle(
-    uint bundleId,
-    address saleAddress
+    uint bundleId
   ) internal virtual
   {
     require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
     _bundles[bundleId].creationTimestamp = block.timestamp;
     _bundles[bundleId].acquisitionTimestamp = block.timestamp;
-    emit BundleAdded(bundleId, saleAddress);
+    emit NewBundle(bundleId);
   }
 
   function _deleteBundle(uint bundleId) internal virtual

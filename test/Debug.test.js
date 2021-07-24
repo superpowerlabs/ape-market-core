@@ -1,7 +1,7 @@
 const {expect, assert} = require("chai")
 const {assertThrowsMessage, formatBundle} = require('./helpers')
 
-describe.skip("Debug", function() {
+describe.only("Debug", function() {
 
   let Debug
   let debug
@@ -36,7 +36,7 @@ describe.skip("Debug", function() {
       capAmount: 20000,
       pricingToken: 1,
       pricingPayment: 2,
-      tokenListTimestamp: 0,
+      tokenListTimestamp: 1627155546,
       tokenFeePercentage: 5,
       paymentFeePercentage: 10,
       tokenIsTransferable: true
@@ -74,6 +74,14 @@ describe.skip("Debug", function() {
       await debug.setSetup2(saleSetup);
       await debug.setVesting2(saleVestingSchedule);
       await debug.transferability2(false);
+
+    })
+
+    it("should set Setup3", async function () {
+
+      await debug.setSetup3(saleSetup);
+
+      assert((await debug.getListTimestamp()), saleSetup.tokenListTimestamp)
 
     })
 

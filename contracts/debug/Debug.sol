@@ -50,8 +50,25 @@ contract Debug {
     bool isTokenTransferable;
   }
 
+  struct Setup3 {
+    address satoken;
+    address sellingToken;
+    address paymentToken;
+    address owner;
+    uint256 remainingAmount;
+    uint32 minAmount;
+    uint32 capAmount;
+    uint32 pricingToken;
+    uint32 pricingPayment;
+    uint32 tokenListTimestamp;
+    uint32 tokenFeePercentage;
+    uint32 paymentFeePercentage;
+    bool isTokenTransferable;
+  }
+
   Setup private _setup;
   Setup2 private _setup2;
+  Setup3 private _setup3;
 
   bool private _notTransferable;
 
@@ -61,6 +78,10 @@ contract Debug {
 
   function setSetup2(Setup2 memory setup_) external {
     _setup2 = setup_;
+  }
+
+  function setSetup3(Setup3 memory setup_) external {
+    _setup3 = setup_;
   }
 
   function setVesting(VestingStep[] memory schedule) external {
@@ -91,6 +112,10 @@ contract Debug {
     if (_setup2.isTokenTransferable != isTokenTransferable) {
       _setup2.isTokenTransferable = isTokenTransferable;
     }
+  }
+
+  function getListTimestamp() external returns (uint32){
+    return _setup3.tokenListTimestamp;
   }
 
 }

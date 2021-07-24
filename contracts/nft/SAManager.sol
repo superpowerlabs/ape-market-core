@@ -76,6 +76,8 @@ contract SAManager is LevelAccess {
     for (uint256 i = 0; i < tokenIds.length; i++) {
       require(_token.ownerOf(tokenIds[i]) == msg.sender, "SAManager: Only owner can merge tokens");
     }
+    uint nextTokenId = _token.nextTokenId();
+    ISAStorage.Bundle memory newBundle;
     ISAStorage.Bundle memory bundle0 = _storage.getBundle(tokenIds[0]);
     // keep this in a variable since sa0.sas will change
     uint256 bundle0Len = bundle0.sas.length;
