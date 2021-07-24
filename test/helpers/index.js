@@ -14,6 +14,21 @@ module.exports = {
       }
       assert.isTrue(shouldBeTrue)
     }
+  },
+
+  formatBundle(bundle) {
+    const result = {}
+    result.creationTimestamp = bundle.creationTimestamp.toNumber()
+    result.acquisitionTimestamp = bundle.acquisitionTimestamp.toNumber()
+    result.sas = []
+    for (let sa of bundle.sas) {
+      result.sas.push({
+        sale: sa.sale,
+        remainingAmount: sa.remainingAmount.toNumber(),
+        vestedPercentage: sa.vestedPercentage.toNumber()
+      })
+    }
+    return result
   }
 
 }

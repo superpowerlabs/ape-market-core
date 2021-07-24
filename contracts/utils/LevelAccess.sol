@@ -8,15 +8,26 @@ contract LevelAccess {
   uint public constant OWNER_LEVEL = 1;
 
   mapping(address => uint) public levels;
+  mapping(uint => string) internal _revertMessages;
 
   modifier onlyLevel(uint level) {
-    require(levels[msg.sender] == level, "LevelAccess: forbidden");
+    _checkLevel(level);
     _;
   }
 
   constructor () {
     levels[msg.sender] = OWNER_LEVEL;
     emit LevelSet(OWNER_LEVEL, msg.sender, address(0));
+  }
+
+  function _checkLevel(uint level) internal view {
+    if (levels[msg.sender] != level) {
+      if (bytes(_revertMessages[level]).length != 0) {
+        revert(_revertMessages[level]);
+      } else {
+        revert("LevelAccess: caller not authorized.");
+      }
+    }
   }
 
   function grantLevel(uint level, address addr) public

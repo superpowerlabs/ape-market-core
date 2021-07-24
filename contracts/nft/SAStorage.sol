@@ -16,9 +16,9 @@ import "hardhat/console.sol";
 */
 
 
-contract SAStorage is ISAStorage,
-LevelAccess // grant manager level 2
-{
+contract SAStorage is ISAStorage, LevelAccess {
+  // after deploying, we must grant SAToken and SAManager with MANAGER_LEVEL
+  // so that they can handle the Bundle/SA storage
 
   using SafeMath for uint256;
   uint public constant MANAGER_LEVEL = 2;
@@ -33,6 +33,10 @@ LevelAccess // grant manager level 2
   modifier SAExists(uint bundleId, uint i) {
     require(i < _bundles[bundleId].sas.length, "SAStorage: SA does not exist");
     _;
+  }
+
+  constructor() {
+    _revertMessages[MANAGER_LEVEL] = "SAStorage: caller is not a manager";
   }
 
   function getBundle(uint bundleId) public override virtual view
@@ -170,6 +174,7 @@ LevelAccess // grant manager level 2
       _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.add(diff);
     } else {
       _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.sub(diff);
+      console.log("Remaining %s", _bundles[bundleId].sas[i].remainingAmount);
     }
   }
 

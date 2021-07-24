@@ -5,7 +5,7 @@ const saleJson = require('../src/artifacts/contracts/sale/Sale.sol/Sale.json')
 
 describe("SaleFactory", async function () {
 
-  let Token
+  let ERC20Token
   let sellingToken
   let Tether
   let tether
@@ -48,8 +48,8 @@ describe("SaleFactory", async function () {
     satoken = await SAToken.deploy(factory.address, storage.address)
     await satoken.deployed()
 
-    Token = await ethers.getContractFactory("Token")
-    sellingToken = await Token.connect(seller).deploy("Abc Token", "ABC")
+    ERC20Token = await ethers.getContractFactory("ERC20Token")
+    sellingToken = await ERC20Token.connect(seller).deploy("Abc Token", "ABC")
     await sellingToken.deployed()
 
     Tether = await ethers.getContractFactory("TetherMock")
@@ -109,7 +109,6 @@ describe("SaleFactory", async function () {
       await expect(factory.connect(factoryAdmin).newSale(saleSetup,saleVestingSchedule))
           .to.emit(factory, "NewSale")
       const saleAddress = await factory.lastSale()
-      assert.isTrue(await factory.isLegitSale(saleAddress))
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
       assert.equal((await sale.levels(saleSetup.owner)).toNumber(), (await sale.SALE_OWNER_LEVEL()).toNumber())
       assert.isTrue(await factory.isLegitSale(saleAddress))

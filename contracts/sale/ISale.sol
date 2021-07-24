@@ -19,11 +19,7 @@ interface ISale {
 
   // This struct contains the basic information about the sale.
   struct Setup {
-    // TODO: should this be "address satoken" instead?
     ISAToken satoken; // The deployed address of SANFT contract
-//    uint256 saleBeginTime; // use 0 to start as soon as contract is deployed
-    // it's easier than setting up a saleEndTime, especially for testing.
-//    uint256 duration; // how long in seconds would the sale run.
     uint256 minAmount; // minimum about of token needs to be purchased for each invest transaction
     uint256 capAmount; // the max number, for recording purpose. not changed by contract
     uint256 remainingAmount; // how much token are still up for sale
@@ -50,7 +46,7 @@ interface ISale {
 
   function getPaymentToken() external view returns (address);
 
-  function setApeWallet(address apeWallet_) external;
+  function changeApeWallet(address apeWallet_) external;
 
   function apeWallet() external view returns (address);
 
