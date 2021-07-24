@@ -1,7 +1,7 @@
 const {expect, assert} = require("chai")
 const {assertThrowsMessage, formatBundle} = require('./helpers')
 
-describe.only("Debug", function() {
+describe.skip("Debug", function() {
 
   let Debug
   let debug

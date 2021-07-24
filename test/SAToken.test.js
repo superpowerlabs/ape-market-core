@@ -47,7 +47,6 @@ describe("SAToken", async function () {
     await saleMock.setToken(token.address)
     await fakeSale.setToken(token.address)
     await storage.grantLevel(await storage.MANAGER_LEVEL(), token.address)
-    await token.grantLevel(await token.PAUSER_LEVEL(), manager.address)
   }
 
   describe('#constructor & #updateFactory', async function () {
@@ -98,7 +97,7 @@ describe("SAToken", async function () {
 
       await assertThrowsMessage(
           token.connect(buyer2).mint(buyer.address, 100),
-          'SAToken: The caller is not a contract')
+          'SAToken: Only legit sales can mint its own NFT!')
 
     })
   })
