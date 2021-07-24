@@ -11,8 +11,6 @@ contract SaleFactory is LevelAccess {
 
   event NewSale(address saleAddress);
 
-  address private _lastSaleAddress;
-
   uint public constant FACTORY_ADMIN_LEVEL = 5;
 
   mapping(address => bool) private _sales;

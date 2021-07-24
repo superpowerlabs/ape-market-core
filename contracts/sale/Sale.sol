@@ -32,7 +32,6 @@ contract Sale is ISale, LevelAccess {
     require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
     _apeWallet = apeWallet_;
     // set permissions and set custom revert message
-    _revertMessages[SALE_OWNER_LEVEL] = "Sale: caller is not the seller";
     grantLevel(SALE_OWNER_LEVEL, _setup.owner);
   }
 

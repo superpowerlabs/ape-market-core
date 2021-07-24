@@ -5,7 +5,7 @@ const {assertThrowsMessage, formatBundle} = require('./helpers')
 
 const saleJson = require('../src/artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe.only("Integration Test", function() {
+describe("Integration Test", function() {
 
   let ERC20Token
   let abc
@@ -214,7 +214,7 @@ describe.only("Integration Test", function() {
       // do the split
       keptAmounts = [8000];
       await tether.connect(investor2).approve(manager.address, 100);
-      await manager.connect(investor2).split(nft, keptAmounts, false);
+      await manager.connect(investor2).split(nft, keptAmounts);
       expect(await satoken.balanceOf(investor2.address)).to.equal(2);
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
       bundle = await storage.getBundle(nft);
@@ -245,7 +245,7 @@ describe.only("Integration Test", function() {
       nft1 = satoken.tokenOfOwnerByIndex(investor1.address, 1);
       nft2 = satoken.tokenOfOwnerByIndex(investor1.address, 2);
       await tether.connect(investor1).approve(manager.address, 100);
-      await manager.connect(investor1).merge([nft0, nft1, nft2], false);
+      await manager.connect(investor1).merge([nft0, nft1, nft2]);
       expect(await satoken.balanceOf(investor1.address)).to.equal(1);
       expect(await tether.balanceOf(apeWallet.address)).to.equal(4200);
       nft = await satoken.tokenOfOwnerByIndex(investor1.address, 0);
@@ -299,7 +299,7 @@ describe.only("Integration Test", function() {
       console.log("Withdraw payment from sale");
       await assertThrowsMessage(
           abcSale.connect(xyzOwner).withdrawPayment(20000),
-          "Sale: caller is not the seller"
+          "LevelAccess: caller not authorized"
       )
 
       console.log("balance is", (await tether.balanceOf(abcSale.address)).toNumber());

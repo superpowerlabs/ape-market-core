@@ -71,23 +71,16 @@ contract SAManager is LevelAccess {
     return _apeWallet;
   }
 
-  function merge(uint256[] memory tokenIds, bool vestTokensBefore) external virtual feeRequired {
+  function merge(uint256[] memory tokenIds) external virtual feeRequired {
     require(tokenIds.length >= 2, "SAManager: Not enough SAs for merging");
     for (uint256 i = 0; i < tokenIds.length; i++) {
       require(_token.ownerOf(tokenIds[i]) == msg.sender, "SAManager: Only owner can merge tokens");
     }
-    if (vestTokensBefore && !_token.vest(tokenIds[0])) {
-      return;
-    }
-
     ISAStorage.Bundle memory bundle0 = _storage.getBundle(tokenIds[0]);
     // keep this in a variable since sa0.sas will change
     uint256 bundle0Len = bundle0.sas.length;
     for (uint256 i = 1; i < tokenIds.length; i++) {
       require(tokenIds[0] != tokenIds[i], "SAManager: Bundle can not merge to itself");
-      if (vestTokensBefore && !_token.vest(tokenIds[i])) {
-        continue;
-      }
       ISAStorage.Bundle memory bundle1 = _storage.getBundle(tokenIds[i]);
       // go through each sa in bundle1, and compare with every sa
       // in bundle0, if same sale then combine and update the matching sa, otherwise, push
@@ -110,13 +103,10 @@ contract SAManager is LevelAccess {
     }
   }
 
-  function split(uint256 tokenId, uint256[] memory keptAmounts, bool vestTokensBefore) public virtual feeRequired {
+  function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual feeRequired {
 
     require(_token.ownerOf(tokenId) == msg.sender, "SAManager: Only owner can split a token");
 
-    if (vestTokensBefore && !_token.vest(tokenId)) {
-      return;
-    }
     ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
     ISAStorage.SA[] memory sas = bundle.sas;
 
@@ -135,7 +125,7 @@ contract SAManager is LevelAccess {
       _storage.changeSA(tokenId, j, sas[i].remainingAmount.sub(keptAmounts[i]), false);
       if (!created) {
         console.log("Changed %s", sas[i].remainingAmount.sub(keptAmounts[i]));
-        _storage.addBundle(nextTokenId, sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), 0);
+        _storage.addBundleWithSA(nextTokenId, sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), 0);
         _token.mintWithExistingBundle(msg.sender);
         created = true;
       } else {

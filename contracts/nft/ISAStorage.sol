@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 interface ISAStorage {
 
-  event BundleAdded(uint bundleId, address initialSale, uint256 remainingAmount, uint256 vestedPercentage);
+  event BundleAdded(uint bundleId, address initialSale);
   event BundleDeleted(uint bundleId);
 
   struct SA {
@@ -20,7 +20,7 @@ interface ISAStorage {
 
   function getBundle(uint bundleId) external view returns (Bundle memory);
 
-  function addBundle(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external returns (uint);
+  function addBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external;
 
   function deleteBundle(uint bundleId) external;
 

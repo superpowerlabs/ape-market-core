@@ -19,14 +19,14 @@ describe("SaleFactory", async function () {
   let saleSetup
   let saleVestingSchedule
 
-  let owner, factoryAdmin, newFactoryAdmin, seller, buyer, buyer2
+  let owner, factoryAdmin, newFactoryAdmin, apeWallet, seller, buyer, buyer2
   let addr0 = '0x0000000000000000000000000000000000000000'
 
   let timestamp
   let chainId
 
   before(async function () {
-    [owner, factoryAdmin, newFactoryAdmin, fakeSale, seller, buyer, buyer2] = await ethers.getSigners()
+    [owner, factoryAdmin, newFactoryAdmin, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
   })
 
   async function getTimestamp() {
@@ -106,7 +106,7 @@ describe("SaleFactory", async function () {
 
     it("should create a new sale", async function () {
 
-      await expect(factory.connect(factoryAdmin).newSale(saleSetup,saleVestingSchedule))
+      await expect(factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address))
           .to.emit(factory, "NewSale")
       const saleAddress = await factory.lastSale()
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
@@ -120,8 +120,8 @@ describe("SaleFactory", async function () {
     it("should throw if trying to create a sale as contract owner", async function () {
 
       await assertThrowsMessage(
-          factory.newSale(saleSetup,saleVestingSchedule),
-          'LevelAccess: forbidden')
+          factory.newSale(saleSetup, saleVestingSchedule, apeWallet.address),
+          'LevelAccess: caller not authorized')
 
     })
 
