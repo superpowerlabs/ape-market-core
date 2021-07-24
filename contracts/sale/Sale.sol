@@ -53,6 +53,17 @@ contract Sale is ISale, LevelAccess {
     return _apeWallet;
   }
 
+  function makeTransferable() external override {
+    // it cannot be changed back
+    if (!_setup.isTokenTransferable) {
+      _setup.isTokenTransferable = true;
+    }
+  }
+
+  function isTransferable() external override view returns(bool){
+    return _setup.isTokenTransferable;
+  }
+
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external virtual override

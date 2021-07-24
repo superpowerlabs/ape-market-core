@@ -68,6 +68,10 @@ interface ISale {
 
   function triggerTokenListing() external;
 
+  function makeTransferable() external;
+
+  function isTransferable() external view returns(bool);
+
   function isTokenListed() external view returns (bool);
 
   function getVestedPercentage() external view returns (uint256);
