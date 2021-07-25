@@ -5,11 +5,6 @@ import "../utils/LevelAccess.sol";
 import "./Sale.sol";
 import "./ISaleData.sol";
 
-interface ISaleDataMin {
-
-  function grantManagerLevel(address saleAddress) external;
-}
-
 // for debugging only
 import "hardhat/console.sol";
 
@@ -50,7 +45,7 @@ contract SaleFactory is LevelAccess {
   {
     Sale sale = new Sale(apeWallet, saleDataAddress);
     address addr = address(sale);
-    ISaleDataMin saleData = ISaleDataMin(saleDataAddress);
+    ISaleData saleData = ISaleData(saleDataAddress);
     saleData.grantManagerLevel(addr);
     sale.initialize(setup, schedule);
     _allSales.push(addr);
