@@ -13,11 +13,10 @@ contract Sale is ISale, LevelAccess {
 
   using SafeMath for uint256;
 
-  uint public constant SALE_OWNER_LEVEL = 3;
-
   VestingStep[] _vestingSchedule;
-
   Setup private _setup;
+
+  uint public constant SALE_OWNER_LEVEL = 3;
   address private _apeWallet;
   mapping(address => uint256) private _approvedAmounts;
 
@@ -64,13 +63,20 @@ contract Sale is ISale, LevelAccess {
     return _setup.isTokenTransferable;
   }
 
+  function normalize(uint32 amount) public view override returns (uint) {
+    uint decimals = _setup.sellingToken.decimals();
+    return uint256(amount).mul(10 ** decimals);
+  }
+
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external virtual override
   onlyLevel(SALE_OWNER_LEVEL) {
-    uint256 fee = _setup.capAmount.mul(_setup.tokenFeePercentage).div(100);
-    _setup.sellingToken.transferFrom(_setup.owner, address(this), _setup.capAmount.add(fee));
-    _setup.remainingAmount = _setup.capAmount;
+    uint capAmount = normalize(_setup.capAmount);
+    uint256 fee = capAmount.mul(_setup.tokenFeePercentage).div(100);
+//    console.log("capAmount.add(fee)", capAmount, capAmount.add(fee));
+    _setup.sellingToken.transferFrom(_setup.owner, address(this), capAmount.add(fee));
+    _setup.remainingAmount = capAmount;
   }
 
   // Sale creator calls this function to approve investor.
@@ -83,10 +89,11 @@ contract Sale is ISale, LevelAccess {
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external virtual override {
-    require(amount >= _setup.minAmount, "Sale: Amount is too low");
+    require(amount >= normalize(_setup.minAmount), "Sale: Amount is too low");
     require(amount <= _setup.remainingAmount, "Sale: Amount is too high");
     require(_approvedAmounts[msg.sender] >= amount, "Sale: Amount if above approved amount");
     uint256 tokenPayment = amount.mul(_setup.pricingPayment).div(_setup.pricingToken);
+    console.log("tokenPayment", tokenPayment);
     uint256 buyerFee = tokenPayment.mul(_setup.paymentFeePercentage).div(100);
     uint256 sellerFee = amount.mul(_setup.tokenFeePercentage).div(100);
     _setup.paymentToken.transferFrom(msg.sender, _apeWallet, buyerFee);
@@ -111,7 +118,9 @@ contract Sale is ISale, LevelAccess {
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
     require(amount <= _setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
-    uint256 fee = _setup.capAmount.mul(_setup.tokenFeePercentage).div(100);
+    uint capAmount = normalize(_setup.capAmount);
+    uint256 fee = capAmount.mul(_setup.tokenFeePercentage).div(100);
+    // TODO: why do we transfer also the fee to the seller?
     _setup.sellingToken.transfer(msg.sender, amount + fee);
     _setup.remainingAmount -= amount;
   }
@@ -119,7 +128,7 @@ contract Sale is ISale, LevelAccess {
   function triggerTokenListing() external virtual override
   onlyLevel(SALE_OWNER_LEVEL) {
     require(_setup.tokenListTimestamp == 0, "Sale: Token already listed");
-    _setup.tokenListTimestamp = block.timestamp;
+    _setup.tokenListTimestamp = uint32(block.timestamp);
   }
 
   function isTokenListed() external virtual view override returns (bool) {
@@ -134,7 +143,7 @@ contract Sale is ISale, LevelAccess {
     VestingStep[] storage vs = _vestingSchedule;
     uint256 vestedPercentage;
     for (uint256 i = 0; i < vs.length; i++) {
-      uint256 ts = _setup.tokenListTimestamp.add(vs[i].timestamp);
+      uint256 ts = uint256(_setup.tokenListTimestamp).add(vs[i].timestamp);
       console.log("vesting ts", ts);
       if (ts > block.timestamp) {
         break;

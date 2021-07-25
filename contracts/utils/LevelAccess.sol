@@ -5,9 +5,9 @@ contract LevelAccess {
 
   event LevelSet(uint level, address account, address setter);
 
-  uint public constant OWNER_LEVEL = 1;
-
   mapping(address => uint) public levels;
+
+  uint public constant OWNER_LEVEL = 1;
 
   modifier onlyLevel(uint level) {
     require(levels[msg.sender] == level, "LevelAccess: caller not authorized.");

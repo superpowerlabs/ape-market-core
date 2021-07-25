@@ -15,7 +15,7 @@ library SaleLib {
     }
     uint256 vestedPercentage;
     for (uint256 i = 0; i < vs.length; i++) {
-      uint256 ts = setup.tokenListTimestamp.add(vs[i].timestamp);
+      uint256 ts = uint256(setup.tokenListTimestamp).add(vs[i].timestamp);
       if (ts > block.timestamp) {
         break;
       }
