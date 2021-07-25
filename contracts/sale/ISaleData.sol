@@ -40,11 +40,27 @@ interface ISaleData {
     bool isTokenTransferable;
   }
 
-  function setUpSale(Setup memory setup, VestingStep[] memory schedule) external;
+  function normalize(uint saleId, uint32 amount) external view returns (uint);
+
+  function setVest(uint saleId, uint256 lastVestedPercentage, uint256 lockedAmount) external returns (uint, uint);
+
+  function triggerTokenListing(uint saleId) external;
+
+  function setWithdrawToken(uint saleId, uint256 amount) external returns (ERC20Min, uint);
+
+  function setInvest(uint saleId, uint256 amount) external returns (uint, uint, uint);
+
+  function setLaunch(uint saleId) external returns (ERC20Min, address, uint);
+
+  function makeTransferable(uint saleId) external;
+
+  function getSaleById(uint saleId) external view returns (Setup memory);
+
+  function setUpSale(Setup memory setup, VestingStep[] memory schedule) external returns (uint);
 
   function grantManagerLevel(address saleAddress) external;
 
-  function getVestedPercentage(Setup memory setup, VestingStep[] memory vs) external view returns (uint256);
+  function getVestedPercentage(uint saleId) external view returns (uint256);
 
   function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
 

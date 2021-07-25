@@ -3,22 +3,31 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
-import "./ISale.sol";
 import "../utils/LevelAccess.sol";
 import "./ISaleData.sol";
 
-contract Sale is ISale, LevelAccess {
+interface ISAStorage {
+
+  struct SA {
+    address sale;
+    uint256 remainingAmount;
+    uint256 vestedPercentage;
+  }
+}
+
+contract Sale is LevelAccess {
 
   using SafeMath for uint256;
 
-  ISaleData.VestingStep[] _vestingSchedule;
-  ISaleData.Setup private _setup;
+//  ISaleData.VestingStep[] _vestingSchedule;
+//  ISaleData.Setup private _setup;
 
   ISaleData private _saleData;
 
   uint public constant SALE_OWNER_LEVEL = 3;
+  uint private _saleId;
   address private _apeWallet;
   mapping(address => uint256) private _approvedAmounts;
 
@@ -28,159 +37,99 @@ contract Sale is ISale, LevelAccess {
   }
 
   function initialize(ISaleData.Setup memory setup_, ISaleData.VestingStep[] memory schedule) external {
-    _setup = setup_;
-    for (uint256 i = 0; i < schedule.length; i++) {
-      if (i > 0) {
-        require(schedule[i].percentage > schedule[i - 1].percentage, "Sale: Vest percentage should be monotonic increasing");
-      }
-      _vestingSchedule.push(schedule[i]);
-    }
-    require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
-    grantLevel(SALE_OWNER_LEVEL, _setup.owner);
+    _saleId = _saleData.setUpSale(setup_, schedule);
+    grantLevel(SALE_OWNER_LEVEL, setup_.owner);
   }
 
-  function getSetup() public view returns (ISaleData.Setup memory, ISaleData.VestingStep[] memory) {
-    return (_setup, _vestingSchedule);
+  function getSetup() public view returns (ISaleData.Setup memory) {
+    return _saleData.getSaleById(_saleId);
   }
 
-  function getPaymentToken() external view override returns (address){
-    return address(_setup.paymentToken);
+  function getPaymentToken() external view returns (address){
+    return address(_saleData.getSaleById(_saleId).paymentToken);
   }
 
-  function changeApeWallet(address apeWallet_) external override
+  function changeApeWallet(address apeWallet_) external
   onlyLevel(SALE_OWNER_LEVEL) {
     _apeWallet = apeWallet_;
   }
 
-  function apeWallet() external view override
+  function apeWallet() external view
   returns (address) {
     return _apeWallet;
   }
 
-  function makeTransferable() external override {
-    // it cannot be changed back
-    if (!_setup.isTokenTransferable) {
-      _setup.isTokenTransferable = true;
-    }
+  function makeTransferable() external {
+    _saleData.makeTransferable(_saleId);
   }
 
-  function isTransferable() external override view returns (bool){
-    return _setup.isTokenTransferable;
+  function isTransferable() external view returns (bool){
+    return _saleData.getSaleById(_saleId).isTokenTransferable;
   }
 
-  function normalize(uint32 amount) public view override returns (uint) {
-    uint decimals = _setup.sellingToken.decimals();
-    return uint256(amount).mul(10 ** decimals);
+  function normalize(uint32 amount) public view returns (uint) {
+    return _saleData.normalize(_saleId, amount);
   }
 
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
-  function launch() external virtual override
+  function launch() external virtual
   onlyLevel(SALE_OWNER_LEVEL) {
-    uint capAmount = normalize(_setup.capAmount);
-    uint256 fee = capAmount.mul(_setup.tokenFeePercentage).div(100);
-    //    console.log("capAmount.add(fee)", capAmount, capAmount.add(fee));
-    _setup.sellingToken.transferFrom(_setup.owner, address(this), capAmount.add(fee));
-    _setup.remainingAmount = capAmount;
+    (ERC20Min sellingToken, address owner, uint amount) = _saleData.setLaunch(_saleId);
+    sellingToken.transferFrom(owner, address(this), amount);
   }
 
   // Sale creator calls this function to approve investor.
   // can be called repeated. unused amount can be forfeited by setting it to 0
-  function approveInvestor(address investor, uint256 amount) external virtual override
+  function approveInvestor(address investor, uint256 amount) external virtual
   onlyLevel(SALE_OWNER_LEVEL) {
     _approvedAmounts[investor] = amount;
   }
 
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
-  function invest(uint256 amount) external virtual override {
-    require(amount >= normalize(_setup.minAmount), "Sale: Amount is too low");
-    require(amount <= _setup.remainingAmount, "Sale: Amount is too high");
+  function invest(uint256 amount) external virtual {
     require(_approvedAmounts[msg.sender] >= amount, "Sale: Amount if above approved amount");
-    uint256 tokenPayment = amount.mul(_setup.pricingPayment).div(_setup.pricingToken);
-    console.log("tokenPayment", tokenPayment);
-    uint256 buyerFee = tokenPayment.mul(_setup.paymentFeePercentage).div(100);
-    uint256 sellerFee = amount.mul(_setup.tokenFeePercentage).div(100);
-    _setup.paymentToken.transferFrom(msg.sender, _apeWallet, buyerFee);
-    _setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
+    ISaleData.Setup memory setup = _saleData.getSaleById(_saleId);
+    (uint tokenPayment, uint buyerFee, uint sellerFee) = _saleData.setInvest(_saleId, amount);
+//    console.log("tokenPayment", tokenPayment);
+    setup.paymentToken.transferFrom(msg.sender, _apeWallet, buyerFee);
+    setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
     // mint NFT
-    ISAToken nft = ISAToken(_setup.satoken);
+    ISAToken nft = ISAToken(setup.satoken);
     nft.mint(msg.sender, amount);
     nft.mint(_apeWallet, sellerFee);
-    _setup.remainingAmount = _setup.remainingAmount.sub(amount);
     _approvedAmounts[msg.sender] = _approvedAmounts[msg.sender].sub(amount);
-    console.log("Sale: Paying buyer fee", buyerFee);
-    console.log("Sale: Paying seller fee", sellerFee);
+//    console.log("Sale: Paying buyer fee", buyerFee);
+//    console.log("Sale: Paying seller fee", sellerFee);
   }
 
-  function withdrawPayment(uint256 amount) external virtual override
+  function withdrawPayment(uint256 amount) external virtual
   onlyLevel(SALE_OWNER_LEVEL) {
-    _setup.paymentToken.transfer(msg.sender, amount);
+    _saleData.getSaleById(_saleId).paymentToken.transfer(msg.sender, amount);
   }
 
-  function withdrawToken(uint256 amount) external virtual override
+  function withdrawToken(uint256 amount) external virtual
   onlyLevel(SALE_OWNER_LEVEL) {
-    // we cannot simply relying on the transfer to do the check, since some of the
-    // token are sold to investors.
-    require(amount <= _setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
-    uint capAmount = normalize(_setup.capAmount);
-    uint256 fee = capAmount.mul(_setup.tokenFeePercentage).div(100);
-    // TODO: why do we transfer also the fee to the seller?
-    _setup.sellingToken.transfer(msg.sender, amount + fee);
-    _setup.remainingAmount -= amount;
+    (ERC20Min sellingToken, uint fee) = _saleData.setWithdrawToken(_saleId, amount);
+    sellingToken.transfer(msg.sender, amount + fee);
   }
 
-  function triggerTokenListing() external virtual override
+  function triggerTokenListing() external virtual
   onlyLevel(SALE_OWNER_LEVEL) {
-    require(_setup.tokenListTimestamp == 0, "Sale: Token already listed");
-    _setup.tokenListTimestamp = uint32(block.timestamp);
+    _saleData.triggerTokenListing(_saleId);
   }
 
-  function isTokenListed() external virtual view override returns (bool) {
-    return (_setup.tokenListTimestamp != 0);
+  function isTokenListed() external virtual view returns (bool) {
+    return (_saleData.getSaleById(_saleId).tokenListTimestamp != 0);
   }
 
-  function getVestedPercentage() public virtual view override returns (uint256) {
-    return _saleData.getVestedPercentage(_setup, _vestingSchedule);
-    //    if (_setup.tokenListTimestamp == 0) {// token not listed yet!
-    //      return 0;
-    //    }
-    //    ISaleData.VestingStep[] storage vs = _vestingSchedule;
-    //    uint256 vestedPercentage;
-    //    for (uint256 i = 0; i < vs.length; i++) {
-    //      uint256 ts = uint256(_setup.tokenListTimestamp).add(vs[i].timestamp);
-    //      console.log("vesting ts", ts);
-    //      if (ts > block.timestamp) {
-    //        break;
-    //      }
-    //      vestedPercentage = vs[i].percentage;
-    //    }
-    //    console.log("vested percentage", vestedPercentage);
-    //    return vestedPercentage;
-  }
-
-  function getVestedAmount(
-    uint256 vestedPercentage,
-    uint256 lastVestedPercentage,
-    uint256 lockedAmount) public virtual view override returns (uint256) {
-    return _saleData.getVestedAmount(vestedPercentage, lastVestedPercentage, lockedAmount);
-    //    uint256 vestedAmount;
-    //    if (vestedPercentage == 100) {
-    //      vestedAmount = lockedAmount;
-    //    } else {
-    //      vestedAmount = lockedAmount.mul(vestedPercentage.sub(lastVestedPercentage))
-    //      .div(100 - lastVestedPercentage);
-    //    }
-    //    return vestedAmount;
-  }
-
-  function vest(address sa_owner, ISAStorage.SA memory sa) external virtual override
+  function vest(address sa_owner, ISAStorage.SA memory sa) external virtual
   returns (uint, uint){
-    require(msg.sender == address(_setup.satoken), "Sale: only SAToken can call vest");
-    uint256 vestedPercentage = getVestedPercentage();
-    // TODO: Maybe this can be exploited passing an arbitrary sa?
-    uint256 vestedAmount = getVestedAmount(vestedPercentage, sa.vestedPercentage, sa.remainingAmount);
-    _setup.sellingToken.transfer(sa_owner, vestedAmount);
+    ISaleData.Setup memory setup = _saleData.getSaleById(_saleId);
+    require(msg.sender == address(setup.satoken), "Sale: only SAToken can call vest");
+    (uint vestedPercentage, uint vestedAmount) = _saleData.setVest(_saleId, sa.vestedPercentage, sa.remainingAmount);
+    setup.sellingToken.transfer(sa_owner, vestedAmount);
     return (vestedPercentage, vestedAmount);
   }
 }

@@ -55,6 +55,7 @@ describe("Integration Test", function () {
     SaleFactory = await ethers.getContractFactory("SaleFactory")
     factory = await SaleFactory.deploy()
     await factory.deployed()
+    saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
 
     SAToken = await ethers.getContractFactory("SAToken")
@@ -138,7 +139,7 @@ describe("Integration Test", function () {
 
       abcSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
       expect(await abcSale.levels(saleSetup.owner)).to.equal(await abcSale.SALE_OWNER_LEVEL())
-      const [setup, steps] = await abcSale.getSetup()
+      const setup = await abcSale.getSetup()
       expect(setup.owner).to.equal(abcOwner.address)
 
       // console.log(await abcSale.getSetup())

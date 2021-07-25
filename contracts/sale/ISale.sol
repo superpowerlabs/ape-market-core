@@ -7,7 +7,6 @@ import "../nft/ISAStorage.sol";
 
 interface ISale {
 
-
   function getPaymentToken() external view returns (address);
 
   function changeApeWallet(address apeWallet_) external;
@@ -39,10 +38,6 @@ interface ISale {
   function isTransferable() external view returns(bool);
 
   function isTokenListed() external view returns (bool);
-
-  function getVestedPercentage() external view returns (uint256);
-
-  function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
 
   function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint, uint);
 }
