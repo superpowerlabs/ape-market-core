@@ -46,15 +46,17 @@ interface ISaleData {
 
   function triggerTokenListing(uint saleId) external;
 
+  function approveInvestor(uint saleId, address investor, uint256 amount) external;
+
   function setWithdrawToken(uint saleId, uint256 amount) external returns (ERC20Min, uint);
 
-  function setInvest(uint saleId, uint256 amount) external returns (uint, uint, uint);
+  function setInvest(uint saleId, address investor, uint256 amount) external returns (uint, uint, uint);
 
   function setLaunch(uint saleId) external returns (ERC20Min, address, uint);
 
   function makeTransferable(uint saleId) external;
 
-  function getSaleById(uint saleId) external view returns (Setup memory);
+  function getSetupById(uint saleId) external view returns (Setup memory);
 
   function setUpSale(Setup memory setup, VestingStep[] memory schedule) external returns (uint);
 

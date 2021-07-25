@@ -117,7 +117,6 @@ describe("SaleFactory", async function () {
           .to.emit(factory, "NewSale")
       const saleAddress = await factory.lastSale()
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-      assert.equal((await sale.levels(saleSetup.owner)).toNumber(), (await sale.SALE_OWNER_LEVEL()).toNumber())
       assert.isTrue(await factory.isLegitSale(saleAddress))
       assert.equal((await factory.getAllSales())[0], saleAddress)
       assert.equal(await factory.getSale(0), saleAddress)

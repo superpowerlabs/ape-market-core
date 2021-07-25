@@ -14,7 +14,13 @@ contract SaleData is ISaleData, LevelAccess {
 
   mapping (uint => VestingStep[]) private _vestingSchedules;
   mapping (uint => Setup) private _setups;
+  mapping(uint => mapping(address => uint256)) private _approvedAmounts;
   uint private _lastId = 0;
+
+  modifier onlySaleOwner(uint saleId) {
+    require(msg.sender == _setups[saleId].owner, "Sale: caller is not the owner");
+    _;
+  }
 
   function setUpSale(Setup memory setup, VestingStep[] memory schedule) external override
   onlyLevel(MANAGER_LEVEL) returns (uint){
@@ -30,7 +36,7 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function makeTransferable(uint saleId) external override
-  onlyLevel(MANAGER_LEVEL) {
+  onlySaleOwner(saleId) {
     // it cannot be changed back
     if (!_setups[saleId].isTokenTransferable) {
       _setups[saleId].isTokenTransferable = true;
@@ -50,15 +56,22 @@ contract SaleData is ISaleData, LevelAccess {
     return uint256(amount).mul(10 ** decimals);
   }
 
-  function getSaleById(uint saleId) external view override
+  function getSetupById(uint saleId) external view override
   returns (Setup memory){
     return _setups[saleId];
   }
 
-  function setInvest(uint saleId, uint256 amount) external virtual override
+  function approveInvestor(uint saleId, address investor, uint256 amount) external virtual override
+  onlySaleOwner(saleId)  {
+    _approvedAmounts[saleId][investor] = amount;
+  }
+
+  function setInvest(uint saleId, address investor, uint256 amount) external virtual override
   onlyLevel(MANAGER_LEVEL) returns (uint, uint, uint) {
+    require(_approvedAmounts[saleId][investor] >= amount, "Sale: Amount if above approved amount");
     require(amount >= normalize(saleId, _setups[saleId].minAmount), "Sale: Amount is too low");
     require(amount <= _setups[saleId].remainingAmount, "Sale: Amount is too high");
+    _approvedAmounts[saleId][investor] = _approvedAmounts[saleId][investor].sub(amount);
     uint256 tokenPayment = amount.mul(_setups[saleId].pricingPayment).div(_setups[saleId].pricingToken);
     uint256 buyerFee = tokenPayment.mul(_setups[saleId].paymentFeePercentage).div(100);
     uint256 sellerFee = amount.mul(_setups[saleId].tokenFeePercentage).div(100);
@@ -85,7 +98,7 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function triggerTokenListing(uint saleId) external virtual override
-  onlyLevel(MANAGER_LEVEL) {
+  onlySaleOwner(saleId) {
     require(_setups[saleId].tokenListTimestamp == 0, "Sale: Token already listed");
     _setups[saleId].tokenListTimestamp = uint32(block.timestamp);
   }
