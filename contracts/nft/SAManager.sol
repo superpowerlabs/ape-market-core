@@ -23,6 +23,16 @@ interface ISATokenMin {
 
 }
 
+interface ERC20Min {
+
+  function transfer(address recipient, uint256 amount) external returns (bool);
+
+  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+  function decimals() external view returns (uint8);
+
+}
+
 contract SAManager is LevelAccess {
 
   using SafeMath for uint256;

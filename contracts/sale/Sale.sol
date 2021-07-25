@@ -7,28 +7,27 @@ import "hardhat/console.sol";
 
 import "./ISale.sol";
 import "../utils/LevelAccess.sol";
-
-interface ISaleCalc {
-
-  function getVestedPercentage(ISale.Setup memory setup, ISale.VestingStep[] memory vs) external view returns (uint256);
-
-  function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external pure returns (uint256);
-}
+import "./ISaleData.sol";
 
 contract Sale is ISale, LevelAccess {
 
   using SafeMath for uint256;
 
-  VestingStep[] _vestingSchedule;
-  Setup private _setup;
+  ISaleData.VestingStep[] _vestingSchedule;
+  ISaleData.Setup private _setup;
 
-  ISaleCalc private _saleCalc;
+  ISaleData private _saleData;
 
   uint public constant SALE_OWNER_LEVEL = 3;
   address private _apeWallet;
   mapping(address => uint256) private _approvedAmounts;
 
-  constructor(Setup memory setup_, VestingStep[] memory schedule, address apeWallet_, address saleCalc){
+  constructor(address apeWallet_, address saleDataAddress){
+    _apeWallet = apeWallet_;
+    _saleData = ISaleData(saleDataAddress);
+  }
+
+  function initialize(ISaleData.Setup memory setup_, ISaleData.VestingStep[] memory schedule) external {
     _setup = setup_;
     for (uint256 i = 0; i < schedule.length; i++) {
       if (i > 0) {
@@ -37,13 +36,10 @@ contract Sale is ISale, LevelAccess {
       _vestingSchedule.push(schedule[i]);
     }
     require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
-    _apeWallet = apeWallet_;
-    _saleCalc = ISaleCalc(saleCalc);
-    // set permissions and set custom revert message
     grantLevel(SALE_OWNER_LEVEL, _setup.owner);
   }
 
-  function getSetup() public view returns (Setup memory, VestingStep[] memory) {
+  function getSetup() public view returns (ISaleData.Setup memory, ISaleData.VestingStep[] memory) {
     return (_setup, _vestingSchedule);
   }
 
@@ -145,11 +141,11 @@ contract Sale is ISale, LevelAccess {
   }
 
   function getVestedPercentage() public virtual view override returns (uint256) {
-    return _saleCalc.getVestedPercentage(_setup, _vestingSchedule);
+    return _saleData.getVestedPercentage(_setup, _vestingSchedule);
     //    if (_setup.tokenListTimestamp == 0) {// token not listed yet!
     //      return 0;
     //    }
-    //    VestingStep[] storage vs = _vestingSchedule;
+    //    ISaleData.VestingStep[] storage vs = _vestingSchedule;
     //    uint256 vestedPercentage;
     //    for (uint256 i = 0; i < vs.length; i++) {
     //      uint256 ts = uint256(_setup.tokenListTimestamp).add(vs[i].timestamp);
@@ -167,7 +163,7 @@ contract Sale is ISale, LevelAccess {
     uint256 vestedPercentage,
     uint256 lastVestedPercentage,
     uint256 lockedAmount) public virtual view override returns (uint256) {
-    return _saleCalc.getVestedAmount(vestedPercentage, lastVestedPercentage, lockedAmount);
+    return _saleData.getVestedAmount(vestedPercentage, lastVestedPercentage, lockedAmount);
     //    uint256 vestedAmount;
     //    if (vestedPercentage == 100) {
     //      vestedAmount = lockedAmount;

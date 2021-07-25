@@ -22,8 +22,8 @@ describe("Integration Test", function () {
   let xyzSale
   let SAManager
   let manager
-  let SaleCalc
-  let saleCalc
+  let SaleData
+  let saleData
 
   let saleSetup
   let saleVestingSchedule
@@ -48,9 +48,9 @@ describe("Integration Test", function () {
     storage = await SAStorage.deploy()
     await storage.deployed()
 
-    SaleCalc = await ethers.getContractFactory("SaleCalc")
-    saleCalc = await SaleCalc.deploy()
-    await saleCalc.deployed()
+    SaleData = await ethers.getContractFactory("SaleData")
+    saleData = await SaleData.deploy()
+    await saleData.deployed()
 
     SaleFactory = await ethers.getContractFactory("SaleFactory")
     factory = await SaleFactory.deploy()
@@ -133,7 +133,7 @@ describe("Integration Test", function () {
         }]
 
       console.log('Deploy new sale for ABC')
-      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleCalc.address)
+      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address)
       let saleAddress = await factory.lastSale()
 
       abcSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
@@ -154,7 +154,7 @@ describe("Integration Test", function () {
       saleSetup.pricingPayment = 1;
 
       console.log('Deploy new sale for XYZ')
-      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleCalc.address)
+      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address)
       saleAddress = await factory.lastSale()
       xyzSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
 

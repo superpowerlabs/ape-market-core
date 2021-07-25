@@ -3,6 +3,12 @@ pragma solidity ^0.8.0;
 
 import "../utils/LevelAccess.sol";
 import "./Sale.sol";
+import "./ISaleData.sol";
+
+interface ISaleDataMin {
+
+  function grantManagerLevel(address saleAddress) external;
+}
 
 // for debugging only
 import "hardhat/console.sol";
@@ -35,16 +41,18 @@ contract SaleFactory is LevelAccess {
   }
 
   function newSale(
-    Sale.Setup memory setup,
-    Sale.VestingStep[] memory schedule,
+    ISaleData.Setup memory setup,
+    ISaleData.VestingStep[] memory schedule,
     address apeWallet,
-    address saleCalc
+    address saleDataAddress
   ) external
   onlyLevel(FACTORY_ADMIN_LEVEL)
   {
-    Sale sale = new Sale(setup, schedule, apeWallet, saleCalc);
-    sale.grantLevel(sale.SALE_OWNER_LEVEL(), setup.owner);
+    Sale sale = new Sale(apeWallet, saleDataAddress);
     address addr = address(sale);
+    ISaleDataMin saleData = ISaleDataMin(saleDataAddress);
+    saleData.grantManagerLevel(addr);
+    sale.initialize(setup, schedule);
     _allSales.push(addr);
     _sales[addr] = true;
     emit NewSale(addr);
