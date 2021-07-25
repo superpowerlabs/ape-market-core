@@ -53,12 +53,6 @@ contract Sale {
     sellingToken.transferFrom(owner, address(this), amount);
   }
 
-  // Sale creator calls this function to approve investor.
-  // can be called repeated. unused amount can be forfeited by setting it to 0
-//  function approveInvestor(address investor, uint256 amount) external virtual
-//  onlySaleOwner {
-//    _saleData.approveInvestor(saleId, investor, amount);
-//  }
 
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
