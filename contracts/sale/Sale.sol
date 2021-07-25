@@ -6,8 +6,14 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "hardhat/console.sol";
 
 import "./ISale.sol";
-//import "./SaleLib.sol";
 import "../utils/LevelAccess.sol";
+
+interface ISaleCalc {
+
+  function getVestedPercentage(ISale.Setup memory setup, ISale.VestingStep[] memory vs) external view returns (uint256);
+
+  function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external pure returns (uint256);
+}
 
 contract Sale is ISale, LevelAccess {
 
@@ -16,11 +22,13 @@ contract Sale is ISale, LevelAccess {
   VestingStep[] _vestingSchedule;
   Setup private _setup;
 
+  ISaleCalc private _saleCalc;
+
   uint public constant SALE_OWNER_LEVEL = 3;
   address private _apeWallet;
   mapping(address => uint256) private _approvedAmounts;
 
-  constructor(Setup memory setup_, VestingStep[] memory schedule, address apeWallet_){
+  constructor(Setup memory setup_, VestingStep[] memory schedule, address apeWallet_, address saleCalc){
     _setup = setup_;
     for (uint256 i = 0; i < schedule.length; i++) {
       if (i > 0) {
@@ -30,6 +38,7 @@ contract Sale is ISale, LevelAccess {
     }
     require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
     _apeWallet = apeWallet_;
+    _saleCalc = ISaleCalc(saleCalc);
     // set permissions and set custom revert message
     grantLevel(SALE_OWNER_LEVEL, _setup.owner);
   }
@@ -59,7 +68,7 @@ contract Sale is ISale, LevelAccess {
     }
   }
 
-  function isTransferable() external override view returns(bool){
+  function isTransferable() external override view returns (bool){
     return _setup.isTokenTransferable;
   }
 
@@ -74,7 +83,7 @@ contract Sale is ISale, LevelAccess {
   onlyLevel(SALE_OWNER_LEVEL) {
     uint capAmount = normalize(_setup.capAmount);
     uint256 fee = capAmount.mul(_setup.tokenFeePercentage).div(100);
-//    console.log("capAmount.add(fee)", capAmount, capAmount.add(fee));
+    //    console.log("capAmount.add(fee)", capAmount, capAmount.add(fee));
     _setup.sellingToken.transferFrom(_setup.owner, address(this), capAmount.add(fee));
     _setup.remainingAmount = capAmount;
   }
@@ -136,37 +145,37 @@ contract Sale is ISale, LevelAccess {
   }
 
   function getVestedPercentage() public virtual view override returns (uint256) {
-//    return SaleLib.getVestedPercentage(_setup, _vestingSchedule);
-    if (_setup.tokenListTimestamp == 0) {// token not listed yet!
-      return 0;
-    }
-    VestingStep[] storage vs = _vestingSchedule;
-    uint256 vestedPercentage;
-    for (uint256 i = 0; i < vs.length; i++) {
-      uint256 ts = uint256(_setup.tokenListTimestamp).add(vs[i].timestamp);
-      console.log("vesting ts", ts);
-      if (ts > block.timestamp) {
-        break;
-      }
-      vestedPercentage = vs[i].percentage;
-    }
-    console.log("vested percentage", vestedPercentage);
-    return vestedPercentage;
+    return _saleCalc.getVestedPercentage(_setup, _vestingSchedule);
+    //    if (_setup.tokenListTimestamp == 0) {// token not listed yet!
+    //      return 0;
+    //    }
+    //    VestingStep[] storage vs = _vestingSchedule;
+    //    uint256 vestedPercentage;
+    //    for (uint256 i = 0; i < vs.length; i++) {
+    //      uint256 ts = uint256(_setup.tokenListTimestamp).add(vs[i].timestamp);
+    //      console.log("vesting ts", ts);
+    //      if (ts > block.timestamp) {
+    //        break;
+    //      }
+    //      vestedPercentage = vs[i].percentage;
+    //    }
+    //    console.log("vested percentage", vestedPercentage);
+    //    return vestedPercentage;
   }
 
   function getVestedAmount(
     uint256 vestedPercentage,
     uint256 lastVestedPercentage,
     uint256 lockedAmount) public virtual view override returns (uint256) {
-//    return SaleLib.getVestedAmount(vestedPercentage, lastVestedPercentage, lockedAmount);
-    uint256 vestedAmount;
-    if (vestedPercentage == 100) {
-      vestedAmount = lockedAmount;
-    } else {
-      vestedAmount = lockedAmount.mul(vestedPercentage.sub(lastVestedPercentage))
-      .div(100 - lastVestedPercentage);
-    }
-    return vestedAmount;
+    return _saleCalc.getVestedAmount(vestedPercentage, lastVestedPercentage, lockedAmount);
+    //    uint256 vestedAmount;
+    //    if (vestedPercentage == 100) {
+    //      vestedAmount = lockedAmount;
+    //    } else {
+    //      vestedAmount = lockedAmount.mul(vestedPercentage.sub(lastVestedPercentage))
+    //      .div(100 - lastVestedPercentage);
+    //    }
+    //    return vestedAmount;
   }
 
   function vest(address sa_owner, ISAStorage.SA memory sa) external virtual override

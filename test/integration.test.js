@@ -22,6 +22,8 @@ describe("Integration Test", function () {
   let xyzSale
   let SAManager
   let manager
+  let SaleCalc
+  let saleCalc
 
   let saleSetup
   let saleVestingSchedule
@@ -45,6 +47,10 @@ describe("Integration Test", function () {
     SAStorage = await ethers.getContractFactory("SAStorage")
     storage = await SAStorage.deploy()
     await storage.deployed()
+
+    SaleCalc = await ethers.getContractFactory("SaleCalc")
+    saleCalc = await SaleCalc.deploy()
+    await saleCalc.deployed()
 
     SaleFactory = await ethers.getContractFactory("SaleFactory")
     factory = await SaleFactory.deploy()
@@ -85,7 +91,7 @@ describe("Integration Test", function () {
     return '' + amount + '0'.repeat(18);
   }
 
-  describe.only('Full flow', async function () {
+  describe('Full flow', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
@@ -127,7 +133,7 @@ describe("Integration Test", function () {
         }]
 
       console.log('Deploy new sale for ABC')
-      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address)
+      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleCalc.address)
       let saleAddress = await factory.lastSale()
 
       abcSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
@@ -135,7 +141,7 @@ describe("Integration Test", function () {
       const [setup, steps] = await abcSale.getSetup()
       expect(setup.owner).to.equal(abcOwner.address)
 
-      console.log(await abcSale.getSetup())
+      // console.log(await abcSale.getSetup())
 
       console.log('Launching ABC Sale')
       await abc.connect(abcOwner).approve(abcSale.address, normalize(setup.capAmount * 1.05))
@@ -148,7 +154,7 @@ describe("Integration Test", function () {
       saleSetup.pricingPayment = 1;
 
       console.log('Deploy new sale for XYZ')
-      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address)
+      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleCalc.address)
       saleAddress = await factory.lastSale()
       xyzSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
 

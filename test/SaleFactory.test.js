@@ -15,6 +15,8 @@ describe("SaleFactory", async function () {
   let satoken
   let SaleFactory
   let factory
+  let SaleCalc
+  let saleCalc
 
   let saleSetup
   let saleVestingSchedule
@@ -38,6 +40,10 @@ describe("SaleFactory", async function () {
     SAStorage = await ethers.getContractFactory("SAStorage")
     storage = await SAStorage.deploy()
     await storage.deployed()
+
+    SaleCalc = await ethers.getContractFactory("SaleCalc")
+    saleCalc = await SaleCalc.deploy()
+    await saleCalc.deployed()
 
     SaleFactory = await ethers.getContractFactory("SaleFactory")
     factory = await SaleFactory.deploy()
@@ -106,7 +112,7 @@ describe("SaleFactory", async function () {
 
     it("should create a new sale", async function () {
 
-      await expect(factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address))
+      await expect(factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleCalc.address))
           .to.emit(factory, "NewSale")
       const saleAddress = await factory.lastSale()
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
@@ -120,7 +126,7 @@ describe("SaleFactory", async function () {
     it("should throw if trying to create a sale as contract owner", async function () {
 
       await assertThrowsMessage(
-          factory.newSale(saleSetup, saleVestingSchedule, apeWallet.address),
+          factory.newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleCalc.address),
           'LevelAccess: caller not authorized')
 
     })

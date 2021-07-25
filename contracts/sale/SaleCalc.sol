@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./ISale.sol";
 
-library SaleLib {
+contract SaleCalc {
 
   using SafeMath for uint;
 

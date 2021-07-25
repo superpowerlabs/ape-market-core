@@ -37,11 +37,12 @@ contract SaleFactory is LevelAccess {
   function newSale(
     Sale.Setup memory setup,
     Sale.VestingStep[] memory schedule,
-    address apeWallet
+    address apeWallet,
+    address saleCalc
   ) external
   onlyLevel(FACTORY_ADMIN_LEVEL)
   {
-    Sale sale = new Sale(setup, schedule, apeWallet);
+    Sale sale = new Sale(setup, schedule, apeWallet, saleCalc);
     sale.grantLevel(sale.SALE_OWNER_LEVEL(), setup.owner);
     address addr = address(sale);
     _allSales.push(addr);
