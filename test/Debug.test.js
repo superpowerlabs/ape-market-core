@@ -10,7 +10,7 @@ describe.skip("Debug", function() {
   let saleVestingSchedule
 
   let owner, satoken, abc, abcOwner, tether
-  let addr0 = '0x0000000000000000000000000000000000000000'
+  // let addr0 = '0x0000000000000000000000000000000000000000'
 
   before(async function () {
     [owner, satoken, abc, abcOwner, tether] = await ethers.getSigners()
