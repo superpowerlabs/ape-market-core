@@ -34,7 +34,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   using SafeMath for uint256;
   using Counters for Counters.Counter;
 
-  uint public constant MANAGER_LEVEL = 2;
+  uint16 public constant MANAGER_LEVEL = 2;
 
   Counters.Counter private _tokenIdCounter;
 
@@ -69,6 +69,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal
   override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
+    // TODO: check the Sale to see whether the token is transferable
     if (from != address(0) && to != address(0)) {
       _storage.updateBundle(tokenId);
     }
