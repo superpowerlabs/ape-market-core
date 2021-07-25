@@ -20,8 +20,8 @@ contract SAStorage is ISAStorage, LevelAccess {
   // after deploying, we must grant SAToken and SAManager with MANAGER_LEVEL
   // so that they can handle the Bundle/SA storage
 
-  uint public constant MANAGER_LEVEL = 2;
   using SafeMath for uint256;
+  uint public constant MANAGER_LEVEL = 2;
 
   mapping(uint256 => Bundle) private _bundles;
 

@@ -114,7 +114,7 @@ describe("Integration Test", function () {
         tokenListTimestamp: 0,
         tokenFeePercentage: 5,
         paymentFeePercentage: 10,
-        tokenIsTransferable: true
+        isTokenTransferable: true
       };
       saleVestingSchedule = [
         {
@@ -134,6 +134,8 @@ describe("Integration Test", function () {
       expect(await abcSale.levels(saleSetup.owner)).to.equal(await abcSale.SALE_OWNER_LEVEL())
       const [setup, steps] = await abcSale.getSetup()
       expect(setup.owner).to.equal(abcOwner.address)
+
+      console.log(await abcSale.getSetup())
 
       console.log('Launching ABC Sale')
       await abc.connect(abcOwner).approve(abcSale.address, normalize(setup.capAmount * 1.05))

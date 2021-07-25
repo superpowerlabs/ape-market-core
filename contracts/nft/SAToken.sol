@@ -26,6 +26,8 @@ interface ISaleMin {
   function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
 
   function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint, uint);
+
+  function isTransferable() external view returns(bool);
 }
 
 
@@ -69,8 +71,16 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal
   override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
-    // TODO: check the Sale to see whether the token is transferable
     if (from != address(0) && to != address(0)) {
+      // check if any sale is not transferable
+      ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
+      for (uint i = 0; i < bundle.sas.length; i++) {
+        ISaleMin sale = ISaleMin(bundle.sas[i].sale);
+        console.log(sale.isTransferable());
+        if (!sale.isTransferable()) {
+          revert("SAToken: token not transferable");
+        }
+      }
       _storage.updateBundle(tokenId);
     }
   }
@@ -82,7 +92,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   }
 
   function mint(address to, uint256 amount) external override virtual {
-//    require(isContract(msg.sender), "SAToken: The caller is not a contract");
+    //    require(isContract(msg.sender), "SAToken: The caller is not a contract");
     require(_factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
     _safeMint(to, _tokenIdCounter.current());
     console.log("Minted %s", _tokenIdCounter.current());
@@ -98,7 +108,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     _tokenIdCounter.increment();
   }
 
-  function nextTokenId() external view virtual override returns(uint) {
+  function nextTokenId() external view virtual override returns (uint) {
     return _tokenIdCounter.current();
   }
 
@@ -138,11 +148,11 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   }
 
   // from OpenZeppelin Address.sol
-//  function isContract(address account) internal view returns (bool) {
-//    uint256 size;
-//    // solium-disable-next-line security/no-inline-assembly
-//    assembly {size := extcodesize(account)}
-//    return size > 0;
-//  }
+  //  function isContract(address account) internal view returns (bool) {
+  //    uint256 size;
+  //    // solium-disable-next-line security/no-inline-assembly
+  //    assembly {size := extcodesize(account)}
+  //    return size > 0;
+  //  }
 
 }
