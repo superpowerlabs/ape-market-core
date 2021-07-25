@@ -34,7 +34,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   using SafeMath for uint256;
   using Counters for Counters.Counter;
 
-  uint16 public constant MANAGER_LEVEL = 2;
+  uint public constant MANAGER_LEVEL = 2;
 
   Counters.Counter private _tokenIdCounter;
 

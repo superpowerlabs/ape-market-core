@@ -7,9 +7,9 @@ contract LevelAccess {
 
   mapping(address => uint) public levels;
 
-  uint16 public constant OWNER_LEVEL = 1;
+  uint public constant OWNER_LEVEL = 1;
 
-  modifier onlyLevel(uint16 level) {
+  modifier onlyLevel(uint level) {
     require(levels[msg.sender] == level, "LevelAccess: caller not authorized.");
     _;
   }
@@ -19,7 +19,7 @@ contract LevelAccess {
     emit LevelSet(OWNER_LEVEL, msg.sender, address(0));
   }
 
-  function grantLevel(uint16 level, address addr) public
+  function grantLevel(uint level, address addr) public
   onlyLevel(OWNER_LEVEL) {
     levels[addr] = level;
     emit LevelSet(level, addr, msg.sender);

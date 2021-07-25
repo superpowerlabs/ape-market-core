@@ -9,21 +9,9 @@ import "../nft/ISAToken.sol";
 
 interface ERC20Min {
 
-//  function totalSupply() external view returns (uint256);
-
-  function balanceOf(address account) external view returns (uint256);
-
   function transfer(address recipient, uint256 amount) external returns (bool);
 
-//  function allowance(address owner, address spender) external view returns (uint256);
-
-//  function approve(address spender, uint256 amount) external returns (bool);
-
-  function transferFrom(
-    address sender,
-    address recipient,
-    uint256 amount
-  ) external returns (bool);
+  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 
   function decimals() external view returns (uint8);
 
@@ -84,6 +72,8 @@ interface ISale {
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external;
+
+  function normalize(uint32 amount) external view returns (uint);
 
   function withdrawPayment(uint256 amount) external;
 

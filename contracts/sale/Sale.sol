@@ -16,7 +16,7 @@ contract Sale is ISale, LevelAccess {
   VestingStep[] _vestingSchedule;
   Setup private _setup;
 
-  uint16 public constant SALE_OWNER_LEVEL = 3;
+  uint public constant SALE_OWNER_LEVEL = 3;
   address private _apeWallet;
   mapping(address => uint256) private _approvedAmounts;
 
@@ -63,7 +63,7 @@ contract Sale is ISale, LevelAccess {
     return _setup.isTokenTransferable;
   }
 
-  function _normalize(uint32 amount) internal view returns (uint) {
+  function normalize(uint32 amount) public view override returns (uint) {
     uint decimals = _setup.sellingToken.decimals();
     return uint256(amount).mul(10 ** decimals);
   }
@@ -72,7 +72,7 @@ contract Sale is ISale, LevelAccess {
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external virtual override
   onlyLevel(SALE_OWNER_LEVEL) {
-    uint capAmount = _normalize(_setup.capAmount);
+    uint capAmount = normalize(_setup.capAmount);
     uint256 fee = capAmount.mul(_setup.tokenFeePercentage).div(100);
 //    console.log("capAmount.add(fee)", capAmount, capAmount.add(fee));
     _setup.sellingToken.transferFrom(_setup.owner, address(this), capAmount.add(fee));
@@ -89,7 +89,7 @@ contract Sale is ISale, LevelAccess {
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external virtual override {
-    require(amount >= _normalize(_setup.minAmount), "Sale: Amount is too low");
+    require(amount >= normalize(_setup.minAmount), "Sale: Amount is too low");
     require(amount <= _setup.remainingAmount, "Sale: Amount is too high");
     require(_approvedAmounts[msg.sender] >= amount, "Sale: Amount if above approved amount");
     uint256 tokenPayment = amount.mul(_setup.pricingPayment).div(_setup.pricingToken);
@@ -118,7 +118,7 @@ contract Sale is ISale, LevelAccess {
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
     require(amount <= _setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
-    uint capAmount = _normalize(_setup.capAmount);
+    uint capAmount = normalize(_setup.capAmount);
     uint256 fee = capAmount.mul(_setup.tokenFeePercentage).div(100);
     // TODO: why do we transfer also the fee to the seller?
     _setup.sellingToken.transfer(msg.sender, amount + fee);

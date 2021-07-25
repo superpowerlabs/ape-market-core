@@ -68,7 +68,13 @@ describe("Integration Test", function () {
     await tether.deployed()
 
     SAManager = await ethers.getContractFactory("SAManager")
-    manager = await SAManager.deploy(satoken.address, storage.address, tether.address, 100, apeWallet.address)
+    manager = await SAManager.deploy(
+        satoken.address,
+        storage.address,
+        tether.address,
+        100,
+        apeWallet.address
+    )
     await manager.deployed()
 
     await satoken.grantLevel(await satoken.MANAGER_LEVEL(), manager.address)
@@ -178,7 +184,7 @@ describe("Integration Test", function () {
       // 5% fee
       expect(await bundle.sas[0].remainingAmount).to.equal(normalize(4000));
       // 10% fee
-      expect(await tether.balanceOf(abcSale.address)).to.equal(normalize(6000 + (4000 * 2)));
+      expect(await tether.balanceOf(abcSale.address)).to.equal(normalize((6000 + 4000) * 2));
 
 
       console.log("Investor2 investing int XYZ Sale with approval");
@@ -221,10 +227,12 @@ describe("Integration Test", function () {
       await manager.connect(investor2).split(nft, keptAmounts);
       expect(await satoken.balanceOf(investor2.address)).to.equal(2);
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
+      // console.log('nft', nft.toNumber()) // 7
       bundle = await storage.getBundle(nft);
       expect(bundle.sas[0].sale).to.equal(xyzSale.address);
       expect(bundle.sas[0].remainingAmount).to.equal(normalize(8000));
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 1);
+      // console.log('nft', nft.toNumber()) // 6
 
       bundle = await storage.getBundle(nft);
       expect(bundle.sas[0].sale).to.equal(xyzSale.address);
@@ -244,7 +252,7 @@ describe("Integration Test", function () {
       expect(await tether.balanceOf(apeWallet.address)).to.equal(normalize(4100));
 
       console.log("Merge investor1's nft");
-      expect(await satoken.balanceOf(investor1.address)).to.equal(normalize(3));
+      expect(await satoken.balanceOf(investor1.address)).to.equal(3);
       nft0 = satoken.tokenOfOwnerByIndex(investor1.address, 0);
       nft1 = satoken.tokenOfOwnerByIndex(investor1.address, 1);
       nft2 = satoken.tokenOfOwnerByIndex(investor1.address, 2);
@@ -306,7 +314,7 @@ describe("Integration Test", function () {
           "LevelAccess: caller not authorized"
       )
 
-      console.log("balance is", (await tether.balanceOf(abcSale.address)).toNumber());
+      console.log("balance is", (await tether.balanceOf(abcSale.address)).toString());
       await abcSale.connect(abcOwner).withdrawPayment(normalize(20000))
 
       console.log("Withdraw token from sale");
