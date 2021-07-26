@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 // this contract is to test and do calculations
 
-contract Debug {
+contract TestMappings {
 
   mapping(address => mapping(address => bool)) private _associatedAddresses;
 

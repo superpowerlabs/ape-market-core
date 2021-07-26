@@ -1,7 +1,7 @@
 const {expect, assert} = require("chai")
 const {assertThrowsMessage, formatBundle} = require('./helpers')
 
-describe.only("Debug", function() {
+describe.only("TestMappings", function() {
 
   let Debug
   let debug
