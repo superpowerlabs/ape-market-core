@@ -52,7 +52,7 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function normalize(uint saleId, uint32 amount) public view override returns (uint) {
-    uint decimals = _setups[saleId].sellingToken.decimals();
+    uint decimals = _setups[saleId].paymentToken.decimals();
     return uint256(amount).mul(10 ** decimals);
   }
 
