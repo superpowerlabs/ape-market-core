@@ -104,7 +104,7 @@ describe("Integration Test", function () {
       await initNetworkAndDeploy()
     })
 
-    it.only("should verify that the entire process works", async function () {
+    it("should verify that the entire process works", async function () {
 
       console.log('Fund investors')
       await (await tether.connect(tetherOwner).transfer(investor1.address, normalize(40000)))
