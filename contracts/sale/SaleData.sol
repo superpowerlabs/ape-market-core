@@ -51,9 +51,9 @@ contract SaleData is ISaleData, LevelAccess {
     return (_setups[saleId].sellingToken, _setups[saleId].owner, capAmount.add(fee));
   }
 
-  function normalize(uint saleId, uint32 amount) public view override returns (uint) {
+  function normalize(uint saleId, uint64 amount) public view override returns (uint) {
     uint decimals = _setups[saleId].sellingToken.decimals();
-    return uint256(amount).mul(10 ** decimals);
+    return uint256(amount).mul(10 ** decimals).div(1000);
   }
 
   function getSetupById(uint saleId) external view override
@@ -100,7 +100,7 @@ contract SaleData is ISaleData, LevelAccess {
   function triggerTokenListing(uint saleId) external virtual override
   onlySaleOwner(saleId) {
     require(_setups[saleId].tokenListTimestamp == 0, "Sale: Token already listed");
-    _setups[saleId].tokenListTimestamp = uint32(block.timestamp);
+    _setups[saleId].tokenListTimestamp = uint64(block.timestamp);
   }
 
   function grantManagerLevel(address saleAddress) public override

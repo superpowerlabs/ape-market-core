@@ -30,17 +30,17 @@ interface ISaleData {
     ERC20Min paymentToken;
     address owner;
     uint256 remainingAmount;
-    uint32 minAmount;
-    uint32 capAmount;
-    uint32 pricingToken;
-    uint32 pricingPayment;
-    uint32 tokenListTimestamp;
-    uint32 tokenFeePercentage;
-    uint32 paymentFeePercentage;
+    uint64 minAmount;
+    uint64 capAmount;
+    uint64 pricingToken;
+    uint64 pricingPayment;
+    uint64 tokenListTimestamp;
+    uint64 tokenFeePercentage;
+    uint64 paymentFeePercentage;
     bool isTokenTransferable;
   }
 
-  function normalize(uint saleId, uint32 amount) external view returns (uint);
+  function normalize(uint saleId, uint64 amount) external view returns (uint);
 
   function setVest(uint saleId, uint256 lastVestedPercentage, uint256 lockedAmount) external returns (uint, uint);
 
