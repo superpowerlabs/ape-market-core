@@ -15,6 +15,8 @@ describe("SaleFactory", async function () {
   let satoken
   let SaleFactory
   let factory
+  let SaleData
+  let saleData
 
   let saleSetup
   let saleVestingSchedule
@@ -39,9 +41,14 @@ describe("SaleFactory", async function () {
     storage = await SAStorage.deploy()
     await storage.deployed()
 
+    SaleData = await ethers.getContractFactory("SaleData")
+    saleData = await SaleData.deploy()
+    await saleData.deployed()
+
     SaleFactory = await ethers.getContractFactory("SaleFactory")
     factory = await SaleFactory.deploy()
     await factory.deployed()
+    saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
 
     SAToken = await ethers.getContractFactory("SAToken")
@@ -106,11 +113,10 @@ describe("SaleFactory", async function () {
 
     it("should create a new sale", async function () {
 
-      await expect(factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address))
+      await expect(factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address))
           .to.emit(factory, "NewSale")
       const saleAddress = await factory.lastSale()
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-      assert.equal((await sale.levels(saleSetup.owner)).toNumber(), (await sale.SALE_OWNER_LEVEL()).toNumber())
       assert.isTrue(await factory.isLegitSale(saleAddress))
       assert.equal((await factory.getAllSales())[0], saleAddress)
       assert.equal(await factory.getSale(0), saleAddress)
@@ -120,7 +126,7 @@ describe("SaleFactory", async function () {
     it("should throw if trying to create a sale as contract owner", async function () {
 
       await assertThrowsMessage(
-          factory.newSale(saleSetup, saleVestingSchedule, apeWallet.address),
+          factory.newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address),
           'LevelAccess: caller not authorized')
 
     })

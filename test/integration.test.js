@@ -19,9 +19,13 @@ describe("Integration Test", function () {
   let SaleFactory
   let factory
   let abcSale
+  let abcSaleId
   let xyzSale
+  let xyzSaleId
   let SAManager
   let manager
+  let SaleData
+  let saleData
 
   let saleSetup
   let saleVestingSchedule
@@ -46,9 +50,14 @@ describe("Integration Test", function () {
     storage = await SAStorage.deploy()
     await storage.deployed()
 
+    SaleData = await ethers.getContractFactory("SaleData")
+    saleData = await SaleData.deploy()
+    await saleData.deployed()
+
     SaleFactory = await ethers.getContractFactory("SaleFactory")
     factory = await SaleFactory.deploy()
     await factory.deployed()
+    saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
 
     SAToken = await ethers.getContractFactory("SAToken")
@@ -85,7 +94,7 @@ describe("Integration Test", function () {
     return '' + amount + '0'.repeat(18);
   }
 
-  describe.only('Full flow', async function () {
+  describe('Full flow', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
@@ -127,15 +136,13 @@ describe("Integration Test", function () {
         }]
 
       console.log('Deploy new sale for ABC')
-      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address)
+      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address)
       let saleAddress = await factory.lastSale()
 
       abcSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-      expect(await abcSale.levels(saleSetup.owner)).to.equal(await abcSale.SALE_OWNER_LEVEL())
-      const [setup, steps] = await abcSale.getSetup()
+      abcSaleId = await abcSale.saleId()
+      const setup = await saleData.getSetupById(abcSaleId)
       expect(setup.owner).to.equal(abcOwner.address)
-
-      console.log(await abcSale.getSetup())
 
       console.log('Launching ABC Sale')
       await abc.connect(abcOwner).approve(abcSale.address, normalize(setup.capAmount * 1.05))
@@ -148,9 +155,10 @@ describe("Integration Test", function () {
       saleSetup.pricingPayment = 1;
 
       console.log('Deploy new sale for XYZ')
-      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address)
+      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address)
       saleAddress = await factory.lastSale()
       xyzSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
+      xyzSaleId = await xyzSale.saleId()
 
       console.log("Launching XYZ Sale");
       await xyz.connect(xyzOwner).approve(xyzSale.address, normalize(setup.capAmount * 1.05));
@@ -164,7 +172,7 @@ describe("Integration Test", function () {
 
       console.log("Investor1 investing in ABC Sale with approval");
       // using hardcoded numbers here to simplicity
-      await abcSale.connect(abcOwner).approveInvestor(investor1.address, normalize(10000));
+      await saleData.connect(abcOwner).approveInvestor(abcSaleId, investor1.address, normalize(10000));
       await abcSale.connect(investor1).invest(normalize(6000));
       expect(await satoken.balanceOf(investor1.address)).to.equal(1);
       let saId = await satoken.tokenOfOwnerByIndex(investor1.address, 0);
@@ -192,7 +200,7 @@ describe("Integration Test", function () {
       console.log("Investor2 investing int XYZ Sale with approval");
       // using hardcoded numbers here to simplicity
       await tether.connect(investor2).approve(xyzSale.address, normalize(20000 * 1.1));
-      await xyzSale.connect(xyzOwner).approveInvestor(investor2.address, normalize(20000));
+      await saleData.connect(xyzOwner).approveInvestor(xyzSaleId, investor2.address, normalize(20000));
       await xyzSale.connect(investor2).invest(normalize(20000));
       expect(await satoken.balanceOf(investor2.address)).to.equal(1);
       saId = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
@@ -274,10 +282,8 @@ describe("Integration Test", function () {
       let currentBlockTimeStamp;
       console.log("Vesting NFT of investor1 after first mile stone");
       // list tokens
-      transaction = await abcSale.connect(abcOwner).triggerTokenListing();
-      await transaction.wait();
-      transaction = await xyzSale.connect(xyzOwner).triggerTokenListing();
-      await transaction.wait();
+      await saleData.connect(abcOwner).triggerTokenListing(abcSaleId);
+      await saleData.connect(xyzOwner).triggerTokenListing(xyzSaleId);
 
       // before vesting
       nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
@@ -303,7 +309,6 @@ describe("Integration Test", function () {
       await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp() + 1020]);
 
       await satoken.connect(investor1).vest(nft);
-
       expect(await abc.balanceOf(investor1.address)).to.equal(normalize(10000));
       expect(await xyz.balanceOf(investor1.address)).to.equal(normalize(8000));
       // SAs should have been burned
@@ -311,10 +316,7 @@ describe("Integration Test", function () {
       expect(await satoken.balanceOf(investor1.address)).to.equal(0);
 
       console.log("Withdraw payment from sale");
-      await assertThrowsMessage(
-          abcSale.connect(xyzOwner).withdrawPayment(normalize(20000)),
-          "LevelAccess: caller not authorized"
-      )
+      await expect(abcSale.connect(xyzOwner).withdrawPayment(normalize(20000))).to.be.revertedWith("Sale: caller is not the owner");
 
       console.log("balance is", (await tether.balanceOf(abcSale.address)).toString());
       await abcSale.connect(abcOwner).withdrawPayment(normalize(20000))
