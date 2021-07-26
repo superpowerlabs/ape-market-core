@@ -3,8 +3,8 @@ const {assertThrowsMessage, formatBundle} = require('./helpers')
 
 describe.only("TestMappings", function() {
 
-  let Debug
-  let debug
+  let TestMappings
+  let testMappings
 
   let one, two
 
@@ -14,9 +14,9 @@ describe.only("TestMappings", function() {
 
   async function initNetworkAndDeploy() {
 
-    Debug = await ethers.getContractFactory("Debug")
-    debug = await Debug.deploy()
-    await debug.deployed()
+    TestMappings = await ethers.getContractFactory("TestMappings")
+    testMappings = await TestMappings.deploy()
+    await testMappings.deployed()
 
   }
 
@@ -28,15 +28,15 @@ describe.only("TestMappings", function() {
 
     it("should use two mappings", async function () {
 
-      await debug.associate(one.address, two.address);
-      assert.isTrue(await debug.isMutualAssociatedAddress(one.address, two.address))
+      await testMappings.associate(one.address, two.address);
+      assert.isTrue(await testMappings.isMutualAssociatedAddress(one.address, two.address))
 
     })
 
     it("should use one mappings", async function () {
 
-      await debug.associate2(one.address, two.address);
-      assert.isTrue(await debug.isMutualAssociatedAddress2(one.address, two.address))
+      await testMappings.associate2(one.address, two.address);
+      assert.isTrue(await testMappings.isMutualAssociatedAddress2(one.address, two.address))
 
     })
 
