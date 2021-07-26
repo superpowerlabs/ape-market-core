@@ -19,4 +19,18 @@ contract Debug {
     _associatedAddresses2[key] = true;
   }
 
+  function isMutualAssociatedAddress(address one, address two) external view returns (bool) {
+    return (
+    _associatedAddresses[one][two] &&
+    _associatedAddresses[two][one]
+    );
+  }
+
+  function isMutualAssociatedAddress2(address one, address two) external view returns (bool) {
+    return (
+    _associatedAddresses2[keccak256(abi.encodePacked(one, two))] ||
+    _associatedAddresses2[keccak256(abi.encodePacked(two, one))]
+    );
+  }
+
 }

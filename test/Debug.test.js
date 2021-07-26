@@ -6,16 +6,11 @@ describe.only("Debug", function() {
   let Debug
   let debug
 
-  let owner, satoken, abc, abcOwner, tether
-  // let addr0 = '0x0000000000000000000000000000000000000000'
+  let one, two
 
   before(async function () {
-    [owner, satoken, abc, abcOwner, tether] = await ethers.getSigners()
+    [one, two] = await ethers.getSigners()
   })
-
-  async function getTimestamp() {
-    return (await ethers.provider.getBlock()).timestamp
-  }
 
   async function initNetworkAndDeploy() {
 
@@ -33,13 +28,15 @@ describe.only("Debug", function() {
 
     it("should use two mappings", async function () {
 
-      await debug.associate(owner.address, satoken.address);
+      await debug.associate(one.address, two.address);
+      assert.isTrue(await debug.isMutualAssociatedAddress(one.address, two.address))
 
     })
 
     it("should use one mappings", async function () {
 
-      await debug.associate2(owner.address, satoken.address);
+      await debug.associate2(one.address, two.address);
+      assert.isTrue(await debug.isMutualAssociatedAddress2(one.address, two.address))
 
     })
 
