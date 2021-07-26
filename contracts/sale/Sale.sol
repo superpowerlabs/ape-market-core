@@ -49,7 +49,7 @@ contract Sale {
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external virtual
   onlySaleOwner {
-    (ERC20Min sellingToken, address owner, uint amount) = _saleData.setLaunch(saleId);
+    (IERC20Min sellingToken, address owner, uint amount) = _saleData.setLaunch(saleId);
     sellingToken.transferFrom(owner, address(this), amount);
   }
 
@@ -77,7 +77,7 @@ contract Sale {
 
   function withdrawToken(uint256 amount) external virtual
   onlySaleOwner {
-    (ERC20Min sellingToken, uint fee) = _saleData.setWithdrawToken(saleId, amount);
+    (IERC20Min sellingToken, uint fee) = _saleData.setWithdrawToken(saleId, amount);
     sellingToken.transfer(msg.sender, amount + fee);
   }
 

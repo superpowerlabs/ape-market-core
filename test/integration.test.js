@@ -94,6 +94,10 @@ describe("Integration Test", function () {
     return '' + amount + '0'.repeat(18);
   }
 
+  function normalizeMinMaxAmount (amount) {
+    return '' + amount + '0'.repeat(15);
+  }
+
   describe('Full flow', async function () {
 
     beforeEach(async function () {
@@ -116,8 +120,8 @@ describe("Integration Test", function () {
         paymentToken: tether.address,
         owner: abcOwner.address,
         remainingAmount: 0,
-        minAmount: 100,
-        capAmount: 20000,
+        minAmount: 100000,
+        capAmount: 20000000,
         pricingToken: 1,
         pricingPayment: 2,
         tokenListTimestamp: 0,
@@ -145,10 +149,10 @@ describe("Integration Test", function () {
       expect(setup.owner).to.equal(abcOwner.address)
 
       console.log('Launching ABC Sale')
-      await abc.connect(abcOwner).approve(abcSale.address, normalize(setup.capAmount * 1.05))
+      await abc.connect(abcOwner).approve(abcSale.address, normalizeMinMaxAmount(setup.capAmount * 1.05))
 
       await abcSale.connect(abcOwner).launch()
-      expect(await abc.balanceOf(abcSale.address)).to.equal(normalize(setup.capAmount * 1.05));
+      expect(await abc.balanceOf(abcSale.address)).to.equal(normalizeMinMaxAmount(setup.capAmount * 1.05));
 
       saleSetup.owner = xyzOwner.address;
       saleSetup.sellingToken = xyz.address;
@@ -161,9 +165,9 @@ describe("Integration Test", function () {
       xyzSaleId = await xyzSale.saleId()
 
       console.log("Launching XYZ Sale");
-      await xyz.connect(xyzOwner).approve(xyzSale.address, normalize(setup.capAmount * 1.05));
+      await xyz.connect(xyzOwner).approve(xyzSale.address, normalizeMinMaxAmount(setup.capAmount * 1.05));
       await xyzSale.connect(xyzOwner).launch()
-      expect(await xyz.balanceOf(xyzSale.address)).to.equal(normalize(setup.capAmount * 1.05));
+      expect(await xyz.balanceOf(xyzSale.address)).to.equal(normalizeMinMaxAmount(setup.capAmount * 1.05));
 
       console.log("Investor1 investing in ABC Sale without approval");
       // using hardcoded numbers here to simplicity
