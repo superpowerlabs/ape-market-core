@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "./ISAStorage.sol";
 import "../sale/ISale.sol";
@@ -24,6 +23,16 @@ interface ISATokenMin {
 
 }
 
+interface IERC20Min {
+
+  function transfer(address recipient, uint256 amount) external returns (bool);
+
+  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+  function decimals() external view returns (uint8);
+
+}
+
 contract SAManager is LevelAccess {
 
   using SafeMath for uint256;
@@ -33,11 +42,12 @@ contract SAManager is LevelAccess {
   ISale private _sale;
 
   address private _apeWallet;
-  IERC20 _feeToken;
+  IERC20Min _feeToken;
   uint256 _feeAmount; // the amount of fee in _feeToken charged for merge, split and transfer
 
   modifier feeRequired() {
-    _feeToken.transferFrom(msg.sender, _apeWallet, _feeAmount);
+    uint decimals = _feeToken.decimals();
+    _feeToken.transferFrom(msg.sender, _apeWallet, _feeAmount.mul(10 ** decimals));
     _;
   }
 
@@ -51,7 +61,7 @@ contract SAManager is LevelAccess {
   constructor(address tokenAddress, address storageAddress, address feeToken, uint feeAmount, address apeWallet_){
     _token = ISATokenMin(tokenAddress);
     _storage = ISAStorage(storageAddress);
-    _feeToken = IERC20(feeToken);
+    _feeToken = IERC20Min(feeToken);
     _feeAmount = feeAmount;
     _apeWallet = apeWallet_;
   }
@@ -71,59 +81,55 @@ contract SAManager is LevelAccess {
     return _apeWallet;
   }
 
-  function merge(uint256[] memory tokenIds, bool vestTokensBefore) external virtual feeRequired {
+  function merge(uint256[] memory tokenIds) external virtual feeRequired {
     require(tokenIds.length >= 2, "SAManager: Not enough SAs for merging");
     for (uint256 i = 0; i < tokenIds.length; i++) {
       require(_token.ownerOf(tokenIds[i]) == msg.sender, "SAManager: Only owner can merge tokens");
-    }
-    if (vestTokensBefore && !_token.vest(tokenIds[0])) {
-      return;
-    }
-
-    ISAStorage.Bundle memory bundle0 = _storage.getBundle(tokenIds[0]);
-    // keep this in a variable since sa0.sas will change
-    uint256 bundle0Len = bundle0.sas.length;
-    for (uint256 i = 1; i < tokenIds.length; i++) {
-      require(tokenIds[0] != tokenIds[i], "SAManager: Bundle can not merge to itself");
-      if (vestTokensBefore && !_token.vest(tokenIds[i])) {
-        continue;
+      for (uint w = 0; w < tokenIds.length; w++) {
+        if (w != i && tokenIds[w] == tokenIds[i]) {
+          revert("SAManager: Bundle can not merge to itself");
+        }
       }
-      ISAStorage.Bundle memory bundle1 = _storage.getBundle(tokenIds[i]);
-      // go through each sa in bundle1, and compare with every sa
-      // in bundle0, if same sale then combine and update the matching sa, otherwise, push
-      // into bundle0.
-      for (uint256 j = 0; j < bundle1.sas.length; j++) {
+    }
+    uint nextTokenId = _token.nextTokenId();
+    _storage.newBundle(nextTokenId);
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      ISAStorage.Bundle memory bundle = _storage.getBundle(tokenIds[i]);
+      for (uint256 j = 0; j < bundle.sas.length; j++) {
+        if (bundle.sas[j].remainingAmount == 0) {
+          // sa is empty
+          continue;
+        }
         bool matched = false;
-        for (uint256 k = 0; k < bundle0Len; k++) {
-          if (bundle1.sas[j].sale == bundle0.sas[k].sale) {
-            _storage.changeSA(tokenIds[j], k, bundle1.sas[j].remainingAmount, true);
+        ISAStorage.Bundle memory newBundle = _storage.getBundle(nextTokenId);
+        for (uint256 k = 0; k < newBundle.sas.length; k++) {
+          if (bundle.sas[j].sale == newBundle.sas[k].sale &&
+            bundle.sas[j].vestedPercentage == newBundle.sas[k].vestedPercentage) {
+            _storage.changeSA(nextTokenId, k, bundle.sas[j].remainingAmount, true);
             matched = true;
             break;
           }
         }
         if (!matched) {
-          _storage.addNewSA(tokenIds[0], bundle1.sas[j]);
+          _storage.addNewSA(nextTokenId, bundle.sas[j]);
         }
-        _storage.deleteSA(tokenIds[i], j);
       }
       _token.burn(tokenIds[i]);
     }
+    _token.mintWithExistingBundle(msg.sender);
   }
 
-  function split(uint256 tokenId, uint256[] memory keptAmounts, bool vestTokensBefore) public virtual feeRequired {
+  function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual feeRequired {
 
     require(_token.ownerOf(tokenId) == msg.sender, "SAManager: Only owner can split a token");
 
-    if (vestTokensBefore && !_token.vest(tokenId)) {
-      return;
-    }
     ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
     ISAStorage.SA[] memory sas = bundle.sas;
 
     require(keptAmounts.length == bundle.sas.length, "SANFT: length of sa does not match split");
     bool created;
     uint nextTokenId = _token.nextTokenId();
-    uint j = 0;
+    uint j;
     for (uint256 i = 0; i < keptAmounts.length; i++) {
       require(sas[i].remainingAmount >= keptAmounts[i], "SANFT: Split is incorrect");
       if (keptAmounts[i] == sas[j].remainingAmount) {
@@ -131,24 +137,23 @@ contract SAManager is LevelAccess {
         j++;
         continue;
       }
-//      console.log("Kept %s", keptAmounts[i]);
-      _storage.changeSA(tokenId, j, sas[i].remainingAmount.sub(keptAmounts[i]), false);
       if (!created) {
-        console.log("Changed %s", sas[i].remainingAmount.sub(keptAmounts[i]));
-        _storage.addBundle(nextTokenId, sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), 0);
+        _storage.addBundleWithSA(nextTokenId, sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
+        _token.mintWithExistingBundle(msg.sender);
+        _storage.addBundleWithSA(nextTokenId + 1, sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
         _token.mintWithExistingBundle(msg.sender);
         created = true;
       } else {
-        ISAStorage.SA memory newSA = ISAStorage.SA(sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), 0);
+        ISAStorage.SA memory newSA = ISAStorage.SA(sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
         _storage.addNewSA(nextTokenId, newSA);
+        if (keptAmounts[i] != 0) {
+          newSA = ISAStorage.SA(sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
+          _storage.addNewSA(nextTokenId + 1, newSA);
+          j++;
+        }
       }
-      if (keptAmounts[i] == 0) {
-        _storage.deleteSA(tokenId, j);
-      } else {
-        j++;
-      }
-      sas[i].remainingAmount = keptAmounts[i];
     }
+    _token.burn(tokenId);
   }
 
 

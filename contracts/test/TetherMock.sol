@@ -7,7 +7,7 @@ contract TetherMock is ERC20 {
 
   constructor ()
   ERC20("Tether", "USDT") {
-    _mint(msg.sender, 1000000);
+    _mint(msg.sender, 1000000 * 1e18);
   }
 
 }

@@ -29,10 +29,10 @@ describe("SAStorage", async function () {
 
   async function prePopulate() {
     let saId = 0
-    await storage.connect(manager).addBundle(saId++, sale1.address, 0, 100)
-    await storage.connect(manager).addBundle(saId++, sale2.address, 0, 100)
-    await storage.connect(manager).addBundle(saId++, sale1.address, 10, 90)
-    await storage.connect(manager).addBundle(saId++, sale2.address, 30, 50)
+    await storage.connect(manager).addBundleWithSA(saId++, sale1.address, 0, 100)
+    await storage.connect(manager).addBundleWithSA(saId++, sale2.address, 0, 100)
+    await storage.connect(manager).addBundleWithSA(saId++, sale1.address, 10, 90)
+    await storage.connect(manager).addBundleWithSA(saId++, sale2.address, 30, 50)
   }
 
   describe('#constructor & #getManager', async function () {
@@ -62,7 +62,7 @@ describe("SAStorage", async function () {
 
   })
 
-  describe('#addBundle', async function () {
+  describe('#addBundleWithSA', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
@@ -72,9 +72,9 @@ describe("SAStorage", async function () {
 
       let saId = 3
 
-      await expect(storage.connect(manager).addBundle(saId, sale1.address, 0, 100))
+      await expect(storage.connect(manager).addBundleWithSA(saId, sale1.address, 0, 100))
           .to.emit(storage, 'BundleAdded')
-          .withArgs(saId, sale1.address, 0, 100)
+          .withArgs(saId, sale1.address)
       assert.equal((await storage.getBundle(saId)).sas[0].sale, sale1.address)
     })
 
@@ -82,10 +82,10 @@ describe("SAStorage", async function () {
 
       let saId = 3
 
-      await storage.connect(manager).addBundle(saId, sale1.address, 0, 100)
+      await storage.connect(manager).addBundleWithSA(saId, sale1.address, 0, 100)
 
       await assertThrowsMessage(
-          storage.connect(manager).addBundle(saId, sale1.address, 20, 20),
+          storage.connect(manager).addBundleWithSA(saId, sale1.address, 20, 20),
           'SAStorage: Bundle already added')
 
     })
@@ -100,7 +100,7 @@ describe("SAStorage", async function () {
     it("should delete a sale", async function () {
 
       let saId = 3
-      await storage.connect(manager).addBundle(saId, sale1.address, 0, 100)
+      await storage.connect(manager).addBundleWithSA(saId, sale1.address, 0, 100)
       await expect(storage.connect(manager).deleteBundle(saId))
           .to.emit(storage, 'BundleDeleted')
           .withArgs(saId)
