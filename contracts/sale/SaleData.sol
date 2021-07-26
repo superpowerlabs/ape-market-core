@@ -58,7 +58,7 @@ contract SaleData is ISaleData, LevelAccess {
 
   function denormalize(address sellingToken, uint64 amount) public view override returns (uint) {
     // this should be called by the DApp to send the Setup object
-    IERC20Min token = IER20Min(sellingToken);
+    IERC20Min token = IERC20Min(sellingToken);
     uint decimals = token.decimals();
     return uint256(amount).mul(1000).div(10 ** decimals);
   }
