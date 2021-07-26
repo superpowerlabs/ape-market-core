@@ -20,8 +20,8 @@ interface ERC20Min {
 interface ISaleData {
 
   struct VestingStep {
-    uint256 timestamp;
-    uint256 percentage;
+    uint128 timestamp;
+    uint128 percentage;
   }
 
   struct Setup {

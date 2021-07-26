@@ -23,7 +23,7 @@ interface ISATokenMin {
 
 }
 
-interface ERC20Min {
+interface IERC20Min {
 
   function transfer(address recipient, uint256 amount) external returns (bool);
 
@@ -42,7 +42,7 @@ contract SAManager is LevelAccess {
   ISale private _sale;
 
   address private _apeWallet;
-  ERC20Min _feeToken;
+  IERC20Min _feeToken;
   uint256 _feeAmount; // the amount of fee in _feeToken charged for merge, split and transfer
 
   modifier feeRequired() {
@@ -61,7 +61,7 @@ contract SAManager is LevelAccess {
   constructor(address tokenAddress, address storageAddress, address feeToken, uint feeAmount, address apeWallet_){
     _token = ISATokenMin(tokenAddress);
     _storage = ISAStorage(storageAddress);
-    _feeToken = ERC20Min(feeToken);
+    _feeToken = IERC20Min(feeToken);
     _feeAmount = feeAmount;
     _apeWallet = apeWallet_;
   }
