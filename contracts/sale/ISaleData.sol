@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
 import "../nft/ISAToken.sol";
 
 
-interface ERC20Min {
+interface IERC20Min {
 
   function transfer(address recipient, uint256 amount) external returns (bool);
 
@@ -26,8 +26,8 @@ interface ISaleData {
 
   struct Setup {
     ISAToken satoken;
-    ERC20Min sellingToken;
-    ERC20Min paymentToken;
+    IERC20Min sellingToken;
+    IERC20Min paymentToken;
     address owner;
     uint256 remainingAmount;
     uint64 minAmount;
@@ -42,17 +42,19 @@ interface ISaleData {
 
   function normalize(uint saleId, uint64 amount) external view returns (uint);
 
+  function denormalize(address sellingToken, uint64 amount) external view returns (uint);
+
   function setVest(uint saleId, uint256 lastVestedPercentage, uint256 lockedAmount) external returns (uint, uint);
 
   function triggerTokenListing(uint saleId) external;
 
   function approveInvestor(uint saleId, address investor, uint256 amount) external;
 
-  function setWithdrawToken(uint saleId, uint256 amount) external returns (ERC20Min, uint);
+  function setWithdrawToken(uint saleId, uint256 amount) external returns (IERC20Min, uint);
 
   function setInvest(uint saleId, address investor, uint256 amount) external returns (uint, uint, uint);
 
-  function setLaunch(uint saleId) external returns (ERC20Min, address, uint);
+  function setLaunch(uint saleId) external returns (IERC20Min, address, uint);
 
   function makeTransferable(uint saleId) external;
 

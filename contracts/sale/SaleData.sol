@@ -44,7 +44,7 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function setLaunch(uint saleId) external virtual override
-  onlyLevel(MANAGER_LEVEL) returns (ERC20Min, address, uint){
+  onlyLevel(MANAGER_LEVEL) returns (IERC20Min, address, uint){
     uint capAmount = normalize(saleId, _setups[saleId].capAmount);
     uint256 fee = capAmount.mul(_setups[saleId].tokenFeePercentage).div(100);
     _setups[saleId].remainingAmount = capAmount;
@@ -54,6 +54,13 @@ contract SaleData is ISaleData, LevelAccess {
   function normalize(uint saleId, uint64 amount) public view override returns (uint) {
     uint decimals = _setups[saleId].sellingToken.decimals();
     return uint256(amount).mul(10 ** decimals).div(1000);
+  }
+
+  function denormalize(address sellingToken, uint64 amount) public view override returns (uint) {
+    // this should be called by the DApp to send the Setup object
+    IERC20Min token = IER20Min(sellingToken);
+    uint decimals = token.decimals();
+    return uint256(amount).mul(1000).div(10 ** decimals);
   }
 
   function getSetupById(uint saleId) external view override
@@ -80,7 +87,7 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function setWithdrawToken(uint saleId, uint256 amount) external virtual override
-  onlyLevel(MANAGER_LEVEL) returns (ERC20Min, uint){
+  onlyLevel(MANAGER_LEVEL) returns (IERC20Min, uint){
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
     require(amount <= _setups[saleId].remainingAmount, "Sale: Cannot withdraw more than remaining");
