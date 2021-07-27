@@ -25,9 +25,7 @@ contract Profile is IProfile, Ownable {
   function associateAccount(address account, uint timestamp, bytes memory signature) external override {
     require(msg.sender != address(0) && account != address(0), "Profile: no invalid accounts");
     require(timestamp + _validity > block.timestamp, "Profile: request is expired");
-    bytes32 hash = encodeForSignature(account, msg.sender, timestamp);
-    address signer = ECDSA.recover(hash, signature);
-    require(signer == account, "Profile: invalid signature");
+    require(ECDSA.recover(encodeForSignature(account, msg.sender, timestamp), signature) == account, "Profile: invalid signature");
     _associatedAccounts[_getPseudoAddress(msg.sender, account)] = true;
     emit AccountsAssociated(msg.sender, account);
   }
