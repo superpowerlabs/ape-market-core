@@ -146,4 +146,23 @@ describe("Profile", function () {
 
   })
 
+  describe('#isMyAssociated', async function () {
+
+    beforeEach(async function () {
+      await initNetworkAndDeploy()
+    })
+
+    it("should verify that account2 is associate to account1", async function () {
+
+      // account1 is the signer
+      let signature = await getSignatureByAccount1(account1.address, account2.address, now)
+      await profile.connect(account2).associateAccount(account1.address, now, signature)
+      assert.isTrue(await profile.connect(account1).isMyAssociated(account2.address))
+      assert.isTrue(await profile.connect(account2).isMyAssociated(account1.address))
+
+    })
+
+
+  })
+
 })
