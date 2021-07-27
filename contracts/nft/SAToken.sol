@@ -9,29 +9,16 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./ISAToken.sol";
 import "./ISAStorage.sol";
+import "../sale/ISale.sol";
 import "../utils/LevelAccess.sol";
+import "../user/IProfile.sol";
 
 // for debugging only
 import "hardhat/console.sol";
 
-interface IProfile {
-  function areAccountsAssociated(address addr1, address addr2) external view returns (bool);
-}
-
 interface ISaleFactory {
 
   function isLegitSale(address sale) external view returns (bool);
-}
-
-interface ISaleMin {
-
-  function getVestedPercentage() external view returns (uint256);
-
-  function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
-
-  function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint, uint);
-
-  function isTransferable() external view returns (bool);
 }
 
 
@@ -81,7 +68,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
         // check if any sale is not transferable
         ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
         for (uint i = 0; i < bundle.sas.length; i++) {
-          ISaleMin sale = ISaleMin(bundle.sas[i].sale);
+          ISale sale = ISale(bundle.sas[i].sale);
           console.log(sale.isTransferable());
           if (!sale.isTransferable()) {
             revert("SAToken: token not transferable");
@@ -129,7 +116,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     uint256 numEmptySubSAs = 0;
     for (uint256 i = 0; i < bundle.sas.length; i++) {
       ISAStorage.SA memory sa = bundle.sas[i];
-      ISaleMin sale = ISaleMin(sa.sale);
+      ISale sale = ISale(sa.sale);
       (uint256 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
       console.log("vesting", tokenId, vestedAmount);
       if (vestedPercentage == 100) {
