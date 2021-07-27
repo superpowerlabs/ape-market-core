@@ -32,19 +32,13 @@ contract Profile is Ownable {
   }
 
   function dissociateAccount(address associatedAccount) external {
-    bool right = _associatedAccounts[keccak256(abi.encodePacked(msg.sender, associatedAccount))];
-    bool left = _associatedAccounts[keccak256(abi.encodePacked(associatedAccount, msg.sender))];
-    require(right || left, "Profile: association not found");
-    if (right) {
-      delete _associatedAccounts[keccak256(abi.encodePacked(msg.sender, associatedAccount))];
-    }
-    if (left) {
-      delete _associatedAccounts[keccak256(abi.encodePacked(associatedAccount, msg.sender))];
-    }
+    require(areAccountsAssociated(msg.sender, associatedAccount), "Profile: association not found");
+    delete _associatedAccounts[keccak256(abi.encodePacked(msg.sender, associatedAccount))];
+    delete _associatedAccounts[keccak256(abi.encodePacked(associatedAccount, msg.sender))];
     emit AccountsDissociated(msg.sender, associatedAccount);
   }
 
-  function areAccountsAssociated(address addr1, address addr2) external view returns (bool) {
+  function areAccountsAssociated(address addr1, address addr2) public view returns (bool) {
     return (
     _associatedAccounts[keccak256(abi.encodePacked(addr1, addr2))] ||
     _associatedAccounts[keccak256(abi.encodePacked(addr2, addr1))]
