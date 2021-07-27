@@ -10,7 +10,7 @@ import "./IProfile.sol";
 
 contract Profile is IProfile, Ownable {
 
-  mapping(bytes32 => bool) private _associatedAccounts;
+  mapping(address => bool) private _associatedAccounts;
   uint private _validity = 1 days;
 
   function changeValidity(uint validity) external override onlyOwner {
@@ -18,10 +18,8 @@ contract Profile is IProfile, Ownable {
     ValidityChanged(validity);
   }
 
-  function _packAddresses(address addr1, address addr2) private pure returns (bytes32){
-    uint o = uint256(uint160(addr1));
-    uint t = uint256(uint160(addr2));
-    return keccak256(abi.encodePacked(o + t));
+  function _getPseudoAddress(address addr1, address addr2) private pure returns (address){
+    return address(uint160(uint256(uint160(addr1)) + uint256(uint160(addr2))));
   }
 
   function associateAccount(address account, uint timestamp, bytes memory signature) external override {
@@ -30,18 +28,18 @@ contract Profile is IProfile, Ownable {
     bytes32 hash = encodeForSignature(account, msg.sender, timestamp);
     address signer = ECDSA.recover(hash, signature);
     require(signer == account, "Profile: invalid signature");
-    _associatedAccounts[_packAddresses(msg.sender, account)] = true;
+    _associatedAccounts[_getPseudoAddress(msg.sender, account)] = true;
     emit AccountsAssociated(msg.sender, account);
   }
 
   function dissociateAccount(address account) external override {
     require(areAccountsAssociated(msg.sender, account), "Profile: association not found");
-    delete _associatedAccounts[_packAddresses(msg.sender, account)];
+    delete _associatedAccounts[_getPseudoAddress(msg.sender, account)];
     emit AccountsDissociated(msg.sender, account);
   }
 
   function areAccountsAssociated(address addr1, address addr2) public view override returns (bool) {
-    return _associatedAccounts[_packAddresses(addr1, addr2)];
+    return _associatedAccounts[_getPseudoAddress(addr1, addr2)];
   }
 
   function isMyAssociated(address addr) external view override returns (bool) {
