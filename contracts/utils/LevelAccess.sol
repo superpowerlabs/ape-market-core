@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract LevelAccess {
+abstract contract LevelAccess {
 
   event LevelSet(uint level, address account, address setter);
 
