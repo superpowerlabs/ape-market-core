@@ -14,6 +14,10 @@ import "../utils/LevelAccess.sol";
 // for debugging only
 import "hardhat/console.sol";
 
+interface IProfile {
+  function areAccountsAssociated(address addr1, address addr2) external view returns (bool);
+}
+
 interface ISaleFactory {
 
   function isLegitSale(address sale) external view returns (bool);
@@ -27,7 +31,7 @@ interface ISaleMin {
 
   function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint, uint);
 
-  function isTransferable() external view returns(bool);
+  function isTransferable() external view returns (bool);
 }
 
 
@@ -41,13 +45,14 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   Counters.Counter private _tokenIdCounter;
 
   ISAStorage private _storage;
-
   ISaleFactory private _factory;
+  IProfile private _profile;
 
-  constructor(address factoryAddress, address storageAddress)
+  constructor(address factoryAddress, address storageAddress, address profileAddress)
   ERC721("SA NFT Token", "SANFT") {
     _factory = ISaleFactory(factoryAddress);
     _storage = ISAStorage(storageAddress);
+    _profile = IProfile(profileAddress);
   }
 
   function updateFactory(address factoryAddress) external override virtual
@@ -72,13 +77,15 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
     if (from != address(0) && to != address(0)) {
-      // check if any sale is not transferable
-      ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
-      for (uint i = 0; i < bundle.sas.length; i++) {
-        ISaleMin sale = ISaleMin(bundle.sas[i].sale);
-        console.log(sale.isTransferable());
-        if (!sale.isTransferable()) {
-          revert("SAToken: token not transferable");
+      if (!_profile.areAccountsAssociated(from, to)) {
+        // check if any sale is not transferable
+        ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
+        for (uint i = 0; i < bundle.sas.length; i++) {
+          ISaleMin sale = ISaleMin(bundle.sas[i].sale);
+          console.log(sale.isTransferable());
+          if (!sale.isTransferable()) {
+            revert("SAToken: token not transferable");
+          }
         }
       }
       _storage.updateBundle(tokenId);

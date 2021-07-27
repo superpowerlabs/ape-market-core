@@ -37,6 +37,10 @@ describe("SaleFactory", async function () {
 
   async function initNetworkAndDeploy() {
 
+    Profile = await ethers.getContractFactory("Profile")
+    profile = await Profile.deploy()
+    await profile.deployed()
+
     SAStorage = await ethers.getContractFactory("SAStorage")
     storage = await SAStorage.deploy()
     await storage.deployed()
@@ -52,7 +56,7 @@ describe("SaleFactory", async function () {
     factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
 
     SAToken = await ethers.getContractFactory("SAToken")
-    satoken = await SAToken.deploy(factory.address, storage.address)
+    satoken = await SAToken.deploy(factory.address, storage.address, profile.address)
     await satoken.deployed()
 
     ERC20Token = await ethers.getContractFactory("ERC20Token")

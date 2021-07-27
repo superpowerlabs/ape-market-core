@@ -3,6 +3,8 @@ const {assertThrowsMessage} = require('./helpers')
 
 describe("SAToken", async function () {
 
+  let Profile
+  let profile
   let SAStorage
   let storage
   let SAToken
@@ -29,6 +31,9 @@ describe("SAToken", async function () {
   }
 
   async function initNetworkAndDeploy() {
+    Profile = await ethers.getContractFactory("Profile")
+    profile = await Profile.deploy()
+    await profile.deployed()
     SAStorage = await ethers.getContractFactory("SAStorage")
     storage = await SAStorage.deploy()
     await storage.deployed()
@@ -42,7 +47,7 @@ describe("SAToken", async function () {
     await factoryMock.deployed()
     await factoryMock.setLegitSale(saleMock.address)
     SAToken = await ethers.getContractFactory("SAToken")
-    token = await SAToken.deploy(factoryMock.address, storage.address)
+    token = await SAToken.deploy(factoryMock.address, storage.address, profile.address)
     await token.deployed()
     await saleMock.setToken(token.address)
     await fakeSale.setToken(token.address)

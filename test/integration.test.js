@@ -7,6 +7,8 @@ const saleJson = require('../src/artifacts/contracts/sale/Sale.sol/Sale.json')
 
 describe("Integration Test", function () {
 
+  let Profile
+  let profile
   let ERC20Token
   let abc
   let xyz
@@ -46,6 +48,10 @@ describe("Integration Test", function () {
 
   async function initNetworkAndDeploy() {
 
+    Profile = await ethers.getContractFactory("Profile")
+    profile = await Profile.deploy()
+    await profile.deployed()
+
     SAStorage = await ethers.getContractFactory("SAStorage")
     storage = await SAStorage.deploy()
     await storage.deployed()
@@ -61,7 +67,7 @@ describe("Integration Test", function () {
     factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
 
     SAToken = await ethers.getContractFactory("SAToken")
-    satoken = await SAToken.deploy(factory.address, storage.address)
+    satoken = await SAToken.deploy(factory.address, storage.address, profile.address)
     await satoken.deployed()
 
     await storage.grantLevel(await storage.MANAGER_LEVEL(), satoken.address)
