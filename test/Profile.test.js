@@ -1,7 +1,7 @@
 const {expect, assert} = require("chai")
 const {assertThrowsMessage, formatBundle} = require('./helpers')
 
-describe("Debug", function () {
+describe("Profile", function () {
 
   let Profile
   let profile

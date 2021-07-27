@@ -31,11 +31,11 @@ contract Profile is Ownable {
     emit AccountsAssociated(msg.sender, account);
   }
 
-  function dissociateAccount(address associatedAccount) external {
-    require(areAccountsAssociated(msg.sender, associatedAccount), "Profile: association not found");
-    delete _associatedAccounts[keccak256(abi.encodePacked(msg.sender, associatedAccount))];
-    delete _associatedAccounts[keccak256(abi.encodePacked(associatedAccount, msg.sender))];
-    emit AccountsDissociated(msg.sender, associatedAccount);
+  function dissociateAccount(address account) external {
+    require(areAccountsAssociated(msg.sender, account), "Profile: association not found");
+    delete _associatedAccounts[keccak256(abi.encodePacked(msg.sender, account))];
+    delete _associatedAccounts[keccak256(abi.encodePacked(account, msg.sender))];
+    emit AccountsDissociated(msg.sender, account);
   }
 
   function areAccountsAssociated(address addr1, address addr2) public view returns (bool) {
