@@ -3,6 +3,8 @@ const {assertThrowsMessage} = require('./helpers')
 
 describe("SAStorage", async function () {
 
+  let Profile
+  let profile
   let SAStorage
   let storage
   let MANAGER_LEVEL
