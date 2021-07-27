@@ -1,5 +1,4 @@
 const {expect, assert} = require("chai")
-const {assertThrowsMessage, formatBundle} = require('./helpers')
 
 describe("Profile", function () {
 
@@ -32,7 +31,6 @@ describe("Profile", function () {
     await profile.deployed()
 
     now = Math.round(Date.now() / 1000)
-
   }
 
   describe('#associateAccount', async function () {
@@ -49,8 +47,6 @@ describe("Profile", function () {
       await expect(profile.connect(account2).associateAccount(account1.address, now, signature))
           .emit(profile, 'AccountsAssociated')
           .withArgs(account2.address, account1.address);
-
-
     })
 
     it("should throw if not signed by the account to be associated", async function () {
@@ -59,7 +55,6 @@ describe("Profile", function () {
 
       await expect(profile.connect(account2).associateAccount(account3.address, now, signature))
           .revertedWith('Profile: invalid signature')
-
     })
 
     it("should throw if the transaction is executed after validity late", async function () {
@@ -68,7 +63,6 @@ describe("Profile", function () {
 
       await expect(profile.connect(account2).associateAccount(account1.address, now - (2 * day), signature))
           .revertedWith('Profile: request is expired')
-
     })
 
     it("should throw if invalid address", async function () {
@@ -77,9 +71,7 @@ describe("Profile", function () {
 
       await expect(profile.connect(account2).associateAccount(addr0, now - (2 * day), signature))
           .revertedWith('Profile: no invalid accounts')
-
     })
-
   })
 
   describe('#dissociateAccount', async function () {
@@ -97,8 +89,6 @@ describe("Profile", function () {
       await expect(profile.connect(account2).dissociateAccount(account1.address))
           .emit(profile, 'AccountsDissociated')
           .withArgs(account2.address, account1.address);
-
-
     })
 
     it("should allow associate account1 to dissociate account2", async function () {
@@ -110,8 +100,6 @@ describe("Profile", function () {
       await expect(profile.connect(account1).dissociateAccount(account2.address))
           .emit(profile, 'AccountsDissociated')
           .withArgs(account1.address, account2.address);
-
-
     })
 
     it("should throw if trying to dissociate not-associated account", async function () {
@@ -121,7 +109,6 @@ describe("Profile", function () {
 
       await expect(profile.connect(account2).dissociateAccount(account3.address))
           .revertedWith('Profile: association not found')
-
     })
 
   })
@@ -157,9 +144,6 @@ describe("Profile", function () {
 
     })
 
-
   })
-
-
 
 })
