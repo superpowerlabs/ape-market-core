@@ -45,10 +45,7 @@ contract Profile is IProfile, Ownable {
   }
 
   function encodeForSignature(address addr1, address addr2, uint timestamp) public pure override returns (bytes32){
-    return keccak256(abi.encodePacked(
-        "\x19\x00", // EIP-191
-        addr1, addr2, timestamp
-      ));
+    return keccak256(abi.encodePacked("\x19\x00"/* EIP-191 */, addr1, addr2, timestamp));
   }
 
 }
