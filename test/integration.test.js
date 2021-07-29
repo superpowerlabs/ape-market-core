@@ -224,7 +224,7 @@ describe("Integration Test", function () {
 
       console.log("Checking Ape Owner for investing fee");
       expect(await satoken.balanceOf(apeWallet.address)).to.equal(3);
-      nft = satoken.tokenOfOwnerByIndex(apeWallet.address, 0);
+      let nft = satoken.tokenOfOwnerByIndex(apeWallet.address, 0);
       bundle = await storage.getBundle(nft);
       expect(bundle.sas[0].sale).to.equal(abcSale.address);
       expect(bundle.sas[0].remainingAmount).to.equal(normalize(300));

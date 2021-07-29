@@ -24,7 +24,11 @@ contract SaleFactory is LevelAccess {
   }
 
   function lastSale() external view returns (address) {
-    return _allSales[_allSales.length - 1];
+    if (_allSales.length == 0) {
+      return address(0);
+    } else {
+      return _allSales[_allSales.length - 1];
+    }
   }
 
   function getSale(uint i) external view returns (address) {

@@ -117,6 +117,8 @@ describe("SaleFactory", async function () {
 
     it("should create a new sale", async function () {
 
+      assert.equal(await factory.lastSale(), addr0)
+
       await expect(factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address))
           .to.emit(factory, "NewSale")
       const saleAddress = await factory.lastSale()
