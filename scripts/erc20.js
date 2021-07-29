@@ -12,10 +12,10 @@ async function main() {
   // If this script is run directly using `node` you may want to call compile
   // manually to make sure everything is compiled
   // await hre.run('compile');
-  let [apeOwner, tetherOwner, abcOwner, xyzOwner, investor1, investor2]  = await ethers.getSigners();
+  [apeOwner, tetherOwner, abcOwner, xyzOwner, investor1, investor2]  = await ethers.getSigners();
 
-  const Tether = await hre.ethers.getContractFactory("Tether");
-  const tether = await Tether.connect(tetherOwner).deploy("NEWTether", "NEWUSDT");
+  Tether = await hre.ethers.getContractFactory("Tether");
+  tether = await Tether.connect(tetherOwner).deploy("NEWTether", "NEWUSDT");
   await tether.deployed();
   console.log("Tether deployed to:", tether.address);
 
@@ -24,7 +24,7 @@ async function main() {
   console.log((await tether.balanceOf(tetherOwner.address)).toNumber());
 
   //await tether.connect(tetherOwner).approve(tetherOwner.address, "40000");
-  let transaction = await tether.connect(tetherOwner).transfer(investor1.address, "40000");
+  transaction = await tether.connect(tetherOwner).transfer(investor1.address, "40000");
   console.log(await transaction.wait());
 
   console.log((await tether.balanceOf(investor1.address)).toNumber());
@@ -44,8 +44,8 @@ async function main() {
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main()
-  .then(() => process.exit(0))
-  .catch(error => {
-    console.error(error);
-    process.exit(1);
-  });
+    .then(() => process.exit(0))
+    .catch(error => {
+      console.error(error);
+      process.exit(1);
+    });
