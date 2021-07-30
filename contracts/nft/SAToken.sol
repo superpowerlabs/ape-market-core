@@ -63,13 +63,14 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal
   override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
+//    console.log("Transfer from %s to %s", from, to);
     if (from != address(0) && to != address(0)) {
       if (!_profile.areAccountsAssociated(from, to)) {
         // check if any sale is not transferable
         ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
         for (uint256 i = 0; i < bundle.sas.length; i++) {
           ISale sale = ISale(bundle.sas[i].sale);
-          console.log(sale.isTransferable());
+//          console.log(sale.isTransferable());
           if (!sale.isTransferable()) {
             revert("SAToken: token not transferable");
           }
@@ -111,7 +112,8 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   function vest(uint256 tokenId) public virtual override
   returns (bool) {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
-    console.log("vesting", tokenId);
+//    console.log("vesting", tokenId);
+    // console.log("gas left before vesting", gasleft());
     ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
     uint256 nextId = _tokenIdCounter.current();
     bool notEmtpy;
@@ -120,15 +122,17 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
       ISAStorage.SA memory sa = bundle.sas[i];
       ISale sale = ISale(sa.sale);
       (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
-      console.log("vesting", tokenId, vestedAmount);
+//      console.log("vesting", tokenId, vestedAmount);
       if (vestedPercentage != 100) {
         // we skip vested SAs
         if (!minted) {
           _mint(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+          // console.log("gas left after mint", gasleft());
           minted = true;
         } else {
           ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
           _storage.addSAToBundle(nextId, newSA);
+          // console.log("gas left after addNewSA", gasleft());
         }
         notEmtpy = true;
       }
@@ -144,7 +148,9 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
 
   function _burn(uint256 tokenId) internal virtual override {
     super._burn(tokenId);
+    // console.log("gas left after burn", gasleft());
     _storage.deleteBundle(tokenId);
+    // console.log("gas left after delete bundle", gasleft());
   }
 
   // from OpenZeppelin's Address.sol

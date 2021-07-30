@@ -38,6 +38,14 @@ describe("Integration Test", function () {
   let timestamp
   let chainId
 
+  function CL() {
+    let str = ''
+    for (let s of arguments) {
+      str += s + ' '
+    }
+    // console.log(str)
+  }
+
   before(async function () {
     [owner, factoryAdmin, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet] = await ethers.getSigners()
   })
@@ -112,7 +120,7 @@ describe("Integration Test", function () {
 
     it("should verify that the entire process works", async function () {
 
-      console.log('Fund investors')
+      CL('Fund investors')
       await (await tether.connect(tetherOwner).transfer(investor1.address, normalize(40000)))
       expect(await tether.balanceOf(investor1.address)).equal(normalize(40000));
       await (await tether.connect(tetherOwner).transfer(investor2.address, normalize(50000)))
@@ -145,7 +153,7 @@ describe("Integration Test", function () {
           percentage: 100
         }]
 
-      console.log('Deploy new sale for ABC')
+      CL('Deploy new sale for ABC')
       await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address)
       let saleAddress = await factory.lastSale()
 
@@ -154,7 +162,7 @@ describe("Integration Test", function () {
       const setup = await saleData.getSetupById(abcSaleId)
       expect(setup.owner).equal(abcOwner.address)
 
-      console.log('Launching ABC Sale')
+      CL('Launching ABC Sale')
       await abc.connect(abcOwner).approve(abcSale.address, normalizeMinMaxAmount(setup.capAmount * 1.05))
 
       await abcSale.connect(abcOwner).launch()
@@ -164,23 +172,23 @@ describe("Integration Test", function () {
       saleSetup.sellingToken = xyz.address;
       saleSetup.pricingPayment = 1;
 
-      console.log('Deploy new sale for XYZ')
+      CL('Deploy new sale for XYZ')
       await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address)
       saleAddress = await factory.lastSale()
       xyzSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
       xyzSaleId = await xyzSale.saleId()
 
-      console.log("Launching XYZ Sale");
+      CL("Launching XYZ Sale");
       await xyz.connect(xyzOwner).approve(xyzSale.address, normalizeMinMaxAmount(setup.capAmount * 1.05));
       await xyzSale.connect(xyzOwner).launch()
       expect(await xyz.balanceOf(xyzSale.address)).equal(normalizeMinMaxAmount(setup.capAmount * 1.05));
 
-      console.log("Investor1 investing in ABC Sale without approval");
+      CL("Investor1 investing in ABC Sale without approval");
       // using hardcoded numbers here to simplicity
       await tether.connect(investor1).approve(abcSale.address, normalize(10000 * 2 * 1.1));
-      await expect(abcSale.connect(investor1).invest(normalize(10000))).be.revertedWith("Sale: Amount if above approved amount");
+      await expect(abcSale.connect(investor1).invest(normalize(10000))).revertedWith("Sale: Amount if above approved amount");
 
-      console.log("Investor1 investing in ABC Sale with approval");
+      CL("Investor1 investing in ABC Sale with approval");
       // using hardcoded numbers here to simplicity
       await saleData.connect(abcOwner).approveInvestor(abcSaleId, investor1.address, normalize(10000));
       await abcSale.connect(investor1).invest(normalize(6000));
@@ -194,7 +202,7 @@ describe("Integration Test", function () {
       expect(await tether.balanceOf(abcSale.address)).equal(normalize(6000 * 2));
 
 
-      console.log("Investor1 investing in ABC Sale with approval again");
+      CL("Investor1 investing in ABC Sale with approval again");
       // using hardcoded numbers here to simplicity
       await abcSale.connect(investor1).invest(normalize(4000));
       expect(await satoken.balanceOf(investor1.address)).equal(2);
@@ -207,7 +215,7 @@ describe("Integration Test", function () {
       expect(await tether.balanceOf(abcSale.address)).equal(normalize((6000 + 4000) * 2));
 
 
-      console.log("Investor2 investing int XYZ Sale with approval");
+      CL("Investor2 investing int XYZ Sale with approval");
       // using hardcoded numbers here to simplicity
       await tether.connect(investor2).approve(xyzSale.address, normalize(20000 * 1.1));
       await saleData.connect(xyzOwner).approveInvestor(xyzSaleId, investor2.address, normalize(20000));
@@ -222,7 +230,7 @@ describe("Integration Test", function () {
       expect(await tether.balanceOf(xyzSale.address)).equal(normalize(20000));
 
 
-      console.log("Checking Ape Owner for investing fee");
+      CL("Checking Ape Owner for investing fee");
       expect(await satoken.balanceOf(apeWallet.address)).equal(3);
       let nft = satoken.tokenOfOwnerByIndex(apeWallet.address, 0);
       bundle = await storage.getBundle(nft);
@@ -237,7 +245,7 @@ describe("Integration Test", function () {
       expect(bundle.sas[0].remainingAmount).equal(normalize(1000));
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4000));
 
-      console.log("Splitting investor 2's nft");
+      CL("Splitting investor 2's nft");
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
       bundle = await storage.getBundle(nft);
       expect(bundle.sas[0].remainingAmount).equal(normalize(20000));
@@ -247,13 +255,13 @@ describe("Integration Test", function () {
       await manager.connect(investor2).split(nft, keptAmounts);
       expect(await satoken.balanceOf(investor2.address)).equal(2);
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
-      // console.log('nft', nft.toNumber()) // 7
+      // CL('nft', nft.toNumber()) // 7
       bundle = await storage.getBundle(nft);
-      console.log(xyzSale.address)
+      CL(xyzSale.address)
       expect(bundle.sas[0].sale).equal(xyzSale.address);
       expect(bundle.sas[0].remainingAmount).equal(normalize(8000));
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 1);
-      // console.log('nft', nft.toNumber()) // 6
+      // CL('nft', nft.toNumber()) // 6
 
       bundle = await storage.getBundle(nft);
       expect(bundle.sas[0].sale).equal(xyzSale.address);
@@ -262,7 +270,7 @@ describe("Integration Test", function () {
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4100));
 
 
-      console.log("Transfer one of investor2 nft to investor1");
+      CL("Transfer one of investor2 nft to investor1");
       expect(await satoken.balanceOf(investor2.address)).equal(2);
       expect(await satoken.balanceOf(investor1.address)).equal(2);
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
@@ -272,7 +280,7 @@ describe("Integration Test", function () {
       expect(await satoken.balanceOf(investor1.address)).equal(3);
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4100));
 
-      console.log("Merge investor1's nft");
+      CL("Merge investor1's nft");
       expect(await satoken.balanceOf(investor1.address)).equal(3);
       let nft0 = satoken.tokenOfOwnerByIndex(investor1.address, 0);
       let nft1 = satoken.tokenOfOwnerByIndex(investor1.address, 1);
@@ -291,7 +299,7 @@ describe("Integration Test", function () {
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4200));
 
       let currentBlockTimeStamp;
-      console.log("Vesting NFT of investor1 after first mile stone");
+      CL("Vesting NFT of investor1 after first mile stone");
       // list tokens
       await saleData.connect(abcOwner).triggerTokenListing(abcSaleId);
       await saleData.connect(xyzOwner).triggerTokenListing(xyzSaleId);
@@ -313,7 +321,7 @@ describe("Integration Test", function () {
       expect(await xyz.balanceOf(investor1.address)).equal(normalize(4000));
       expect(bundle.sas[1].remainingAmount).equal(normalize(4000));
 
-      console.log("Vesting NFT 1 of investor1 after second mile stone");
+      CL("Vesting NFT 1 of investor1 after second mile stone");
       expect(await satoken.balanceOf(investor1.address)).equal(1);
       nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
       network = await ethers.provider.getNetwork();
@@ -327,13 +335,13 @@ describe("Integration Test", function () {
 
       expect(await satoken.balanceOf(investor1.address)).equal(0);
 
-      console.log("Withdraw payment from sale");
-      await expect(abcSale.connect(xyzOwner).withdrawPayment(normalize(20000))).be.revertedWith("Sale: caller is not the owner");
+      CL("Withdraw payment from sale");
+      await expect(abcSale.connect(xyzOwner).withdrawPayment(normalize(20000))).revertedWith("Sale: caller is not the owner");
 
-      console.log("balance is", (await tether.balanceOf(abcSale.address)).toString());
+      CL("balance is", (await tether.balanceOf(abcSale.address)).toString());
       await abcSale.connect(abcOwner).withdrawPayment(normalize(20000))
 
-      console.log("Withdraw token from sale");
+      CL("Withdraw token from sale");
 
     })
 

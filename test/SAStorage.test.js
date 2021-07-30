@@ -75,8 +75,8 @@ describe("SAStorage", async function () {
       let saId = 3
 
       await expect(storage.connect(manager).newBundleWithSA(saId, sale1.address, 0, 100))
-          .emit(storage, 'BundleAdded')
-          .withArgs(saId, sale1.address)
+          .emit(storage, 'BundleCreated')
+          .withArgs(saId)
       assert.equal((await storage.getBundle(saId)).sas[0].sale, sale1.address)
     })
 

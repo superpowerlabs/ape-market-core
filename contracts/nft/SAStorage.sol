@@ -48,7 +48,6 @@ contract SAStorage is ISAStorage, LevelAccess {
     _newEmptyBundle(bundleId);
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     _addSAToBundle(bundleId, listedSale);
-    emit BundleAdded(bundleId, saleAddress);
   }
 
   function newEmptyBundle(uint256 bundleId) external override virtual
@@ -86,13 +85,6 @@ contract SAStorage is ISAStorage, LevelAccess {
     _addSAToBundle(bundleId, newSA);
   }
 
-  function cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) external virtual override
-  bundleExists(bundleId) onlyLevel(MANAGER_LEVEL)
-  returns (bool) {
-    return _cleanEmptySAs(bundleId, numEmptySAs);
-  }
-
-
   // internal methods:
 
   function _newEmptyBundle(
@@ -102,7 +94,7 @@ contract SAStorage is ISAStorage, LevelAccess {
     require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
     _bundles[bundleId].creationTimestamp = uint32(block.timestamp);
     _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
-    emit NewBundle(bundleId);
+    emit BundleCreated(bundleId);
   }
 
   function _deleteBundle(uint256 bundleId) internal virtual
@@ -117,59 +109,6 @@ contract SAStorage is ISAStorage, LevelAccess {
   {
     _bundles[bundleId].sas.push(newSA);
     _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
-  }
-
-  // _cleanEmptySAs looks not very useful.
-  // We will verify and possibly optimize it later.
-  function _cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) internal virtual
-  returns (bool) {
-    bool emptyBundle = false;
-    Bundle storage bundle = _bundles[bundleId];
-    if (bundle.sas.length == 0 || bundle.sas.length == numEmptySAs) {
-      console.log("SANFT: Simple empty Bundle", bundleId, bundle.sas.length, numEmptySAs);
-      emptyBundle = true;
-    } else {
-      console.log("SANFT: Regular process");
-      if (numEmptySAs < bundle.sas.length / 2) {// empty is less than half, then shift elements
-        console.log("SANFT: Taking the shift route", bundle.sas.length, numEmptySAs);
-        for (uint256 i = 0; i < bundle.sas.length; i++) {
-          if (bundle.sas[i].remainingAmount == 0) {
-            // find one SA from the end that's not 100% vested
-            for (uint256 j = bundle.sas.length - 1; j > i; j--) {
-              if (bundle.sas[j].remainingAmount > 0) {
-                bundle.sas[i] = bundle.sas[j];
-              }
-              bundle.sas.pop();
-            }
-            // cannot find such SA
-            if (bundle.sas[i].remainingAmount == 0) {
-              assert(bundle.sas.length - 1 == i);
-              bundle.sas.pop();
-            }
-          }
-        }
-      } else {// empty is more than half, then create a new array
-        console.log("Taking the new array route", bundle.sas.length, numEmptySAs);
-        SA[] memory newSAs = new SA[](bundle.sas.length - numEmptySAs);
-        uint256 SAindex;
-        for (uint256 i = 0; i < bundle.sas.length; i++) {
-          if (bundle.sas[i].remainingAmount > 0) {
-            newSAs[SAindex++] = bundle.sas[i];
-          }
-          delete bundle.sas[i];
-        }
-        delete bundle.sas;
-        assert(bundle.sas.length == 0);
-        for (uint256 i = 0; i < newSAs.length; i++) {
-          bundle.sas.push(newSAs[i]);
-        }
-      }
-    }
-    if (emptyBundle || bundle.sas.length == 0) {
-      _deleteBundle(bundleId);
-      return false;
-    }
-    return true;
   }
 
 }

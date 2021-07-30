@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 
 interface ISAStorage {
 
-  event BundleAdded(uint256 bundleId, address initialSale);
-  event NewBundle(uint256 bundleId);
+  event BundleCreated(uint256 bundleId);
   event BundleDeleted(uint256 bundleId);
 
   struct SA {
@@ -33,5 +32,4 @@ interface ISAStorage {
 
   function addSAToBundle(uint256 bundleId, SA memory newSA) external;
 
-  function cleanEmptySAs(uint256 tokenId, uint256 numEmptySAs) external returns (bool);
 }

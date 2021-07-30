@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 import "../nft/ISAStorage.sol";
 import "./ISaleData.sol";
@@ -81,12 +81,14 @@ contract Sale {
     sellingToken.transfer(msg.sender, amount + fee);
   }
 
-  function vest(address sa_owner, ISAStorage.SA memory sa) external virtual
+  function vest(address saOwner, ISAStorage.SA memory sa) external virtual
   returns (uint128, uint256){
     ISaleData.Setup memory setup = _saleData.getSetupById(saleId);
     require(msg.sender == address(setup.satoken), "Sale: only SAToken can call vest");
     (uint128 vestedPercentage, uint256 vestedAmount) = _saleData.setVest(saleId, sa.vestedPercentage, sa.remainingAmount);
-    setup.sellingToken.transfer(sa_owner, vestedAmount);
+    // console.log("gas left before transfer", gasleft());
+    setup.sellingToken.transfer(saOwner, vestedAmount);
+    // console.log("gas left after transfer", gasleft());
     return (vestedPercentage, vestedAmount);
   }
 }
