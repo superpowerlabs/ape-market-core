@@ -16,7 +16,7 @@ contract Sale {
 
   uint public saleId;
   address private _apeWallet;
-  
+
   modifier onlySaleOwner() {
     require(msg.sender == _saleData.getSetupById(saleId).owner, "Sale: caller is not the owner");
     _;
@@ -64,8 +64,8 @@ contract Sale {
     setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
     // mint NFT
     ISAToken nft = ISAToken(setup.satoken);
-    nft.mint(msg.sender, amount);
-    nft.mint(_apeWallet, sellerFee);
+    nft.mint(msg.sender, address(0), amount, 0);
+    nft.mint(_apeWallet, address(0), sellerFee, 0);
 //    console.log("Sale: Paying buyer fee", buyerFee);
 //    console.log("Sale: Paying seller fee", sellerFee);
   }
@@ -82,10 +82,10 @@ contract Sale {
   }
 
   function vest(address sa_owner, ISAStorage.SA memory sa) external virtual
-  returns (uint, uint){
+  returns (uint128, uint){
     ISaleData.Setup memory setup = _saleData.getSetupById(saleId);
     require(msg.sender == address(setup.satoken), "Sale: only SAToken can call vest");
-    (uint vestedPercentage, uint vestedAmount) = _saleData.setVest(saleId, sa.vestedPercentage, sa.remainingAmount);
+    (uint128 vestedPercentage, uint vestedAmount) = _saleData.setVest(saleId, sa.vestedPercentage, sa.remainingAmount);
     setup.sellingToken.transfer(sa_owner, vestedAmount);
     return (vestedPercentage, vestedAmount);
   }

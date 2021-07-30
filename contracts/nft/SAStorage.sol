@@ -41,7 +41,7 @@ contract SAStorage is ISAStorage, LevelAccess {
     return _bundles[bundleId];
   }
 
-  function addBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external override virtual
+  function addBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
     _addBundleWithSA(bundleId, saleAddress, remainingAmount, vestedPercentage);
@@ -74,7 +74,7 @@ contract SAStorage is ISAStorage, LevelAccess {
     return _updateBundle(bundleId);
   }
 
-  function updateSA(uint bundleId, uint i, uint vestedPercentage, uint vestedAmount) external override
+  function updateSA(uint bundleId, uint i, uint128 vestedPercentage, uint vestedAmount) external override
   onlyLevel(MANAGER_LEVEL)
   {
     return _updateSA(bundleId, i, vestedPercentage, vestedAmount);
@@ -135,7 +135,7 @@ contract SAStorage is ISAStorage, LevelAccess {
     uint bundleId,
     address saleAddress,
     uint256 remainingAmount,
-    uint256 vestedPercentage
+    uint128 vestedPercentage
   ) internal virtual
   {
     require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
@@ -150,8 +150,8 @@ contract SAStorage is ISAStorage, LevelAccess {
   ) internal virtual
   {
     require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
-    _bundles[bundleId].creationTimestamp = block.timestamp;
-    _bundles[bundleId].acquisitionTimestamp = block.timestamp;
+    _bundles[bundleId].creationTimestamp = uint32(block.timestamp);
+    _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
     emit NewBundle(bundleId);
   }
 
@@ -167,13 +167,13 @@ contract SAStorage is ISAStorage, LevelAccess {
   returns (bool)
   {
     if (_bundles[bundleId].sas.length > 0) {
-      _bundles[bundleId].acquisitionTimestamp = block.timestamp;
+      _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
       return true;
     }
     return false;
   }
 
-  function _updateSA(uint bundleId, uint i, uint vestedPercentage, uint vestedAmount) internal
+  function _updateSA(uint bundleId, uint i, uint128 vestedPercentage, uint vestedAmount) internal
   bundleExists(bundleId) SAExists(bundleId, i) {
     if (vestedPercentage == 100) {
       _deleteSA(bundleId, i);
@@ -211,14 +211,14 @@ contract SAStorage is ISAStorage, LevelAccess {
     for (uint256 i = 0; i < newSAs.length; i++) {
       _bundles[bundleId].sas.push(newSAs[i]);
     }
-    _bundles[bundleId].acquisitionTimestamp = block.timestamp;
+    _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
   }
 
   function _addNewSA(uint bundleId, SA memory newSA) internal virtual
   bundleExists(bundleId)
   {
     _bundles[bundleId].sas.push(newSA);
-    _bundles[bundleId].acquisitionTimestamp = block.timestamp;
+    _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
   }
 
   function _deleteAllSAs(uint bundleId) internal virtual

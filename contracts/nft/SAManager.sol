@@ -11,9 +11,11 @@ import "hardhat/console.sol";
 
 interface ISATokenMin {
 
-  function mintWithExistingBundle(address to) external;
+//  function mintWithExistingBundle(address to) external;
 
   function nextTokenId() external view returns (uint);
+
+  function mint(address to, address sale, uint256 amount, uint128 vestedPercentage) external;
 
   function burn(uint256 tokenId) external;
 
@@ -116,7 +118,8 @@ contract SAManager is LevelAccess {
       }
       _token.burn(tokenIds[i]);
     }
-    _token.mintWithExistingBundle(msg.sender);
+    // TODO fix it!
+//    _token.mintWithExistingBundle(msg.sender);
   }
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual feeRequired {
@@ -138,10 +141,16 @@ contract SAManager is LevelAccess {
         continue;
       }
       if (!created) {
-        _storage.addBundleWithSA(nextTokenId, sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
-        _token.mintWithExistingBundle(msg.sender);
-        _storage.addBundleWithSA(nextTokenId + 1, sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
-        _token.mintWithExistingBundle(msg.sender);
+//        _storage.addBundleWithSA(nextTokenId, sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
+//        _token.mintWithExistingBundle(msg.sender);
+        _token.mint(msg.sender, sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
+
+
+//        _storage.addBundleWithSA(nextTokenId + 1, sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
+//        _token.mintWithExistingBundle(msg.sender);
+
+        _token.mint(msg.sender, sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
+
         created = true;
       } else {
         ISAStorage.SA memory newSA = ISAStorage.SA(sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);

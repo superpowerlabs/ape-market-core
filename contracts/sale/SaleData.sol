@@ -97,9 +97,9 @@ contract SaleData is ISaleData, LevelAccess {
     return (_setups[saleId].sellingToken, fee);
   }
 
-  function setVest(uint saleId, uint256 lastVestedPercentage, uint256 lockedAmount) external virtual override
-  returns (uint, uint){
-    uint256 vestedPercentage = getVestedPercentage(saleId);
+  function setVest(uint saleId, uint128 lastVestedPercentage, uint256 lockedAmount) external virtual override
+  returns (uint128, uint){
+    uint128 vestedPercentage = getVestedPercentage(saleId);
     uint256 vestedAmount = getVestedAmount(vestedPercentage, lastVestedPercentage, lockedAmount);
     return (vestedPercentage, vestedAmount);
   }
@@ -117,13 +117,13 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function getVestedPercentage(uint saleId) public view override
-  onlyLevel(MANAGER_LEVEL) returns (uint256) {
+  onlyLevel(MANAGER_LEVEL) returns (uint128) {
     Setup memory setup = _setups[saleId];
     VestingStep[] memory vs = _vestingSchedules[saleId];
     if (setup.tokenListTimestamp == 0) {
       return 0;
     }
-    uint256 vestedPercentage;
+    uint128 vestedPercentage;
     for (uint256 i = 0; i < vs.length; i++) {
       uint256 ts = uint256(setup.tokenListTimestamp).add(vs[i].timestamp);
       if (ts > block.timestamp) {

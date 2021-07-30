@@ -10,18 +10,18 @@ interface ISAStorage {
   struct SA {
     address sale;
     uint256 remainingAmount;
-    uint256 vestedPercentage;
+    uint128 vestedPercentage;
   }
 
   struct Bundle {
     SA[] sas;
-    uint256 creationTimestamp;
-    uint256 acquisitionTimestamp;
+    uint32 creationTimestamp;
+    uint32 acquisitionTimestamp;
   }
 
   function getBundle(uint bundleId) external view returns (Bundle memory);
 
-  function addBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external;
+  function addBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external;
 
   function newBundle(uint bundleId) external;
 
@@ -29,7 +29,7 @@ interface ISAStorage {
 
   function updateBundle(uint bundleId) external returns (bool);
 
-  function updateSA(uint bundleId, uint i, uint vestedPercentage, uint vestedAmount) external;
+  function updateSA(uint bundleId, uint i, uint128 vestedPercentage, uint vestedAmount) external;
 
   function changeSA(uint bundleId, uint i, uint diff, bool increase) external;
 

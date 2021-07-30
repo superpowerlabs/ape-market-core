@@ -44,7 +44,7 @@ interface ISaleData {
 
   function denormalize(address sellingToken, uint64 amount) external view returns (uint);
 
-  function setVest(uint saleId, uint256 lastVestedPercentage, uint256 lockedAmount) external returns (uint, uint);
+  function setVest(uint saleId, uint128 lastVestedPercentage, uint256 lockedAmount) external returns (uint128, uint);
 
   function triggerTokenListing(uint saleId) external;
 
@@ -64,7 +64,7 @@ interface ISaleData {
 
   function grantManagerLevel(address saleAddress) external;
 
-  function getVestedPercentage(uint saleId) external view returns (uint256);
+  function getVestedPercentage(uint saleId) external view returns (uint128);
 
   function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
 

@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "./ISAToken.sol";
 import "./ISAStorage.sol";
+import "../sale/ISale.sol";
 import "../utils/LevelAccess.sol";
 
 // for debugging only
@@ -21,17 +22,6 @@ interface IProfile {
 interface ISaleFactory {
 
   function isLegitSale(address sale) external view returns (bool);
-}
-
-interface ISaleMin {
-
-  function getVestedPercentage() external view returns (uint256);
-
-  function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
-
-  function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint, uint);
-
-  function isTransferable() external view returns (bool);
 }
 
 
@@ -81,7 +71,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
         // check if any sale is not transferable
         ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
         for (uint i = 0; i < bundle.sas.length; i++) {
-          ISaleMin sale = ISaleMin(bundle.sas[i].sale);
+          ISale sale = ISale(bundle.sas[i].sale);
           console.log(sale.isTransferable());
           if (!sale.isTransferable()) {
             revert("SAToken: token not transferable");
@@ -98,22 +88,34 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     return super.supportsInterface(interfaceId);
   }
 
-  function mint(address to, uint256 amount) external override virtual {
-    //    require(isContract(msg.sender), "SAToken: The caller is not a contract");
-    require(_factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
+//  function mint(address to, uint256 amount) external override virtual {
+//    //    require(isContract(msg.sender), "SAToken: The caller is not a contract");
+//    require(_factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
+//    _safeMint(to, _tokenIdCounter.current());
+//    console.log("Minted %s", _tokenIdCounter.current());
+//    _storage.addBundleWithSA(_tokenIdCounter.current(), msg.sender, amount, 0);
+//    _tokenIdCounter.increment();
+//  }
+
+  function mint(address to, address sale, uint256 amount, uint128 vestedPercentage) external override virtual {
+    if (sale == address(0)) {
+      require(_factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
+    } else {
+      require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SAManager can call this function");
+    }
     _safeMint(to, _tokenIdCounter.current());
     console.log("Minted %s", _tokenIdCounter.current());
-    _storage.addBundleWithSA(_tokenIdCounter.current(), msg.sender, amount, 0);
+    _storage.addBundleWithSA(_tokenIdCounter.current(), msg.sender, amount, vestedPercentage);
     _tokenIdCounter.increment();
   }
 
-  function mintWithExistingBundle(address to) external override virtual
-  onlyLevel(MANAGER_LEVEL) {
-    require(_storage.getBundle(_tokenIdCounter.current()).sas[0].sale != address(0), "SAToken: Bundle does not exists");
-    console.log("Minted %s", _tokenIdCounter.current());
-    _safeMint(to, _tokenIdCounter.current());
-    _tokenIdCounter.increment();
-  }
+//  function mintWithExistingBundle(address to) external override virtual
+//  onlyLevel(MANAGER_LEVEL) {
+//    require(_storage.getBundle(_tokenIdCounter.current()).sas[0].sale != address(0), "SAToken: Bundle does not exists");
+//    console.log("Minted %s", _tokenIdCounter.current());
+//    _safeMint(to, _tokenIdCounter.current());
+//    _tokenIdCounter.increment();
+//  }
 
   function nextTokenId() external view virtual override returns (uint) {
     return _tokenIdCounter.current();
@@ -129,8 +131,8 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     uint256 numEmptySubSAs = 0;
     for (uint256 i = 0; i < bundle.sas.length; i++) {
       ISAStorage.SA memory sa = bundle.sas[i];
-      ISaleMin sale = ISaleMin(sa.sale);
-      (uint256 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
+      ISale sale = ISale(sa.sale);
+      (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
       console.log("vesting", tokenId, vestedAmount);
       if (vestedPercentage == 100) {
         numEmptySubSAs++;
