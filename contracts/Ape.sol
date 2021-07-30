@@ -16,7 +16,7 @@ contract Ape is ERC20 {
     return _tokenPrice;
   }
 
-  function setTokenPrice(uint price) external virtual {
+  function setTokenPrice(uint256 price) external virtual {
     _tokenPrice = price;
   }
 }

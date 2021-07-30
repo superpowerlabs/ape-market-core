@@ -16,7 +16,7 @@ contract SaleFactory is LevelAccess {
   mapping(address => bool) private _sales;
   address[] private _allSales;
 
-  uint public constant FACTORY_ADMIN_LEVEL = 5;
+  uint256 public constant FACTORY_ADMIN_LEVEL = 5;
   address private _factoryAdmin;
 
   function isLegitSale(address sale) external view returns (bool) {
@@ -31,7 +31,7 @@ contract SaleFactory is LevelAccess {
     }
   }
 
-  function getSale(uint i) external view returns (address) {
+  function getSale(uint256 i) external view returns (address) {
     return _allSales[i];
   }
 

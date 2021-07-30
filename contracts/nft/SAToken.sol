@@ -27,7 +27,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   using SafeMath for uint256;
   using Counters for Counters.Counter;
 
-  uint public constant MANAGER_LEVEL = 2;
+  uint256 public constant MANAGER_LEVEL = 2;
 
   Counters.Counter private _tokenIdCounter;
 
@@ -67,7 +67,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
       if (!_profile.areAccountsAssociated(from, to)) {
         // check if any sale is not transferable
         ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
-        for (uint i = 0; i < bundle.sas.length; i++) {
+        for (uint256 i = 0; i < bundle.sas.length; i++) {
           ISale sale = ISale(bundle.sas[i].sale);
           console.log(sale.isTransferable());
           if (!sale.isTransferable()) {
@@ -93,16 +93,16 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     } else {
       require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SAManager can mint tokens for an existing sale");
     }
-    _mintAndCreateBundle(to, saleAddress, amount, vestedPercentage);
+    _mint(to, saleAddress, amount, vestedPercentage);
   }
 
-  function _mintAndCreateBundle(address to, address saleAddress, uint256 amount, uint128 vestedPercentage) internal {
+  function _mint(address to, address saleAddress, uint256 amount, uint128 vestedPercentage) internal virtual {
     _safeMint(to, _tokenIdCounter.current());
     _storage.newBundleWithSA(_tokenIdCounter.current(), saleAddress, amount, vestedPercentage);
     _tokenIdCounter.increment();
   }
 
-  function nextTokenId() external view virtual override returns (uint) {
+  function nextTokenId() external view virtual override returns (uint256) {
     return _tokenIdCounter.current();
   }
 
@@ -113,7 +113,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
     console.log("vesting", tokenId);
     ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
-    uint nextId = _tokenIdCounter.current();
+    uint256 nextId = _tokenIdCounter.current();
     bool notEmtpy;
     bool minted;
     for (uint256 i = 0; i < bundle.sas.length; i++) {
@@ -124,7 +124,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
       if (vestedPercentage != 100) {
         // we skip vested SAs
         if (!minted) {
-          _mintAndCreateBundle(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+          _mint(msg.sender, sa.sale, vestedAmount, vestedPercentage);
           minted = true;
         } else {
           ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);

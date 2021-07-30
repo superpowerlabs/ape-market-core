@@ -14,7 +14,7 @@ contract Sale {
 
   ISaleData private _saleData;
 
-  uint public saleId;
+  uint256 public saleId;
   address private _apeWallet;
 
   modifier onlySaleOwner() {
@@ -49,7 +49,7 @@ contract Sale {
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external virtual
   onlySaleOwner {
-    (IERC20Min sellingToken, address owner, uint amount) = _saleData.setLaunch(saleId);
+    (IERC20Min sellingToken, address owner, uint256 amount) = _saleData.setLaunch(saleId);
     sellingToken.transferFrom(owner, address(this), amount);
   }
 
@@ -58,7 +58,7 @@ contract Sale {
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external virtual {
     ISaleData.Setup memory setup = _saleData.getSetupById(saleId);
-    (uint tokenPayment, uint buyerFee, uint sellerFee) = _saleData.setInvest(saleId, msg.sender, amount);
+    (uint256 tokenPayment, uint256 buyerFee, uint256 sellerFee) = _saleData.setInvest(saleId, msg.sender, amount);
     //    console.log("tokenPayment", tokenPayment);
     setup.paymentToken.transferFrom(msg.sender, _apeWallet, buyerFee);
     setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
@@ -77,15 +77,15 @@ contract Sale {
 
   function withdrawToken(uint256 amount) external virtual
   onlySaleOwner {
-    (IERC20Min sellingToken, uint fee) = _saleData.setWithdrawToken(saleId, amount);
+    (IERC20Min sellingToken, uint256 fee) = _saleData.setWithdrawToken(saleId, amount);
     sellingToken.transfer(msg.sender, amount + fee);
   }
 
   function vest(address sa_owner, ISAStorage.SA memory sa) external virtual
-  returns (uint128, uint){
+  returns (uint128, uint256){
     ISaleData.Setup memory setup = _saleData.getSetupById(saleId);
     require(msg.sender == address(setup.satoken), "Sale: only SAToken can call vest");
-    (uint128 vestedPercentage, uint vestedAmount) = _saleData.setVest(saleId, sa.vestedPercentage, sa.remainingAmount);
+    (uint128 vestedPercentage, uint256 vestedAmount) = _saleData.setVest(saleId, sa.vestedPercentage, sa.remainingAmount);
     setup.sellingToken.transfer(sa_owner, vestedAmount);
     return (vestedPercentage, vestedAmount);
   }

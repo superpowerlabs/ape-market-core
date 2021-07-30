@@ -3,9 +3,9 @@ pragma solidity ^0.8.0;
 
 interface ISAStorage {
 
-  event BundleAdded(uint bundleId, address initialSale);
-  event NewBundle(uint bundleId);
-  event BundleDeleted(uint bundleId);
+  event BundleAdded(uint256 bundleId, address initialSale);
+  event NewBundle(uint256 bundleId);
+  event BundleDeleted(uint256 bundleId);
 
   struct SA {
     address sale;
@@ -19,21 +19,19 @@ interface ISAStorage {
     uint32 acquisitionTimestamp;
   }
 
-  function getBundle(uint bundleId) external view returns (Bundle memory);
+  function getBundle(uint256 bundleId) external view returns (Bundle memory);
 
-  function newBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external;
+  function newBundleWithSA(uint256 bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external;
 
-  function newEmptyBundle(uint bundleId) external;
+  function newEmptyBundle(uint256 bundleId) external;
 
-  function deleteBundle(uint bundleId) external;
+  function deleteBundle(uint256 bundleId) external;
 
-  function updateBundle(uint bundleId) external returns (bool);
+  function updateBundle(uint256 bundleId) external returns (bool);
 
-  function increaseAmountInSA(uint bundleId, uint i, uint diff) external;
+  function increaseAmountInSA(uint256 bundleId, uint256 i, uint256 diff) external;
 
-  function decreaseAmountInSA(uint bundleId, uint i, uint diff) external;
-
-  function addSAToBundle(uint bundleId, SA memory newSA) external;
+  function addSAToBundle(uint256 bundleId, SA memory newSA) external;
 
   function cleanEmptySAs(uint256 tokenId, uint256 numEmptySAs) external returns (bool);
 }

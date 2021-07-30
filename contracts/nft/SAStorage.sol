@@ -21,27 +21,27 @@ contract SAStorage is ISAStorage, LevelAccess {
   // so that they can handle the Bundle/SA storage
 
   using SafeMath for uint256;
-  uint public constant MANAGER_LEVEL = 2;
+  uint256 public constant MANAGER_LEVEL = 2;
 
   mapping(uint256 => Bundle) private _bundles;
 
-  modifier bundleExists(uint bundleId) {
+  modifier bundleExists(uint256 bundleId) {
     require(_bundles[bundleId].creationTimestamp != 0, "SAStorage: Bundle does not exist");
     _;
   }
 
-  modifier SAExists(uint bundleId, uint i) {
+  modifier SAExists(uint256 bundleId, uint256 i) {
     require(i < _bundles[bundleId].sas.length, "SAStorage: SA does not exist");
     _;
   }
 
-  function getBundle(uint bundleId) public override virtual view
+  function getBundle(uint256 bundleId) public override virtual view
   returns (Bundle memory)
   {
     return _bundles[bundleId];
   }
 
-  function newBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external override virtual
+  function newBundleWithSA(uint256 bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
     require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
@@ -51,19 +51,19 @@ contract SAStorage is ISAStorage, LevelAccess {
     emit BundleAdded(bundleId, saleAddress);
   }
 
-  function newEmptyBundle(uint bundleId) external override virtual
+  function newEmptyBundle(uint256 bundleId) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
     _newEmptyBundle(bundleId);
   }
 
-  function deleteBundle(uint bundleId) external override virtual
+  function deleteBundle(uint256 bundleId) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
     _deleteBundle(bundleId);
   }
 
-  function updateBundle(uint bundleId) external override virtual
+  function updateBundle(uint256 bundleId) external override virtual
   onlyLevel(MANAGER_LEVEL)
   returns (bool)
   {
@@ -74,19 +74,13 @@ contract SAStorage is ISAStorage, LevelAccess {
     return false;
   }
 
-  function increaseAmountInSA(uint bundleId, uint i, uint diff) external override
+  function increaseAmountInSA(uint256 bundleId, uint256 i, uint256 diff) external override
   onlyLevel(MANAGER_LEVEL)
   {
     _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.add(diff);
   }
 
-  function decreaseAmountInSA(uint bundleId, uint i, uint diff) external override
-  onlyLevel(MANAGER_LEVEL)
-  {
-    _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.sub(diff);
-  }
-
-  function addSAToBundle(uint bundleId, SA memory newSA) external override virtual
+  function addSAToBundle(uint256 bundleId, SA memory newSA) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
     _addSAToBundle(bundleId, newSA);
@@ -102,7 +96,7 @@ contract SAStorage is ISAStorage, LevelAccess {
   // internal methods:
 
   function _newEmptyBundle(
-    uint bundleId
+    uint256 bundleId
   ) internal virtual
   {
     require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
@@ -111,14 +105,14 @@ contract SAStorage is ISAStorage, LevelAccess {
     emit NewBundle(bundleId);
   }
 
-  function _deleteBundle(uint bundleId) internal virtual
+  function _deleteBundle(uint256 bundleId) internal virtual
   bundleExists(bundleId)
   {
     delete _bundles[bundleId];
     emit BundleDeleted(bundleId);
   }
 
-  function _addSAToBundle(uint bundleId, SA memory newSA) internal virtual
+  function _addSAToBundle(uint256 bundleId, SA memory newSA) internal virtual
   bundleExists(bundleId)
   {
     _bundles[bundleId].sas.push(newSA);
