@@ -124,8 +124,7 @@ describe("SaleFactory", async function () {
       const saleAddress = await factory.lastSale()
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
       assert.isTrue(await factory.isLegitSale(saleAddress))
-      assert.equal((await factory.getAllSales())[0], saleAddress)
-      assert.equal(await factory.getSale(0), saleAddress)
+      assert.equal(await factory.getSaleAddressById(0), saleAddress)
 
     })
 

@@ -14,7 +14,8 @@ contract SaleFactory is LevelAccess {
 
 
   mapping(address => bool) private _sales;
-  address[] private _allSales;
+  mapping(uint256 => address) private _salesById;
+  uint256 private _lastSaleId;
 
   uint256 public constant FACTORY_ADMIN_LEVEL = 5;
   address private _factoryAdmin;
@@ -24,19 +25,11 @@ contract SaleFactory is LevelAccess {
   }
 
   function lastSale() external view returns (address) {
-    if (_allSales.length == 0) {
-      return address(0);
-    } else {
-      return _allSales[_allSales.length - 1];
-    }
+    return _salesById[_lastSaleId];
   }
 
-  function getSale(uint256 i) external view returns (address) {
-    return _allSales[i];
-  }
-
-  function getAllSales() external view returns (address[] memory) {
-    return _allSales;
+  function getSaleAddressById(uint256 i) external view returns (address) {
+    return _salesById[i];
   }
 
   function newSale(
@@ -52,7 +45,8 @@ contract SaleFactory is LevelAccess {
     ISaleData saleData = ISaleData(saleDataAddress);
     saleData.grantManagerLevel(addr);
     sale.initialize(setup, schedule);
-    _allSales.push(addr);
+    _lastSaleId = sale.saleId();
+    _salesById[_lastSaleId] = addr;
     _sales[addr] = true;
     emit NewSale(addr);
   }
