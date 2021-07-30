@@ -11,13 +11,10 @@ import "./ISAToken.sol";
 import "./ISAStorage.sol";
 import "../sale/ISale.sol";
 import "../utils/LevelAccess.sol";
+import "../user/IProfile.sol";
 
 // for debugging only
 import "hardhat/console.sol";
-
-interface IProfile {
-  function areAccountsAssociated(address addr1, address addr2) external view returns (bool);
-}
 
 interface ISaleFactory {
 
@@ -132,7 +129,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     for (uint256 i = 0; i < bundle.sas.length; i++) {
       ISAStorage.SA memory sa = bundle.sas[i];
       ISale sale = ISale(sa.sale);
-      (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
+      (uint256 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
       console.log("vesting", tokenId, vestedAmount);
       if (vestedPercentage == 100) {
         numEmptySubSAs++;
