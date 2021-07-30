@@ -76,7 +76,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
           }
         }
       }
-      _storage.updateBundle(tokenId);
+      _storage.updateBundleAcquisitionTime(tokenId);
     }
   }
 

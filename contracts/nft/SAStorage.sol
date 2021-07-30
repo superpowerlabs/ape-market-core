@@ -26,7 +26,7 @@ contract SAStorage is ISAStorage, LevelAccess {
   mapping(uint256 => Bundle) private _bundles;
 
   modifier bundleExists(uint256 bundleId) {
-    require(_bundles[bundleId].creationTimestamp != 0, "SAStorage: Bundle does not exist");
+    require(_bundles[bundleId].creationTime != 0, "SAStorage: Bundle does not exist");
     _;
   }
 
@@ -44,7 +44,7 @@ contract SAStorage is ISAStorage, LevelAccess {
   function newBundleWithSA(uint256 bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
-    require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
+    require(_bundles[bundleId].creationTime == 0, "SAStorage: Bundle already added");
     _newEmptyBundle(bundleId);
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     _addSAToBundle(bundleId, listedSale);
@@ -62,12 +62,12 @@ contract SAStorage is ISAStorage, LevelAccess {
     _deleteBundle(bundleId);
   }
 
-  function updateBundle(uint256 bundleId) external override virtual
+  function updateBundleAcquisitionTime(uint256 bundleId) external override virtual
   onlyLevel(MANAGER_LEVEL)
   returns (bool)
   {
     if (_bundles[bundleId].sas.length > 0) {
-      _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
+      _bundles[bundleId].acquisitionTime = uint32(block.timestamp);
       return true;
     }
     return false;
@@ -91,9 +91,9 @@ contract SAStorage is ISAStorage, LevelAccess {
     uint256 bundleId
   ) internal virtual
   {
-    require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
-    _bundles[bundleId].creationTimestamp = uint32(block.timestamp);
-    _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
+    require(_bundles[bundleId].creationTime == 0, "SAStorage: Bundle already added");
+    _bundles[bundleId].creationTime = uint32(block.timestamp);
+    _bundles[bundleId].acquisitionTime = uint32(block.timestamp);
     emit BundleCreated(bundleId);
   }
 
@@ -108,7 +108,7 @@ contract SAStorage is ISAStorage, LevelAccess {
   bundleExists(bundleId)
   {
     _bundles[bundleId].sas.push(newSA);
-    _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
+    _bundles[bundleId].acquisitionTime = uint32(block.timestamp);
   }
 
 }
