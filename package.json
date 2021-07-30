@@ -29,7 +29,7 @@
     "test:gas": "GAS_REPORT=yes npx hardhat test",
     "clear": "rm -rf cache && rm -rf src/artifacts",
     "compile": "npx hardhat compile",
-    "size": "npm run clear && npm run compile && npx hardhat size-contracts",
+    "size": "npx hardhat size-contracts",
     "lint": "solium -d contracts/"
   },
   "eslintConfig": {

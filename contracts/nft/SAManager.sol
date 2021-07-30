@@ -3,98 +3,78 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+import "./ISATokenExtended.sol";
+import "./ISAManager.sol";
 import "./ISAStorage.sol";
 import "../sale/ISale.sol";
 import "../utils/LevelAccess.sol";
+import "../utils/IERC20Optimized.sol";
+import "../user/IProfile.sol";
 
 import "hardhat/console.sol";
 
-interface ISATokenMin {
-
-  function nextTokenId() external view returns (uint256);
-
-  function mint(address to, address sale, uint256 amount, uint128 vestedPercentage) external;
-
-  function burn(uint256 tokenId) external;
-
-  function ownerOf(uint256 tokenId) external view returns (address);
-
-  function vest(uint256 tokenId) external returns (bool);
-
-}
-
-interface IERC20Min {
-
-  function transfer(address recipient, uint256 amount) external returns (bool);
-
-  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-
-  function decimals() external view returns (uint8);
-
-}
-
-contract SAManager is LevelAccess {
+contract SAManager is ISAManager, LevelAccess {
 
   using SafeMath for uint256;
 
-  ISATokenMin private _token;
-  ISAStorage private _storage;
+  uint256 public constant MANAGER_LEVEL = 1;
+
+  ISAToken private _token;
   ISale private _sale;
+  IProfile public profile;
 
-  address private _apeWallet;
-  IERC20Min _feeToken;
-  uint256 _feeAmount; // the amount of fee in _feeToken charged for merge, split and transfer
-
-  modifier feeRequired() {
-    uint256 decimals = _feeToken.decimals();
-    _feeToken.transferFrom(msg.sender, _apeWallet, _feeAmount.mul(10 ** decimals));
+  modifier onlySAToken {
+    require(msg.sender == address(_token), "SAManager: caller is not the SA NFT token");
     _;
+  }
+
+  constructor(address profileAddress) {
+    profile = IProfile(profileAddress);
   }
 
   function _getPrimarySaleFeeToken(uint256 tokenId) internal view virtual
   returns (address) {
-    ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
+    ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
     ISale sale = ISale(bundle.sas[0].sale);
     return sale.getPaymentToken();
   }
 
-  constructor(address tokenAddress, address storageAddress, address feeToken, uint256 feeAmount, address apeWallet_){
-    _token = ISATokenMin(tokenAddress);
-    _storage = ISAStorage(storageAddress);
-    _feeToken = IERC20Min(feeToken);
-    _feeAmount = feeAmount;
-    _apeWallet = apeWallet_;
-  }
-
-  function updateToken(address newTokenAddress) external
+  function setToken(address tokenAddress) external
   onlyLevel(OWNER_LEVEL) {
-    _token = ISATokenMin(newTokenAddress);
+    require(isContract(tokenAddress), "SAManager: token is not a contract");
+    _token = ISAToken(tokenAddress);
+    grantLevel(MANAGER_LEVEL, tokenAddress);
   }
 
-  function updateApeWallet(address apeWallet_) external
+  function beforeTokenTransfer(address from, address to, uint256 tokenId) external view override
   onlyLevel(OWNER_LEVEL) {
-    _apeWallet = apeWallet_;
+    if (!profile.areAccountsAssociated(from, to)) {
+      // check if any sale is not transferable
+      ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
+      for (uint256 i = 0; i < bundle.sas.length; i++) {
+        ISale sale = ISale(bundle.sas[i].sale);
+        //          console.log(sale.isTransferable());
+        if (!sale.isTransferable()) {
+          revert("SAToken: token not transferable");
+        }
+      }
+    }
   }
 
-  function apeWallet() external view
-  returns (address) {
-    return _apeWallet;
-  }
-
-  function merge(uint256[] memory tokenIds) external virtual feeRequired {
+  function merge(uint256[] memory tokenIds) external virtual override
+  onlyLevel(MANAGER_LEVEL) {
     uint256 nextId = _token.nextTokenId();
     uint256 counter;
     bool minted;
     // console.log("gas left before merge", gasleft());
     ISAStorage.Bundle memory bundle;
     for (uint256 i = 0; i < tokenIds.length; i++) {
-      require(_token.ownerOf(tokenIds[i]) == msg.sender, "SAManager: Only owner can merge tokens");
       for (uint256 w = 0; w < tokenIds.length; w++) {
         if (w != i && tokenIds[w] == tokenIds[i]) {
           revert("SAManager: Bundle can not merge to itself");
         }
       }
-      bundle = _storage.getBundle(tokenIds[i]);
+      bundle = _token.getBundle(tokenIds[i]);
       bool notEmpty;
       for (uint256 j = 0; j < bundle.sas.length; j++) {
         if (bundle.sas[j].remainingAmount != 0) {
@@ -114,25 +94,25 @@ contract SAManager is LevelAccess {
     require(counter > 1, "SAManager: Not enough SAs for merging");
     ISAStorage.Bundle memory newBundle;
     for (uint256 i = 0; i < tokenIds.length; i++) {
-      bundle = _storage.getBundle(tokenIds[i]);
+      bundle = _token.getBundle(tokenIds[i]);
       for (uint256 j = 0; j < bundle.sas.length; j++) {
         if (bundle.sas[j].remainingAmount == 0) {
           // we will skip empty SAs to save storage
           continue;
         }
         bool matched = false;
-        newBundle = _storage.getBundle(nextId);
+        newBundle = _token.getBundle(nextId);
         for (uint256 k = 0; k < newBundle.sas.length; k++) {
           if (bundle.sas[j].sale == newBundle.sas[k].sale &&
             bundle.sas[j].vestedPercentage == newBundle.sas[k].vestedPercentage) {
-            _storage.increaseAmountInSA(nextId, k, bundle.sas[j].remainingAmount);
+            _token.increaseAmountInSA(nextId, k, bundle.sas[j].remainingAmount);
             // console.log("gas left after increase to SA", gasleft());
             matched = true;
             break;
           }
         }
         if (!matched) {
-          _storage.addSAToBundle(nextId, bundle.sas[j]);
+          _token.addSAToBundle(nextId, bundle.sas[j]);
           // console.log("gas left after adding new SA", gasleft());
         }
       }
@@ -140,11 +120,9 @@ contract SAManager is LevelAccess {
     }
   }
 
-  function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual feeRequired {
-
-    require(_token.ownerOf(tokenId) == msg.sender, "SAManager: Only owner can split a token");
-
-    ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
+  function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual override
+  onlyLevel(MANAGER_LEVEL) {
+    ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
     ISAStorage.SA[] memory sas = bundle.sas;
     // console.log("gas left before split", gasleft());
     require(keptAmounts.length == bundle.sas.length, "SANFT: length of sa does not match split");
@@ -166,11 +144,11 @@ contract SAManager is LevelAccess {
         minted = true;
       } else {
         ISAStorage.SA memory newSA = ISAStorage.SA(sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
-        _storage.addSAToBundle(nextId, newSA);
+        _token.addSAToBundle(nextId, newSA);
         // console.log("gas left after adding newSA", gasleft());
         if (keptAmounts[i] != 0) {
           newSA = ISAStorage.SA(sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
-          _storage.addSAToBundle(nextId + 1, newSA);
+          _token.addSAToBundle(nextId + 1, newSA);
           // console.log("gas left after newSA to second token", gasleft());
           j++;
         }
@@ -179,5 +157,13 @@ contract SAManager is LevelAccess {
     _token.burn(tokenId);
   }
 
+
+  // from OpenZeppelin's Address.sol
+  function isContract(address account) internal view returns (bool) {
+    uint256 size;
+    // solium-disable-next-line security/no-inline-assembly
+    assembly {size := extcodesize(account)}
+    return size > 0;
+  }
 
 }

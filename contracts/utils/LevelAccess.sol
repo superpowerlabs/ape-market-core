@@ -19,7 +19,7 @@ abstract contract LevelAccess {
     emit LevelSet(OWNER_LEVEL, msg.sender, address(0));
   }
 
-  function grantLevel(uint256 level, address addr) public
+  function grantLevel(uint256 level, address addr) public virtual
   onlyLevel(OWNER_LEVEL) {
     levels[addr] = level;
     emit LevelSet(level, addr, msg.sender);
