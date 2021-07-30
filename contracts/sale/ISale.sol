@@ -13,7 +13,7 @@ interface ISale {
 
   function apeWallet() external view returns (address);
 
-// Sale creator calls this function to start the sale.
+  // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external;
 
@@ -35,7 +35,7 @@ interface ISale {
 
   function makeTransferable() external;
 
-  function isTransferable() external view returns(bool);
+  function isTransferable() external view returns (bool);
 
   function isTokenListed() external view returns (bool);
 

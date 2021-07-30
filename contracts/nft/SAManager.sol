@@ -11,8 +11,6 @@ import "hardhat/console.sol";
 
 interface ISATokenMin {
 
-  //  function mintWithExistingBundle(address to) external;
-
   function nextTokenId() external view returns (uint);
 
   function mint(address to, address sale, uint256 amount, uint128 vestedPercentage) external;

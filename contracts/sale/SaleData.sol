@@ -12,8 +12,8 @@ contract SaleData is ISaleData, LevelAccess {
   uint public constant MANAGER_LEVEL = 2;
   uint public constant ADMIN_LEVEL = 3;
 
-  mapping (uint => VestingStep[]) private _vestingSchedules;
-  mapping (uint => Setup) private _setups;
+  mapping(uint => VestingStep[]) private _vestingSchedules;
+  mapping(uint => Setup) private _setups;
   mapping(uint => mapping(address => uint256)) private _approvedAmounts;
   uint private _lastId = 0;
 
@@ -69,7 +69,7 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function approveInvestor(uint saleId, address investor, uint256 amount) external virtual override
-  onlySaleOwner(saleId)  {
+  onlySaleOwner(saleId) {
     _approvedAmounts[saleId][investor] = amount;
   }
 

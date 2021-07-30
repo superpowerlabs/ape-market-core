@@ -59,15 +59,15 @@ contract Sale {
   function invest(uint256 amount) external virtual {
     ISaleData.Setup memory setup = _saleData.getSetupById(saleId);
     (uint tokenPayment, uint buyerFee, uint sellerFee) = _saleData.setInvest(saleId, msg.sender, amount);
-//    console.log("tokenPayment", tokenPayment);
+    //    console.log("tokenPayment", tokenPayment);
     setup.paymentToken.transferFrom(msg.sender, _apeWallet, buyerFee);
     setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
     // mint NFT
     ISAToken nft = ISAToken(setup.satoken);
     nft.mint(msg.sender, address(0), amount, 0);
     nft.mint(_apeWallet, address(0), sellerFee, 0);
-//    console.log("Sale: Paying buyer fee", buyerFee);
-//    console.log("Sale: Paying seller fee", sellerFee);
+    //    console.log("Sale: Paying buyer fee", buyerFee);
+    //    console.log("Sale: Paying seller fee", sellerFee);
   }
 
   function withdrawPayment(uint256 amount) external virtual
