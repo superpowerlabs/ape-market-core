@@ -85,6 +85,7 @@ contract SAManager is LevelAccess {
     uint nextId = _token.nextTokenId();
     uint counter;
     bool minted;
+    console.log("gas left before merge", gasleft());
     ISAStorage.Bundle memory bundle;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       require(_token.ownerOf(tokenIds[i]) == msg.sender, "SAManager: Only owner can merge tokens");
@@ -100,6 +101,7 @@ contract SAManager is LevelAccess {
           notEmpty = true;
           if (!minted) {
             _token.mint(msg.sender, bundle.sas[j].sale, 0, 0);
+            console.log("gas left after mint", gasleft());
             minted = true;
           }
           break;
@@ -124,12 +126,14 @@ contract SAManager is LevelAccess {
           if (bundle.sas[j].sale == newBundle.sas[k].sale &&
             bundle.sas[j].vestedPercentage == newBundle.sas[k].vestedPercentage) {
             _storage.changeSA(nextId, k, bundle.sas[j].remainingAmount, true);
+            console.log("gas left after increase to SA", gasleft());
             matched = true;
             break;
           }
         }
         if (!matched) {
           _storage.addNewSA(nextId, bundle.sas[j]);
+          console.log("gas left after adding new SA", gasleft());
         }
       }
       _token.burn(tokenIds[i]);
@@ -142,7 +146,7 @@ contract SAManager is LevelAccess {
 
     ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
     ISAStorage.SA[] memory sas = bundle.sas;
-
+    console.log("gas left before split", gasleft());
     require(keptAmounts.length == bundle.sas.length, "SANFT: length of sa does not match split");
     bool minted;
     uint nextId = _token.nextTokenId();
@@ -156,14 +160,18 @@ contract SAManager is LevelAccess {
       }
       if (!minted) {
         _token.mint(msg.sender, sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
+        console.log("gas left after first mint", gasleft());
         _token.mint(msg.sender, sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
+        console.log("gas left after second mint", gasleft());
         minted = true;
       } else {
         ISAStorage.SA memory newSA = ISAStorage.SA(sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
         _storage.addNewSA(nextId, newSA);
+        console.log("gas left after adding newSA", gasleft());
         if (keptAmounts[i] != 0) {
           newSA = ISAStorage.SA(sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
           _storage.addNewSA(nextId + 1, newSA);
+          console.log("gas left after newSA to second token", gasleft());
           j++;
         }
       }

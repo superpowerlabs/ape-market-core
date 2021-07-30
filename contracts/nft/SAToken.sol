@@ -112,6 +112,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   returns (bool) {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
     console.log("vesting", tokenId);
+    console.log("gas left before vesting", gasleft());
     ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
     uint nextId = _tokenIdCounter.current();
     bool notEmtpy;
@@ -125,10 +126,12 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
         // we skip vested SAs
         if (!minted) {
           _mint0(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+          console.log("gas left after mint", gasleft());
           minted = true;
         } else {
           ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
           _storage.addNewSA(nextId, newSA);
+          console.log("gas left after addNewSA", gasleft());
         }
         notEmtpy = true;
       }
@@ -144,7 +147,9 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
 
   function _burn(uint256 tokenId) internal virtual override {
     super._burn(tokenId);
+    console.log("gas left after burn", gasleft());
     _storage.deleteBundle(tokenId);
+    console.log("gas left after delete bundle", gasleft());
   }
 
   // from OpenZeppelin's Address.sol
