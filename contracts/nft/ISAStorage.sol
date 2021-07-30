@@ -21,29 +21,19 @@ interface ISAStorage {
 
   function getBundle(uint bundleId) external view returns (Bundle memory);
 
-  function addBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external;
+  function newBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external;
 
-  function newBundle(uint bundleId) external;
+  function newEmptyBundle(uint bundleId) external;
 
   function deleteBundle(uint bundleId) external;
 
   function updateBundle(uint bundleId) external returns (bool);
 
-  function updateSA(uint bundleId, uint i, uint128 vestedPercentage, uint vestedAmount) external;
+  function increaseAmountInSA(uint bundleId, uint i, uint diff) external;
 
-  function changeSA(uint bundleId, uint i, uint diff, bool increase) external;
+  function decreaseAmountInSA(uint bundleId, uint i, uint diff) external;
 
-  function popSA(uint bundleId) external;
-
-  function getSA(uint bundleId, uint i) external view returns (SA memory);
-
-  function deleteSA(uint bundleId, uint i) external;
-
-  function addNewSAs(uint bundleId, SA[] memory newSAs) external;
-
-  function addNewSA(uint bundleId, SA memory newSA) external;
-
-  function deleteAllSAs(uint bundleId) external;
+  function addSAToBundle(uint bundleId, SA memory newSA) external;
 
   function cleanEmptySAs(uint256 tokenId, uint256 numEmptySAs) external returns (bool);
 }

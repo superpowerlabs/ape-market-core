@@ -93,12 +93,12 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     } else {
       require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SAManager can mint tokens for an existing sale");
     }
-    _mint0(to, saleAddress, amount, vestedPercentage);
+    _mintAndCreateBundle(to, saleAddress, amount, vestedPercentage);
   }
 
-  function _mint0(address to, address saleAddress, uint256 amount, uint128 vestedPercentage) internal {
+  function _mintAndCreateBundle(address to, address saleAddress, uint256 amount, uint128 vestedPercentage) internal {
     _safeMint(to, _tokenIdCounter.current());
-    _storage.addBundleWithSA(_tokenIdCounter.current(), saleAddress, amount, vestedPercentage);
+    _storage.newBundleWithSA(_tokenIdCounter.current(), saleAddress, amount, vestedPercentage);
     _tokenIdCounter.increment();
   }
 
@@ -124,11 +124,11 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
       if (vestedPercentage != 100) {
         // we skip vested SAs
         if (!minted) {
-          _mint0(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+          _mintAndCreateBundle(msg.sender, sa.sale, vestedAmount, vestedPercentage);
           minted = true;
         } else {
           ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
-          _storage.addNewSA(nextId, newSA);
+          _storage.addSAToBundle(nextId, newSA);
         }
         notEmtpy = true;
       }

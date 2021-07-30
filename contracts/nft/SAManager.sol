@@ -123,13 +123,13 @@ contract SAManager is LevelAccess {
         for (uint256 k = 0; k < newBundle.sas.length; k++) {
           if (bundle.sas[j].sale == newBundle.sas[k].sale &&
             bundle.sas[j].vestedPercentage == newBundle.sas[k].vestedPercentage) {
-            _storage.changeSA(nextId, k, bundle.sas[j].remainingAmount, true);
+            _storage.increaseAmountInSA(nextId, k, bundle.sas[j].remainingAmount);
             matched = true;
             break;
           }
         }
         if (!matched) {
-          _storage.addNewSA(nextId, bundle.sas[j]);
+          _storage.addSAToBundle(nextId, bundle.sas[j]);
         }
       }
       _token.burn(tokenIds[i]);
@@ -160,10 +160,10 @@ contract SAManager is LevelAccess {
         minted = true;
       } else {
         ISAStorage.SA memory newSA = ISAStorage.SA(sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
-        _storage.addNewSA(nextId, newSA);
+        _storage.addSAToBundle(nextId, newSA);
         if (keptAmounts[i] != 0) {
           newSA = ISAStorage.SA(sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
-          _storage.addNewSA(nextId + 1, newSA);
+          _storage.addSAToBundle(nextId + 1, newSA);
           j++;
         }
       }
