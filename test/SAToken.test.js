@@ -80,12 +80,12 @@ describe("SAToken", async function () {
     it("should allow saleMock to mint a token ", async function () {
 
       await expect(saleMock.mintToken(buyer.address, 100))
-          .to.emit(token, 'Transfer')
+          .emit(token, 'Transfer')
           .withArgs(addr0, buyer.address, 0)
       assert.equal(await token.ownerOf(0), buyer.address)
 
       await expect(saleMock.mintToken(buyer2.address, 50))
-          .to.emit(token, 'Transfer')
+          .emit(token, 'Transfer')
           .withArgs(addr0, buyer2.address, 1)
       assert.equal(await token.ownerOf(1), buyer2.address)
     })
@@ -98,11 +98,19 @@ describe("SAToken", async function () {
 
     })
 
-    it("should throw if a non-contract try to mint a token", async function () {
+    it("should throw if a non-contract try to mint a token as Sale", async function () {
 
       await assertThrowsMessage(
-          token.connect(buyer2).mint(buyer.address, 100),
+          token.connect(buyer2).mint(buyer.address, addr0, 100, 0),
           'SAToken: Only legit sales can mint its own NFT!')
+
+    })
+
+    it("should throw if a non-manager try to mint a token as SAManager", async function () {
+
+      await assertThrowsMessage(
+          token.connect(buyer2).mint(buyer.address, buyer.address, 100, 0),
+          'SAToken: Only SAManager can mint tokens for an existing sale')
 
     })
   })

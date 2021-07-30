@@ -120,7 +120,7 @@ describe("SaleFactory", async function () {
       assert.equal(await factory.lastSale(), addr0)
 
       await expect(factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address))
-          .to.emit(factory, "NewSale")
+          .emit(factory, "NewSale")
       const saleAddress = await factory.lastSale()
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
       assert.isTrue(await factory.isLegitSale(saleAddress))

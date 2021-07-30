@@ -85,34 +85,22 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     return super.supportsInterface(interfaceId);
   }
 
-//  function mint(address to, uint256 amount) external override virtual {
-//    //    require(isContract(msg.sender), "SAToken: The caller is not a contract");
-//    require(_factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
-//    _safeMint(to, _tokenIdCounter.current());
-//    console.log("Minted %s", _tokenIdCounter.current());
-//    _storage.addBundleWithSA(_tokenIdCounter.current(), msg.sender, amount, 0);
-//    _tokenIdCounter.increment();
-//  }
-
   function mint(address to, address sale, uint256 amount, uint128 vestedPercentage) external override virtual {
+    address saleAddress = sale;
     if (sale == address(0)) {
-      require(_factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
+      require(isContract(msg.sender) && _factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
+      saleAddress = msg.sender;
     } else {
-      require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SAManager can call this function");
+      require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SAManager can mint tokens for an existing sale");
     }
-    _safeMint(to, _tokenIdCounter.current());
-    console.log("Minted %s", _tokenIdCounter.current());
-    _storage.addBundleWithSA(_tokenIdCounter.current(), msg.sender, amount, vestedPercentage);
-    _tokenIdCounter.increment();
+    _mint0(to, saleAddress, amount, vestedPercentage);
   }
 
-//  function mintWithExistingBundle(address to) external override virtual
-//  onlyLevel(MANAGER_LEVEL) {
-//    require(_storage.getBundle(_tokenIdCounter.current()).sas[0].sale != address(0), "SAToken: Bundle does not exists");
-//    console.log("Minted %s", _tokenIdCounter.current());
-//    _safeMint(to, _tokenIdCounter.current());
-//    _tokenIdCounter.increment();
-//  }
+  function _mint0(address to, address saleAddress, uint256 amount, uint128 vestedPercentage) internal {
+    _safeMint(to, _tokenIdCounter.current());
+    _storage.addBundleWithSA(_tokenIdCounter.current(), saleAddress, amount, vestedPercentage);
+    _tokenIdCounter.increment();
+  }
 
   function nextTokenId() external view virtual override returns (uint) {
     return _tokenIdCounter.current();
@@ -125,22 +113,28 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
     console.log("vesting", tokenId);
     ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
-    uint256 numEmptySubSAs = 0;
+    uint nextId = _tokenIdCounter.current();
+    bool notEmtpy;
+    bool minted;
     for (uint256 i = 0; i < bundle.sas.length; i++) {
       ISAStorage.SA memory sa = bundle.sas[i];
       ISale sale = ISale(sa.sale);
-      (uint256 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
+      (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
       console.log("vesting", tokenId, vestedAmount);
-      if (vestedPercentage == 100) {
-        numEmptySubSAs++;
+      if (vestedPercentage != 100) {
+        // we skip vested SAs
+        if (!minted) {
+          _mint0(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+          minted = true;
+        } else {
+          ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
+          _storage.addNewSA(nextId, newSA);
+        }
+        notEmtpy = true;
       }
-      _storage.updateSA(tokenId, i, vestedPercentage, vestedAmount);
     }
-    if (numEmptySubSAs == bundle.sas.length) {
-      _burn(tokenId);
-      return false;
-    }
-    return true;
+    _burn(tokenId);
+    return notEmtpy;
   }
 
   function burn(uint256 tokenId) external virtual override
@@ -153,12 +147,12 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     _storage.deleteBundle(tokenId);
   }
 
-  // from OpenZeppelin Address.sol
-  //  function isContract(address account) internal view returns (bool) {
-  //    uint256 size;
-  //    // solium-disable-next-line security/no-inline-assembly
-  //    assembly {size := extcodesize(account)}
-  //    return size > 0;
-  //  }
+  // from OpenZeppelin's Address.sol
+  function isContract(address account) internal view returns (bool) {
+    uint256 size;
+    // solium-disable-next-line security/no-inline-assembly
+    assembly {size := extcodesize(account)}
+    return size > 0;
+  }
 
 }

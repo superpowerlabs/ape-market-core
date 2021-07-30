@@ -39,5 +39,5 @@ interface ISale {
 
   function isTokenListed() external view returns (bool);
 
-  function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint, uint);
+  function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint128, uint);
 }

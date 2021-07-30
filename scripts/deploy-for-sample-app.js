@@ -110,7 +110,7 @@ async function main() {
   console.log('SaleFactory at ', factory.address)
 
     await expect(factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, data.SaleData))
-    .to.emit(factory, "NewSale")
+    .emit(factory, "NewSale")
 
   const AbcSaleAddress = await factory.lastSale()
 
@@ -119,7 +119,7 @@ async function main() {
 
   await abc.connect(abcOwner).approve(AbcSaleAddress, normalizeMinMaxAmount(saleSetup.capAmount * 1.05));
   await abcSale.connect(abcOwner).launch()
-  expect(await abc.balanceOf(AbcSaleAddress)).to.equal(normalizeMinMaxAmount(saleSetup.capAmount * 1.05));
+  expect(await abc.balanceOf(AbcSaleAddress)).equal(normalizeMinMaxAmount(saleSetup.capAmount * 1.05));
 
   console.log("ABC Sale deployed to:", AbcSaleAddress);
 
@@ -136,7 +136,7 @@ async function main() {
 
   await xyz.connect(xyzOwner).approve(XyzSaleAddress, normalizeMinMaxAmount(saleSetup.capAmount * 1.05));
   await xyzSale.connect(xyzOwner).launch()
-  expect(await xyz.balanceOf(XyzSaleAddress)).to.equal(normalizeMinMaxAmount(saleSetup.capAmount * 1.05));
+  expect(await xyz.balanceOf(XyzSaleAddress)).equal(normalizeMinMaxAmount(saleSetup.capAmount * 1.05));
 
   data = Object.assign(data, {
     AbcAddress,

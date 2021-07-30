@@ -57,7 +57,7 @@ describe("SAStorage", async function () {
 
     it("should update the manager", async function () {
       await expect(storage.grantLevel(MANAGER_LEVEL, newManager.address))
-          .to.emit(storage, 'LevelSet')
+          .emit(storage, 'LevelSet')
           .withArgs(MANAGER_LEVEL, newManager.address, owner.address)
       assert.equal((await storage.levels(newManager.address)).toNumber(), MANAGER_LEVEL)
     })
@@ -75,7 +75,7 @@ describe("SAStorage", async function () {
       let saId = 3
 
       await expect(storage.connect(manager).addBundleWithSA(saId, sale1.address, 0, 100))
-          .to.emit(storage, 'BundleAdded')
+          .emit(storage, 'BundleAdded')
           .withArgs(saId, sale1.address)
       assert.equal((await storage.getBundle(saId)).sas[0].sale, sale1.address)
     })
@@ -104,7 +104,7 @@ describe("SAStorage", async function () {
       let saId = 3
       await storage.connect(manager).addBundleWithSA(saId, sale1.address, 0, 100)
       await expect(storage.connect(manager).deleteBundle(saId))
-          .to.emit(storage, 'BundleDeleted')
+          .emit(storage, 'BundleDeleted')
           .withArgs(saId)
       assert.isUndefined((await storage.getBundle(saId)).sas[0])
     })
