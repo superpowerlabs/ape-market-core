@@ -28,7 +28,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   Counters.Counter private _tokenIdCounter;
 
   ISaleFactory public factory;
-  ISATokenExtras private _manager;
+  ISATokenExtras private _extras;
 
   address public apeWallet;
   IERC20 private _feeToken;
@@ -41,15 +41,15 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
     _;
   }
 
-  constructor(address factoryAddress, address managerAddress)
+  constructor(address factoryAddress, address extrasAddress)
   ERC721("SA NFT Token", "SANFT") {
     factory = ISaleFactory(factoryAddress);
-    _manager = ISATokenExtras(managerAddress);
-    grantLevel(MANAGER_LEVEL, managerAddress);
+    _extras = ISATokenExtras(extrasAddress);
+    grantLevel(MANAGER_LEVEL, extrasAddress);
   }
 
-  function getManager() external view override returns(address) {
-    return address(_manager);
+  function getTokenExtras() external view override returns(address) {
+    return address(_extras);
   }
 
   function updateFactory(address factoryAddress) external virtual
@@ -72,7 +72,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
     if (from != address(0) && to != address(0)) {
-      _manager.beforeTokenTransfer(from, to, tokenId);
+      _extras.beforeTokenTransfer(from, to, tokenId);
       // do we need this: ?
 //      _updateBundleAcquisitionTime(tokenId);
     }
@@ -110,7 +110,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   function vest(uint256 tokenId) public virtual override
   returns (bool) {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
-    return _manager.vest(tokenId);
+    return _extras.vest(tokenId);
 //    //    console.log("vesting", tokenId);
 //    // console.log("gas left before vesting", gasleft());
 //    ISAStorage.Bundle memory bundle = getBundle(tokenId);
@@ -154,12 +154,12 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
     for (uint256 i = 0; i < tokenIds.length; i++) {
       require(ownerOf(tokenIds[i]) == msg.sender, "SAToken: Only owner can merge tokens");
     }
-    _manager.merge(tokenIds);
+    _extras.merge(tokenIds);
   }
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual override feeRequired {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Only owner can split a token");
-    _manager.split(tokenId, keptAmounts);
+    _extras.split(tokenId, keptAmounts);
   }
 
   // from OpenZeppelin's Address.sol

@@ -85,7 +85,7 @@ contract Sale {
   returns (uint128, uint256){
     ISaleData.Setup memory setup = _saleData.getSetupById(saleId);
     ISAToken token = ISAToken(setup.satoken);
-    require(msg.sender == token.getManager(), "Sale: only SATokenExtras can call vest");
+    require(msg.sender == token.getTokenExtras(), "Sale: only SATokenExtras can call vest");
     (uint128 vestedPercentage, uint256 vestedAmount) = _saleData.setVest(saleId, sa.vestedPercentage, sa.remainingAmount);
     // console.log("gas left before transfer", gasleft());
     setup.sellingToken.transfer(saOwner, vestedAmount);

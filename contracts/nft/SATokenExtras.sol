@@ -55,7 +55,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
       if (vestedPercentage != 100) {
         // we skip vested SAs
         if (!minted) {
-          _token.mint(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+          _token.mint(_token.ownerOf(tokenId), sa.sale, vestedAmount, vestedPercentage);
           // console.log("gas left after mint", gasleft());
           minted = true;
         } else {
@@ -75,6 +75,14 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     require(isContract(tokenAddress), "SATokenExtras: token is not a contract");
     _token = ISAToken(tokenAddress);
     grantLevel(MANAGER_LEVEL, tokenAddress);
+  }
+
+  function grantLevel(uint256 level, address addr) public virtual override
+  onlyLevel(OWNER_LEVEL) {
+    if (level == MANAGER_LEVEL) {
+      require(addr == address(_token), "SATokenExtras: only SAToken can manage me");
+    }
+    super.grantLevel(level, addr);
   }
 
   function beforeTokenTransfer(address from, address to, uint256 tokenId) external view override
@@ -111,7 +119,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
         if (bundle.sas[j].remainingAmount != 0) {
           notEmpty = true;
           if (!minted) {
-            _token.mint(msg.sender, bundle.sas[j].sale, 0, 0);
+            _token.mint(_token.ownerOf(tokenIds[0]), bundle.sas[j].sale, 0, 0);
             // console.log("gas left after mint", gasleft());
             minted = true;
           }
@@ -168,9 +176,9 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
         continue;
       }
       if (!minted) {
-        _token.mint(msg.sender, sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
+        _token.mint(_token.ownerOf(tokenId), sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
         // console.log("gas left after first mint", gasleft());
-        _token.mint(msg.sender, sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
+        _token.mint(_token.ownerOf(tokenId), sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
         // console.log("gas left after second mint", gasleft());
         minted = true;
       } else {

@@ -14,7 +14,9 @@ describe("SAToken", async function () {
   let fakeSale
   let FactoryMock
   let factoryMock
-  let PAUSER_ROLE
+  let SATokenExtras
+  let tokenExtras
+
 
   let owner, manager, sale, apeFactory, newFactory, buyer, buyer2
   let addr0 = '0x0000000000000000000000000000000000000000'
@@ -46,12 +48,14 @@ describe("SAToken", async function () {
     factoryMock = await FactoryMock.deploy()
     await factoryMock.deployed()
     await factoryMock.setLegitSale(saleMock.address)
+    SATokenExtras = await ethers.getContractFactory("SATokenExtras")
+    tokenExtras = await SATokenExtras.deploy(profile.address)
+    await tokenExtras.deployed()
     SAToken = await ethers.getContractFactory("SAToken")
-    token = await SAToken.deploy(factoryMock.address, storage.address, profile.address)
+    token = await SAToken.deploy(factoryMock.address, tokenExtras.address)
     await token.deployed()
     await saleMock.setToken(token.address)
     await fakeSale.setToken(token.address)
-    await storage.grantLevel(await storage.MANAGER_LEVEL(), token.address)
   }
 
   describe('#constructor & #updateFactory', async function () {

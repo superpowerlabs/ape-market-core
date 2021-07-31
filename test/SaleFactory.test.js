@@ -5,6 +5,8 @@ const saleJson = require('../src/artifacts/contracts/sale/Sale.sol/Sale.json')
 
 describe("SaleFactory", async function () {
 
+  let Profile
+  let profile
   let ERC20Token
   let sellingToken
   let Tether
@@ -17,6 +19,8 @@ describe("SaleFactory", async function () {
   let factory
   let SaleData
   let saleData
+  let SATokenExtras
+  let tokenExtras
 
   let saleSetup
   let saleVestingSchedule
@@ -55,8 +59,12 @@ describe("SaleFactory", async function () {
     saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
 
+    SATokenExtras = await ethers.getContractFactory("SATokenExtras")
+    tokenExtras = await SATokenExtras.deploy(profile.address)
+    await tokenExtras.deployed()
+
     SAToken = await ethers.getContractFactory("SAToken")
-    satoken = await SAToken.deploy(factory.address, storage.address, profile.address)
+    satoken = await SAToken.deploy(factory.address, tokenExtras.address)
     await satoken.deployed()
 
     ERC20Token = await ethers.getContractFactory("ERC20Token")
