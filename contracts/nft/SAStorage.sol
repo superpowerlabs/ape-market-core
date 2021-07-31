@@ -21,255 +21,94 @@ contract SAStorage is ISAStorage, LevelAccess {
   // so that they can handle the Bundle/SA storage
 
   using SafeMath for uint256;
-  uint public constant MANAGER_LEVEL = 2;
+  uint256 public constant MANAGER_LEVEL = 2;
 
   mapping(uint256 => Bundle) private _bundles;
 
-  modifier bundleExists(uint bundleId) {
-    require(_bundles[bundleId].creationTimestamp != 0, "SAStorage: Bundle does not exist");
+  modifier bundleExists(uint256 bundleId) {
+    require(_bundles[bundleId].creationTime != 0, "SAStorage: Bundle does not exist");
     _;
   }
 
-  modifier SAExists(uint bundleId, uint i) {
+  modifier SAExists(uint256 bundleId, uint256 i) {
     require(i < _bundles[bundleId].sas.length, "SAStorage: SA does not exist");
     _;
   }
 
-  function getBundle(uint bundleId) public override virtual view
+  function getBundle(uint256 bundleId) public override virtual view
   returns (Bundle memory)
   {
     return _bundles[bundleId];
   }
 
-  function addBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external override virtual
+  function newBundleWithSA(uint256 bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
-    _addBundleWithSA(bundleId, saleAddress, remainingAmount, vestedPercentage);
+    require(_bundles[bundleId].creationTime == 0, "SAStorage: Bundle already added");
+    _newEmptyBundle(bundleId);
+    SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
+    _addSAToBundle(bundleId, listedSale);
   }
 
-  function newBundle(uint bundleId) external override virtual
+  function newEmptyBundle(uint256 bundleId) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
-    _newBundle(bundleId);
+    _newEmptyBundle(bundleId);
   }
 
-  function deleteBundle(uint bundleId) external override virtual
+  function deleteBundle(uint256 bundleId) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
-    return _deleteBundle(bundleId);
+    _deleteBundle(bundleId);
   }
 
-  function updateBundle(uint bundleId) external override virtual
+  function updateBundleAcquisitionTime(uint256 bundleId) external override virtual
   onlyLevel(MANAGER_LEVEL)
   returns (bool)
   {
-    return _updateBundle(bundleId);
+    if (_bundles[bundleId].sas.length > 0) {
+      _bundles[bundleId].acquisitionTime = uint32(block.timestamp);
+      return true;
+    }
+    return false;
   }
 
-  function updateSA(uint bundleId, uint i, uint128 vestedPercentage, uint vestedAmount) external override
+  function increaseAmountInSA(uint256 bundleId, uint256 i, uint256 diff) external override
   onlyLevel(MANAGER_LEVEL)
   {
-    return _updateSA(bundleId, i, vestedPercentage, vestedAmount);
+    _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.add(diff);
   }
 
-  function changeSA(uint bundleId, uint i, uint diff, bool increase) external override
+  function addSAToBundle(uint256 bundleId, SA memory newSA) external override virtual
   onlyLevel(MANAGER_LEVEL)
   {
-    return _changeSA(bundleId, i, diff, increase);
+    _addSAToBundle(bundleId, newSA);
   }
-
-  function popSA(uint bundleId) external override
-  onlyLevel(MANAGER_LEVEL)
-  {
-    return _popSA(bundleId);
-  }
-
-  function getSA(uint bundleId, uint i) external override view
-  returns (SA memory)
-  {
-    return _bundles[bundleId].sas[i];
-  }
-
-  function deleteSA(uint bundleId, uint i) external override virtual
-  onlyLevel(MANAGER_LEVEL)
-  {
-    _deleteSA(bundleId, i);
-  }
-
-  function addNewSAs(uint bundleId, SA[] memory newSAs) external override virtual
-  onlyLevel(MANAGER_LEVEL)
-  {
-    _addNewSAs(bundleId, newSAs);
-  }
-
-  function addNewSA(uint bundleId, SA memory newSA) external override virtual
-  onlyLevel(MANAGER_LEVEL)
-  {
-    _addNewSA(bundleId, newSA);
-  }
-
-  function deleteAllSAs(uint bundleId) external override virtual
-  onlyLevel(MANAGER_LEVEL)
-  {
-    _deleteAllSAs(bundleId);
-  }
-
-  function cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) external virtual override
-  bundleExists(bundleId) onlyLevel(MANAGER_LEVEL)
-  returns (bool) {
-    return _cleanEmptySAs(bundleId, numEmptySAs);
-  }
-
 
   // internal methods:
 
-  function _addBundleWithSA(
-    uint bundleId,
-    address saleAddress,
-    uint256 remainingAmount,
-    uint128 vestedPercentage
+  function _newEmptyBundle(
+    uint256 bundleId
   ) internal virtual
   {
-    require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
-    _newBundle(bundleId);
-    SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
-    _addNewSA(bundleId, listedSale);
-    emit BundleAdded(bundleId, saleAddress);
+    require(_bundles[bundleId].creationTime == 0, "SAStorage: Bundle already added");
+    _bundles[bundleId].creationTime = uint32(block.timestamp);
+    _bundles[bundleId].acquisitionTime = uint32(block.timestamp);
+    emit BundleCreated(bundleId);
   }
 
-  function _newBundle(
-    uint bundleId
-  ) internal virtual
-  {
-    require(_bundles[bundleId].creationTimestamp == 0, "SAStorage: Bundle already added");
-    _bundles[bundleId].creationTimestamp = uint32(block.timestamp);
-    _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
-    emit NewBundle(bundleId);
-  }
-
-  function _deleteBundle(uint bundleId) internal virtual
+  function _deleteBundle(uint256 bundleId) internal virtual
   bundleExists(bundleId)
   {
     delete _bundles[bundleId];
     emit BundleDeleted(bundleId);
   }
 
-  function _updateBundle(uint bundleId) internal virtual
-  bundleExists(bundleId)
-  returns (bool)
-  {
-    if (_bundles[bundleId].sas.length > 0) {
-      _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
-      return true;
-    }
-    return false;
-  }
-
-  function _updateSA(uint bundleId, uint i, uint128 vestedPercentage, uint vestedAmount) internal
-  bundleExists(bundleId) SAExists(bundleId, i) {
-    if (vestedPercentage == 100) {
-      _deleteSA(bundleId, i);
-    } else {
-      _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.sub(vestedAmount);
-      _bundles[bundleId].sas[i].vestedPercentage = vestedPercentage;
-    }
-  }
-
-  function _changeSA(uint bundleId, uint i, uint diff, bool increase) internal
-  bundleExists(bundleId) SAExists(bundleId, i) {
-    if (increase) {
-      _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.add(diff);
-    } else {
-      _bundles[bundleId].sas[i].remainingAmount = _bundles[bundleId].sas[i].remainingAmount.sub(diff);
-      console.log("Remaining %s", _bundles[bundleId].sas[i].remainingAmount);
-    }
-  }
-
-  function _popSA(uint bundleId) internal virtual
-  bundleExists(bundleId)
-  {
-    _bundles[bundleId].sas.pop();
-  }
-
-  function _deleteSA(uint bundleId, uint i) internal virtual
-  bundleExists(bundleId) SAExists(bundleId, i)
-  {
-    delete _bundles[bundleId].sas[i];
-  }
-
-  function _addNewSAs(uint bundleId, SA[] memory newSAs) internal virtual
-  bundleExists(bundleId)
-  {
-    for (uint256 i = 0; i < newSAs.length; i++) {
-      _bundles[bundleId].sas.push(newSAs[i]);
-    }
-    _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
-  }
-
-  function _addNewSA(uint bundleId, SA memory newSA) internal virtual
+  function _addSAToBundle(uint256 bundleId, SA memory newSA) internal virtual
   bundleExists(bundleId)
   {
     _bundles[bundleId].sas.push(newSA);
-    _bundles[bundleId].acquisitionTimestamp = uint32(block.timestamp);
-  }
-
-  function _deleteAllSAs(uint bundleId) internal virtual
-  bundleExists(bundleId)
-  {
-    delete _bundles[bundleId].sas;
-  }
-
-  // _cleanEmptySAs looks not very useful.
-  // We will verify and possibly optimize it later.
-  function _cleanEmptySAs(uint256 bundleId, uint256 numEmptySAs) internal virtual
-  returns (bool) {
-    bool emptyBundle = false;
-    Bundle storage bundle = _bundles[bundleId];
-    if (bundle.sas.length == 0 || bundle.sas.length == numEmptySAs) {
-      console.log("SANFT: Simple empty Bundle", bundleId, bundle.sas.length, numEmptySAs);
-      emptyBundle = true;
-    } else {
-      console.log("SANFT: Regular process");
-      if (numEmptySAs < bundle.sas.length / 2) {// empty is less than half, then shift elements
-        console.log("SANFT: Taking the shift route", bundle.sas.length, numEmptySAs);
-        for (uint256 i = 0; i < bundle.sas.length; i++) {
-          if (bundle.sas[i].remainingAmount == 0) {
-            // find one SA from the end that's not 100% vested
-            for (uint256 j = bundle.sas.length - 1; j > i; j--) {
-              if (bundle.sas[j].remainingAmount > 0) {
-                bundle.sas[i] = bundle.sas[j];
-              }
-              bundle.sas.pop();
-            }
-            // cannot find such SA
-            if (bundle.sas[i].remainingAmount == 0) {
-              assert(bundle.sas.length - 1 == i);
-              bundle.sas.pop();
-            }
-          }
-        }
-      } else {// empty is more than half, then create a new array
-        console.log("Taking the new array route", bundle.sas.length, numEmptySAs);
-        SA[] memory newSAs = new SA[](bundle.sas.length - numEmptySAs);
-        uint256 SAindex;
-        for (uint256 i = 0; i < bundle.sas.length; i++) {
-          if (bundle.sas[i].remainingAmount > 0) {
-            newSAs[SAindex++] = bundle.sas[i];
-          }
-          delete bundle.sas[i];
-        }
-        delete bundle.sas;
-        assert(bundle.sas.length == 0);
-        for (uint256 i = 0; i < newSAs.length; i++) {
-          bundle.sas.push(newSAs[i]);
-        }
-      }
-    }
-    if (emptyBundle || bundle.sas.length == 0) {
-      _deleteBundle(bundleId);
-      return false;
-    }
-    return true;
+    _bundles[bundleId].acquisitionTime = uint32(block.timestamp);
   }
 
 }

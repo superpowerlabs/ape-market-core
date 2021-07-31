@@ -18,8 +18,8 @@ module.exports = {
 
   formatBundle(bundle) {
     const result = {}
-    result.creationTimestamp = bundle.creationTimestamp.toNumber()
-    result.acquisitionTimestamp = bundle.acquisitionTimestamp.toNumber()
+    result.creationTime = bundle.creationTime.toNumber()
+    result.acquisitionTime = bundle.acquisitionTime.toNumber()
     result.sas = []
     for (let sa of bundle.sas) {
       result.sas.push({

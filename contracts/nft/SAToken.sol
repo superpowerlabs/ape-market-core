@@ -27,7 +27,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   using SafeMath for uint256;
   using Counters for Counters.Counter;
 
-  uint public constant MANAGER_LEVEL = 2;
+  uint256 public constant MANAGER_LEVEL = 2;
 
   Counters.Counter private _tokenIdCounter;
 
@@ -63,19 +63,20 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal
   override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
+//    console.log("Transfer from %s to %s", from, to);
     if (from != address(0) && to != address(0)) {
       if (!_profile.areAccountsAssociated(from, to)) {
         // check if any sale is not transferable
         ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
-        for (uint i = 0; i < bundle.sas.length; i++) {
+        for (uint256 i = 0; i < bundle.sas.length; i++) {
           ISale sale = ISale(bundle.sas[i].sale);
-          console.log(sale.isTransferable());
+//          console.log(sale.isTransferable());
           if (!sale.isTransferable()) {
             revert("SAToken: token not transferable");
           }
         }
       }
-      _storage.updateBundle(tokenId);
+      _storage.updateBundleAcquisitionTime(tokenId);
     }
   }
 
@@ -93,16 +94,16 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     } else {
       require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SAManager can mint tokens for an existing sale");
     }
-    _mint0(to, saleAddress, amount, vestedPercentage);
+    _mint(to, saleAddress, amount, vestedPercentage);
   }
 
-  function _mint0(address to, address saleAddress, uint256 amount, uint128 vestedPercentage) internal {
+  function _mint(address to, address saleAddress, uint256 amount, uint128 vestedPercentage) internal virtual {
     _safeMint(to, _tokenIdCounter.current());
-    _storage.addBundleWithSA(_tokenIdCounter.current(), saleAddress, amount, vestedPercentage);
+    _storage.newBundleWithSA(_tokenIdCounter.current(), saleAddress, amount, vestedPercentage);
     _tokenIdCounter.increment();
   }
 
-  function nextTokenId() external view virtual override returns (uint) {
+  function nextTokenId() external view virtual override returns (uint256) {
     return _tokenIdCounter.current();
   }
 
@@ -111,24 +112,27 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   function vest(uint256 tokenId) public virtual override
   returns (bool) {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
-    console.log("vesting", tokenId);
+//    console.log("vesting", tokenId);
+    // console.log("gas left before vesting", gasleft());
     ISAStorage.Bundle memory bundle = _storage.getBundle(tokenId);
-    uint nextId = _tokenIdCounter.current();
+    uint256 nextId = _tokenIdCounter.current();
     bool notEmtpy;
     bool minted;
     for (uint256 i = 0; i < bundle.sas.length; i++) {
       ISAStorage.SA memory sa = bundle.sas[i];
       ISale sale = ISale(sa.sale);
       (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
-      console.log("vesting", tokenId, vestedAmount);
+//      console.log("vesting", tokenId, vestedAmount);
       if (vestedPercentage != 100) {
         // we skip vested SAs
         if (!minted) {
-          _mint0(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+          _mint(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+          // console.log("gas left after mint", gasleft());
           minted = true;
         } else {
           ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
-          _storage.addNewSA(nextId, newSA);
+          _storage.addSAToBundle(nextId, newSA);
+          // console.log("gas left after addNewSA", gasleft());
         }
         notEmtpy = true;
       }
@@ -144,7 +148,9 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
 
   function _burn(uint256 tokenId) internal virtual override {
     super._burn(tokenId);
+    // console.log("gas left after burn", gasleft());
     _storage.deleteBundle(tokenId);
+    // console.log("gas left after delete bundle", gasleft());
   }
 
   // from OpenZeppelin's Address.sol

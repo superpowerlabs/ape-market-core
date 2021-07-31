@@ -25,7 +25,7 @@ interface ISale {
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external;
 
-  function normalize(uint32 amount) external view returns (uint);
+  function normalize(uint32 amount) external view returns (uint256);
 
   function withdrawPayment(uint256 amount) external;
 
@@ -39,5 +39,5 @@ interface ISale {
 
   function isTokenListed() external view returns (bool);
 
-  function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint128, uint);
+  function vest(address saOwner, ISAStorage.SA memory sa) external returns (uint128, uint256);
 }

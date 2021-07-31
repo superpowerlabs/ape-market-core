@@ -40,31 +40,31 @@ interface ISaleData {
     bool isTokenTransferable;
   }
 
-  function normalize(uint saleId, uint64 amount) external view returns (uint);
+  function normalize(uint256 saleId, uint64 amount) external view returns (uint256);
 
-  function denormalize(address sellingToken, uint64 amount) external view returns (uint);
+  function denormalize(address sellingToken, uint64 amount) external view returns (uint256);
 
-  function setVest(uint saleId, uint128 lastVestedPercentage, uint256 lockedAmount) external returns (uint128, uint);
+  function setVest(uint256 saleId, uint128 lastVestedPercentage, uint256 lockedAmount) external returns (uint128, uint256);
 
-  function triggerTokenListing(uint saleId) external;
+  function triggerTokenListing(uint256 saleId) external;
 
-  function approveInvestor(uint saleId, address investor, uint256 amount) external;
+  function approveInvestor(uint256 saleId, address investor, uint256 amount) external;
 
-  function setWithdrawToken(uint saleId, uint256 amount) external returns (IERC20Min, uint);
+  function setWithdrawToken(uint256 saleId, uint256 amount) external returns (IERC20Min, uint256);
 
-  function setInvest(uint saleId, address investor, uint256 amount) external returns (uint, uint, uint);
+  function setInvest(uint256 saleId, address investor, uint256 amount) external returns (uint256, uint256, uint256);
 
-  function setLaunch(uint saleId) external returns (IERC20Min, address, uint);
+  function setLaunch(uint256 saleId) external returns (IERC20Min, address, uint256);
 
-  function makeTransferable(uint saleId) external;
+  function makeTransferable(uint256 saleId) external;
 
-  function getSetupById(uint saleId) external view returns (Setup memory);
+  function getSetupById(uint256 saleId) external view returns (Setup memory);
 
-  function setUpSale(Setup memory setup, VestingStep[] memory schedule) external returns (uint);
+  function setUpSale(Setup memory setup, VestingStep[] memory schedule) external returns (uint256);
 
   function grantManagerLevel(address saleAddress) external;
 
-  function getVestedPercentage(uint saleId) external view returns (uint128);
+  function getVestedPercentage(uint256 saleId) external view returns (uint128);
 
   function getVestedAmount(uint256 vestedPercentage, uint256 lastVestedPercentage, uint256 lockedAmount) external view returns (uint256);
 
