@@ -10,7 +10,7 @@ import "../utils/IERC20Optimized.sol";
 import "./ISAToken.sol";
 import "./SAStorage.sol";
 import "../sale/ISale.sol";
-import "./ISAManager.sol";
+import "./ISATokenExtras.sol";
 
 // for debugging only
 //import "hardhat/console.sol";
@@ -28,7 +28,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   Counters.Counter private _tokenIdCounter;
 
   ISaleFactory public factory;
-  ISAManager public manager;
+  ISATokenExtras private _manager;
 
   address public apeWallet;
   IERC20 private _feeToken;
@@ -44,8 +44,12 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   constructor(address factoryAddress, address managerAddress)
   ERC721("SA NFT Token", "SANFT") {
     factory = ISaleFactory(factoryAddress);
-    manager = ISAManager(managerAddress);
+    _manager = ISATokenExtras(managerAddress);
     grantLevel(MANAGER_LEVEL, managerAddress);
+  }
+
+  function getManager() external view override returns(address) {
+    return address(_manager);
   }
 
   function updateFactory(address factoryAddress) external virtual
@@ -68,7 +72,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
     if (from != address(0) && to != address(0)) {
-      manager.beforeTokenTransfer(from, to, tokenId);
+      _manager.beforeTokenTransfer(from, to, tokenId);
       // do we need this: ?
 //      _updateBundleAcquisitionTime(tokenId);
     }
@@ -86,7 +90,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
       require(isContract(msg.sender) && factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
       saleAddress = msg.sender;
     } else {
-      require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SAManager can mint tokens for an existing sale");
+      require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SATokenExtras can mint tokens for an existing sale");
     }
     _mint(to, saleAddress, amount, vestedPercentage);
   }
@@ -106,33 +110,34 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   function vest(uint256 tokenId) public virtual override
   returns (bool) {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
-    //    console.log("vesting", tokenId);
-    // console.log("gas left before vesting", gasleft());
-    ISAStorage.Bundle memory bundle = getBundle(tokenId);
-    uint256 nextId = _tokenIdCounter.current();
-    bool notEmtpy;
-    bool minted;
-    for (uint256 i = 0; i < bundle.sas.length; i++) {
-      ISAStorage.SA memory sa = bundle.sas[i];
-      ISale sale = ISale(sa.sale);
-      (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
-      //      console.log("vesting", tokenId, vestedAmount);
-      if (vestedPercentage != 100) {
-        // we skip vested SAs
-        if (!minted) {
-          _mint(msg.sender, sa.sale, vestedAmount, vestedPercentage);
-          // console.log("gas left after mint", gasleft());
-          minted = true;
-        } else {
-          ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
-          _addSAToBundle(nextId, newSA);
-          // console.log("gas left after addNewSA", gasleft());
-        }
-        notEmtpy = true;
-      }
-    }
-    _burn(tokenId);
-    return notEmtpy;
+    return _manager.vest(tokenId);
+//    //    console.log("vesting", tokenId);
+//    // console.log("gas left before vesting", gasleft());
+//    ISAStorage.Bundle memory bundle = getBundle(tokenId);
+//    uint256 nextId = _tokenIdCounter.current();
+//    bool notEmtpy;
+//    bool minted;
+//    for (uint256 i = 0; i < bundle.sas.length; i++) {
+//      ISAStorage.SA memory sa = bundle.sas[i];
+//      ISale sale = ISale(sa.sale);
+//      (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
+//      //      console.log("vesting", tokenId, vestedAmount);
+//      if (vestedPercentage != 100) {
+//        // we skip vested SAs
+//        if (!minted) {
+//          _mint(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+//          // console.log("gas left after mint", gasleft());
+//          minted = true;
+//        } else {
+//          ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
+//          _addSAToBundle(nextId, newSA);
+//          // console.log("gas left after addNewSA", gasleft());
+//        }
+//        notEmtpy = true;
+//      }
+//    }
+//    _burn(tokenId);
+//    return notEmtpy;
   }
 
   function burn(uint256 tokenId) external virtual override
@@ -149,12 +154,12 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
     for (uint256 i = 0; i < tokenIds.length; i++) {
       require(ownerOf(tokenIds[i]) == msg.sender, "SAToken: Only owner can merge tokens");
     }
-    manager.merge(tokenIds);
+    _manager.merge(tokenIds);
   }
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual override feeRequired {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Only owner can split a token");
-    manager.split(tokenId, keptAmounts);
+    _manager.split(tokenId, keptAmounts);
   }
 
   // from OpenZeppelin's Address.sol

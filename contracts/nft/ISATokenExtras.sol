@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface ISAManager {
+interface ISATokenExtras {
 
   function merge(uint256[] memory tokenIds) external;
 
@@ -9,4 +9,5 @@ interface ISAManager {
 
   function beforeTokenTransfer(address from, address to, uint256 tokenId) external;
 
+  function vest(uint256 tokenId) external returns (bool);
 }

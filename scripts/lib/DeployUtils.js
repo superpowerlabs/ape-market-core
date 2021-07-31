@@ -62,8 +62,8 @@ class DeployUtils {
 
     await storage.grantLevel(await storage.MANAGER_LEVEL(), satoken.address)
 
-    const SAManager = await ethers.getContractFactory('SAManager')
-    const manager = await SAManager.deploy(
+    const SATokenExtras = await ethers.getContractFactory('SATokenExtras')
+    const manager = await SATokenExtras.deploy(
         satoken.address,
         storage.address,
         tetherAddress,
@@ -81,7 +81,7 @@ class DeployUtils {
       SaleData: saleData.address,
       SaleFactory: factory.address,
       SAToken: satoken.address,
-      SAManager: manager.address,
+      SATokenExtras: manager.address,
       tether: tetherAddress,
       tetherOwner: tetherOwner ? tetherOwner.address : addr0,
       factoryAdmin: factoryAdminAddress,

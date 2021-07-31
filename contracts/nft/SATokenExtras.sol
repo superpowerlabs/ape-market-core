@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./ISATokenExtended.sol";
-import "./ISAManager.sol";
+import "./ISATokenExtras.sol";
 import "./ISAStorage.sol";
 import "../sale/ISale.sol";
 import "../utils/LevelAccess.sol";
@@ -13,7 +13,7 @@ import "../user/IProfile.sol";
 
 import "hardhat/console.sol";
 
-contract SAManager is ISAManager, LevelAccess {
+contract SATokenExtras is ISATokenExtras, LevelAccess {
 
   using SafeMath for uint256;
 
@@ -24,7 +24,7 @@ contract SAManager is ISAManager, LevelAccess {
   IProfile public profile;
 
   modifier onlySAToken {
-    require(msg.sender == address(_token), "SAManager: caller is not the SA NFT token");
+    require(msg.sender == address(_token), "SATokenExtras: caller is not the SA NFT token");
     _;
   }
 
@@ -39,9 +39,40 @@ contract SAManager is ISAManager, LevelAccess {
     return sale.getPaymentToken();
   }
 
+  function vest(uint256 tokenId) external virtual override
+  onlyLevel(MANAGER_LEVEL) returns (bool) {
+    //    console.log("vesting", tokenId);
+    // console.log("gas left before vesting", gasleft());
+    ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
+    uint256 nextId = _token.nextTokenId();
+    bool notEmtpy;
+    bool minted;
+    for (uint256 i = 0; i < bundle.sas.length; i++) {
+      ISAStorage.SA memory sa = bundle.sas[i];
+      ISale sale = ISale(sa.sale);
+      (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(_token.ownerOf(tokenId), sa);
+      //      console.log("vesting", tokenId, vestedAmount);
+      if (vestedPercentage != 100) {
+        // we skip vested SAs
+        if (!minted) {
+          _token.mint(msg.sender, sa.sale, vestedAmount, vestedPercentage);
+          // console.log("gas left after mint", gasleft());
+          minted = true;
+        } else {
+          ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
+          _token.addSAToBundle(nextId, newSA);
+          // console.log("gas left after addNewSA", gasleft());
+        }
+        notEmtpy = true;
+      }
+    }
+    _token.burn(tokenId);
+    return notEmtpy;
+  }
+
   function setToken(address tokenAddress) external
   onlyLevel(OWNER_LEVEL) {
-    require(isContract(tokenAddress), "SAManager: token is not a contract");
+    require(isContract(tokenAddress), "SATokenExtras: token is not a contract");
     _token = ISAToken(tokenAddress);
     grantLevel(MANAGER_LEVEL, tokenAddress);
   }
@@ -71,7 +102,7 @@ contract SAManager is ISAManager, LevelAccess {
     for (uint256 i = 0; i < tokenIds.length; i++) {
       for (uint256 w = 0; w < tokenIds.length; w++) {
         if (w != i && tokenIds[w] == tokenIds[i]) {
-          revert("SAManager: Bundle can not merge to itself");
+          revert("SATokenExtras: Bundle can not merge to itself");
         }
       }
       bundle = _token.getBundle(tokenIds[i]);
@@ -91,7 +122,7 @@ contract SAManager is ISAManager, LevelAccess {
         counter++;
       }
     }
-    require(counter > 1, "SAManager: Not enough SAs for merging");
+    require(counter > 1, "SATokenExtras: Not enough SAs for merging");
     ISAStorage.Bundle memory newBundle;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       bundle = _token.getBundle(tokenIds[i]);

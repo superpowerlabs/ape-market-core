@@ -106,11 +106,11 @@ describe("SAToken", async function () {
 
     })
 
-    it("should throw if a non-manager try to mint a token as SAManager", async function () {
+    it("should throw if a non-manager try to mint a token as SATokenExtras", async function () {
 
       await assertThrowsMessage(
           token.connect(buyer2).mint(buyer.address, buyer.address, 100, 0),
-          'SAToken: Only SAManager can mint tokens for an existing sale')
+          'SAToken: Only SATokenExtras can mint tokens for an existing sale')
 
     })
   })

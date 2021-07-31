@@ -24,7 +24,7 @@ describe("Integration Test", function () {
   let abcSaleId
   let xyzSale
   let xyzSaleId
-  let SAManager
+  let SATokenExtras
   let manager
   let SaleData
   let saleData
@@ -90,8 +90,8 @@ describe("Integration Test", function () {
     tether = await Tether.connect(tetherOwner).deploy()
     await tether.deployed()
 
-    SAManager = await ethers.getContractFactory("SAManager")
-    manager = await SAManager.deploy(
+    SATokenExtras = await ethers.getContractFactory("SATokenExtras")
+    manager = await SATokenExtras.deploy(
         satoken.address,
         storage.address,
         tether.address,
