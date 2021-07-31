@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 abstract contract LevelAccess {
 
-  event LevelSet(uint level, address account, address setter);
+  event LevelSet(uint256 level, address account, address setter);
 
-  mapping(address => uint) public levels;
+  mapping(address => uint256) public levels;
 
-  uint public constant OWNER_LEVEL = 1;
+  uint256 public constant OWNER_LEVEL = 1;
 
-  modifier onlyLevel(uint level) {
+  modifier onlyLevel(uint256 level) {
     require(levels[msg.sender] == level, "LevelAccess: caller not authorized.");
     _;
   }
@@ -19,7 +19,7 @@ abstract contract LevelAccess {
     emit LevelSet(OWNER_LEVEL, msg.sender, address(0));
   }
 
-  function grantLevel(uint level, address addr) public
+  function grantLevel(uint256 level, address addr) public virtual
   onlyLevel(OWNER_LEVEL) {
     levels[addr] = level;
     emit LevelSet(level, addr, msg.sender);

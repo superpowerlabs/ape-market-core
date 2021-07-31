@@ -3,47 +3,33 @@ pragma solidity ^0.8.0;
 
 interface ISAStorage {
 
-  event BundleAdded(uint bundleId, address initialSale);
-  event NewBundle(uint bundleId);
-  event BundleDeleted(uint bundleId);
+  event BundleCreated(uint256 bundleId);
+  event BundleDeleted(uint256 bundleId);
 
   struct SA {
     address sale;
     uint256 remainingAmount;
-    uint256 vestedPercentage;
+    uint128 vestedPercentage;
   }
 
   struct Bundle {
     SA[] sas;
-    uint256 creationTimestamp;
-    uint256 acquisitionTimestamp;
+    uint32 creationTime;
+    uint32 acquisitionTime;
   }
 
-  function getBundle(uint bundleId) external view returns (Bundle memory);
+  function getBundle(uint256 bundleId) external view returns (Bundle memory);
 
-  function addBundleWithSA(uint bundleId, address saleAddress, uint256 remainingAmount, uint256 vestedPercentage) external;
+//  function newBundleWithSA(uint256 bundleId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) external;
+//
+//  function newEmptyBundle(uint256 bundleId) external;
+//
+//  function deleteBundle(uint256 bundleId) external;
+//
+//  function updateBundleAcquisitionTime(uint256 bundleId) external returns (bool);
 
-  function newBundle(uint bundleId) external;
+  function increaseAmountInSA(uint256 bundleId, uint256 i, uint256 diff) external;
 
-  function deleteBundle(uint bundleId) external;
+  function addSAToBundle(uint256 bundleId, SA memory newSA) external;
 
-  function updateBundle(uint bundleId) external returns (bool);
-
-  function updateSA(uint bundleId, uint i, uint vestedPercentage, uint vestedAmount) external;
-
-  function changeSA(uint bundleId, uint i, uint diff, bool increase) external;
-
-  function popSA(uint bundleId) external;
-
-  function getSA(uint bundleId, uint i) external view returns (SA memory);
-
-  function deleteSA(uint bundleId, uint i) external;
-
-  function addNewSAs(uint bundleId, SA[] memory newSAs) external;
-
-  function addNewSA(uint bundleId, SA memory newSA) external;
-
-  function deleteAllSAs(uint bundleId) external;
-
-  function cleanEmptySAs(uint256 tokenId, uint256 numEmptySAs) external returns (bool);
 }

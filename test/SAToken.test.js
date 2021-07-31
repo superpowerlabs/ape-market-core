@@ -14,7 +14,9 @@ describe("SAToken", async function () {
   let fakeSale
   let FactoryMock
   let factoryMock
-  let PAUSER_ROLE
+  let SATokenExtras
+  let tokenExtras
+
 
   let owner, manager, sale, apeFactory, newFactory, buyer, buyer2
   let addr0 = '0x0000000000000000000000000000000000000000'
@@ -46,12 +48,14 @@ describe("SAToken", async function () {
     factoryMock = await FactoryMock.deploy()
     await factoryMock.deployed()
     await factoryMock.setLegitSale(saleMock.address)
+    SATokenExtras = await ethers.getContractFactory("SATokenExtras")
+    tokenExtras = await SATokenExtras.deploy(profile.address)
+    await tokenExtras.deployed()
     SAToken = await ethers.getContractFactory("SAToken")
-    token = await SAToken.deploy(factoryMock.address, storage.address, profile.address)
+    token = await SAToken.deploy(factoryMock.address, tokenExtras.address)
     await token.deployed()
     await saleMock.setToken(token.address)
     await fakeSale.setToken(token.address)
-    await storage.grantLevel(await storage.MANAGER_LEVEL(), token.address)
   }
 
   describe('#constructor & #updateFactory', async function () {
@@ -80,12 +84,12 @@ describe("SAToken", async function () {
     it("should allow saleMock to mint a token ", async function () {
 
       await expect(saleMock.mintToken(buyer.address, 100))
-          .to.emit(token, 'Transfer')
+          .emit(token, 'Transfer')
           .withArgs(addr0, buyer.address, 0)
       assert.equal(await token.ownerOf(0), buyer.address)
 
       await expect(saleMock.mintToken(buyer2.address, 50))
-          .to.emit(token, 'Transfer')
+          .emit(token, 'Transfer')
           .withArgs(addr0, buyer2.address, 1)
       assert.equal(await token.ownerOf(1), buyer2.address)
     })
@@ -98,11 +102,19 @@ describe("SAToken", async function () {
 
     })
 
-    it("should throw if a non-contract try to mint a token", async function () {
+    it("should throw if a non-contract try to mint a token as Sale", async function () {
 
       await assertThrowsMessage(
-          token.connect(buyer2).mint(buyer.address, 100),
+          token.connect(buyer2).mint(buyer.address, addr0, 100, 0),
           'SAToken: Only legit sales can mint its own NFT!')
+
+    })
+
+    it("should throw if a non-manager try to mint a token as SATokenExtras", async function () {
+
+      await assertThrowsMessage(
+          token.connect(buyer2).mint(buyer.address, buyer.address, 100, 0),
+          'SAToken: Only SATokenExtras can mint tokens for an existing sale')
 
     })
   })

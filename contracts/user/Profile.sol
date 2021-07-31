@@ -11,9 +11,9 @@ import "./IProfile.sol";
 contract Profile is IProfile, Ownable {
 
   mapping(address => bool) private _associatedAccounts;
-  uint private _validity = 1 days;
+  uint256 private _validity = 1 days;
 
-  function changeValidity(uint validity) external override onlyOwner {
+  function changeValidity(uint256 validity) external override onlyOwner {
     _validity = validity;
     ValidityChanged(validity);
   }
@@ -22,7 +22,7 @@ contract Profile is IProfile, Ownable {
     return address(uint160(uint256(uint160(addr1)) + uint256(uint160(addr2))));
   }
 
-  function associateAccount(address account, uint timestamp, bytes memory signature) external override {
+  function associateAccount(address account, uint256 timestamp, bytes memory signature) external override {
     require(msg.sender != address(0) && account != address(0), "Profile: no invalid accounts");
     require(timestamp + _validity > block.timestamp, "Profile: request is expired");
     require(ECDSA.recover(encodeForSignature(account, msg.sender, timestamp), signature) == account, "Profile: invalid signature");
@@ -44,7 +44,7 @@ contract Profile is IProfile, Ownable {
     return areAccountsAssociated(msg.sender, addr);
   }
 
-  function encodeForSignature(address addr1, address addr2, uint timestamp) public pure override returns (bytes32){
+  function encodeForSignature(address addr1, address addr2, uint256 timestamp) public pure override returns (bytes32){
     return keccak256(abi.encodePacked("\x19\x00"/* EIP-191 */, addr1, addr2, timestamp));
   }
 

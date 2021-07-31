@@ -12,7 +12,7 @@ contract SaleMock {
   }
 
   function mintToken(address to, uint256 amount) external {
-    token.mint(to, amount);
+    token.mint(to, address(0), amount, 0);
   }
 
 }

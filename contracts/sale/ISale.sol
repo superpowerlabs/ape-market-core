@@ -13,7 +13,7 @@ interface ISale {
 
   function apeWallet() external view returns (address);
 
-// Sale creator calls this function to start the sale.
+  // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external;
 
@@ -25,7 +25,7 @@ interface ISale {
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external;
 
-  function normalize(uint32 amount) external view returns (uint);
+  function normalize(uint32 amount) external view returns (uint256);
 
   function withdrawPayment(uint256 amount) external;
 
@@ -35,9 +35,9 @@ interface ISale {
 
   function makeTransferable() external;
 
-  function isTransferable() external view returns(bool);
+  function isTransferable() external view returns (bool);
 
   function isTokenListed() external view returns (bool);
 
-  function vest(address sa_owner, ISAStorage.SA memory sa) external returns (uint, uint);
+  function vest(address saOwner, ISAStorage.SA memory sa) external returns (uint128, uint256);
 }
