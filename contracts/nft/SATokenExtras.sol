@@ -196,9 +196,8 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     _token.burn(tokenId);
   }
 
-
   // from OpenZeppelin's Address.sol
-  function isContract(address account) internal view returns (bool) {
+  function isContract(address account) public view override returns (bool) {
     uint256 size;
     // solium-disable-next-line security/no-inline-assembly
     assembly {size := extcodesize(account)}
