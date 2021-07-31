@@ -14,8 +14,6 @@ describe("Integration Test", function () {
   let xyz
   let Tether
   let tether
-  let SAStorage
-  let storage
   let SAToken
   let satoken
   let SaleFactory
@@ -24,10 +22,11 @@ describe("Integration Test", function () {
   let abcSaleId
   let xyzSale
   let xyzSaleId
-  let SAManager
-  let manager
+  let SATokenExtras
+  let tokenExtras
   let SaleData
   let saleData
+
 
   let saleSetup
   let saleVestingSchedule
@@ -43,7 +42,7 @@ describe("Integration Test", function () {
     for (let s of arguments) {
       str += s + ' '
     }
-    // console.log(str)
+    console.log(str)
   }
 
   before(async function () {
@@ -60,10 +59,6 @@ describe("Integration Test", function () {
     profile = await Profile.deploy()
     await profile.deployed()
 
-    SAStorage = await ethers.getContractFactory("SAStorage")
-    storage = await SAStorage.deploy()
-    await storage.deployed()
-
     SaleData = await ethers.getContractFactory("SaleData")
     saleData = await SaleData.deploy()
     await saleData.deployed()
@@ -74,11 +69,14 @@ describe("Integration Test", function () {
     saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
 
-    SAToken = await ethers.getContractFactory("SAToken")
-    satoken = await SAToken.deploy(factory.address, storage.address, profile.address)
-    await satoken.deployed()
+    SATokenExtras = await ethers.getContractFactory("SATokenExtras")
+    tokenExtras = await SATokenExtras.deploy(profile.address)
+    await tokenExtras.deployed()
 
-    await storage.grantLevel(await storage.MANAGER_LEVEL(), satoken.address)
+    SAToken = await ethers.getContractFactory("SAToken")
+    satoken = await SAToken.deploy(factory.address, tokenExtras.address)
+    await satoken.deployed()
+    await tokenExtras.setToken(satoken.address)
 
     ERC20Token = await ethers.getContractFactory("ERC20Token")
     abc = await ERC20Token.connect(abcOwner).deploy("Abc Token", "ABC")
@@ -90,18 +88,7 @@ describe("Integration Test", function () {
     tether = await Tether.connect(tetherOwner).deploy()
     await tether.deployed()
 
-    SAManager = await ethers.getContractFactory("SAManager")
-    manager = await SAManager.deploy(
-        satoken.address,
-        storage.address,
-        tether.address,
-        100,
-        apeWallet.address
-    )
-    await manager.deployed()
-
-    await satoken.grantLevel(await satoken.MANAGER_LEVEL(), manager.address)
-    await storage.grantLevel(await storage.MANAGER_LEVEL(), manager.address)
+    await satoken.setupUpPayments(tether.address, 100, apeWallet.address)
   }
 
   function normalize(amount) {
@@ -194,7 +181,7 @@ describe("Integration Test", function () {
       await abcSale.connect(investor1).invest(normalize(6000));
       expect(await satoken.balanceOf(investor1.address)).equal(1);
       let saId = await satoken.tokenOfOwnerByIndex(investor1.address, 0);
-      let bundle = await storage.getBundle(saId);
+      let bundle = await satoken.getBundle(saId);
       expect(await bundle.sas[0].sale).equal(abcSale.address);
       // 5% fee
       expect(await bundle.sas[0].remainingAmount).equal(normalize(6000));
@@ -207,7 +194,7 @@ describe("Integration Test", function () {
       await abcSale.connect(investor1).invest(normalize(4000));
       expect(await satoken.balanceOf(investor1.address)).equal(2);
       saId = await satoken.tokenOfOwnerByIndex(investor1.address, 1);
-      bundle = await storage.getBundle(saId);
+      bundle = await satoken.getBundle(saId);
       expect(await bundle.sas[0].sale).equal(abcSale.address);
       // 5% fee
       expect(await bundle.sas[0].remainingAmount).equal(normalize(4000));
@@ -222,7 +209,7 @@ describe("Integration Test", function () {
       await xyzSale.connect(investor2).invest(normalize(20000));
       expect(await satoken.balanceOf(investor2.address)).equal(1);
       saId = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
-      bundle = await storage.getBundle(saId);
+      bundle = await satoken.getBundle(saId);
       expect(await bundle.sas[0].sale).equal(xyzSale.address);
       // 5% fee
       expect(await bundle.sas[0].remainingAmount).equal(normalize(20000))
@@ -233,37 +220,37 @@ describe("Integration Test", function () {
       CL("Checking Ape Owner for investing fee");
       expect(await satoken.balanceOf(apeWallet.address)).equal(3);
       let nft = satoken.tokenOfOwnerByIndex(apeWallet.address, 0);
-      bundle = await storage.getBundle(nft);
+      bundle = await satoken.getBundle(nft);
       expect(bundle.sas[0].sale).equal(abcSale.address);
       expect(bundle.sas[0].remainingAmount).equal(normalize(300));
       nft = satoken.tokenOfOwnerByIndex(apeWallet.address, 1);
-      bundle = await storage.getBundle(nft);
+      bundle = await satoken.getBundle(nft);
       expect(bundle.sas[0].sale).equal(abcSale.address);
       expect(bundle.sas[0].remainingAmount).equal(normalize(200));
-      bundle = await storage.getBundle(satoken.tokenOfOwnerByIndex(apeWallet.address, 2));
+      bundle = await satoken.getBundle(satoken.tokenOfOwnerByIndex(apeWallet.address, 2));
       expect(bundle.sas[0].sale).equal(xyzSale.address);
       expect(bundle.sas[0].remainingAmount).equal(normalize(1000));
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4000));
 
       CL("Splitting investor 2's nft");
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
-      bundle = await storage.getBundle(nft);
+      bundle = await satoken.getBundle(nft);
       expect(bundle.sas[0].remainingAmount).equal(normalize(20000));
       // do the split
       let keptAmounts = [normalize(8000)];
-      await tether.connect(investor2).approve(manager.address, normalize(100));
-      await manager.connect(investor2).split(nft, keptAmounts);
+      await tether.connect(investor2).approve(satoken.address, normalize(100));
+      await satoken.connect(investor2).split(nft, keptAmounts);
       expect(await satoken.balanceOf(investor2.address)).equal(2);
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
       // CL('nft', nft.toNumber()) // 7
-      bundle = await storage.getBundle(nft);
+      bundle = await satoken.getBundle(nft);
       CL(xyzSale.address)
       expect(bundle.sas[0].sale).equal(xyzSale.address);
       expect(bundle.sas[0].remainingAmount).equal(normalize(8000));
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 1);
       // CL('nft', nft.toNumber()) // 6
 
-      bundle = await storage.getBundle(nft);
+      bundle = await satoken.getBundle(nft);
       expect(bundle.sas[0].sale).equal(xyzSale.address);
       expect(bundle.sas[0].remainingAmount).equal(normalize(12000));
       // check for 100 fee collected
@@ -274,7 +261,7 @@ describe("Integration Test", function () {
       expect(await satoken.balanceOf(investor2.address)).equal(2);
       expect(await satoken.balanceOf(investor1.address)).equal(2);
       nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
-      await tether.connect(investor2).approve(manager.address, normalize(100))
+      await tether.connect(investor2).approve(satoken.address, normalize(100))
       await satoken.connect(investor2).transferFrom(investor2.address, investor1.address, nft)
       expect(await satoken.balanceOf(investor2.address)).equal(1);
       expect(await satoken.balanceOf(investor1.address)).equal(3);
@@ -285,12 +272,12 @@ describe("Integration Test", function () {
       let nft0 = satoken.tokenOfOwnerByIndex(investor1.address, 0);
       let nft1 = satoken.tokenOfOwnerByIndex(investor1.address, 1);
       let nft2 = satoken.tokenOfOwnerByIndex(investor1.address, 2);
-      await tether.connect(investor1).approve(manager.address, normalize(100));
-      await manager.connect(investor1).merge([nft0, nft1, nft2]);
+      await tether.connect(investor1).approve(satoken.address, normalize(100));
+      await satoken.connect(investor1).merge([nft0, nft1, nft2]);
       expect(await satoken.balanceOf(investor1.address)).equal(1);
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4200));
       nft = await satoken.tokenOfOwnerByIndex(investor1.address, 0);
-      bundle = await storage.getBundle(nft);
+      bundle = await satoken.getBundle(nft);
       expect(bundle.sas.length).equal(2);
       expect(bundle.sas[0].sale).equal(abcSale.address);
       expect(bundle.sas[0].remainingAmount).equal(normalize(10000));
@@ -306,7 +293,7 @@ describe("Integration Test", function () {
 
       // before vesting
       nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
-      bundle = await storage.getBundle(nft);
+      bundle = await satoken.getBundle(nft);
       expect(await abc.balanceOf(investor1.address)).equal(0);
       expect(bundle.sas[0].remainingAmount).equal(normalize(10000));
 
@@ -315,7 +302,7 @@ describe("Integration Test", function () {
 
       await satoken.connect(investor1).vest(nft);
       nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
-      bundle = await storage.getBundle(nft);
+      bundle = await satoken.getBundle(nft);
       expect(await abc.balanceOf(investor1.address)).equal(normalize(5000));
       expect(bundle.sas[0].remainingAmount).equal(normalize(5000));
       expect(await xyz.balanceOf(investor1.address)).equal(normalize(4000));

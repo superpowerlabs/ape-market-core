@@ -35,8 +35,7 @@ contract SAStorage is ISAStorage, LevelAccess {
   }
 
   function getBundle(uint256 tokenId) public override virtual view
-  returns (Bundle memory)
-  {
+  returns (Bundle memory){
     return _bundles[tokenId];
   }
 
@@ -52,33 +51,18 @@ contract SAStorage is ISAStorage, LevelAccess {
 
   // internals
 
-  function _newBundleWithSA(uint256 tokenId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) internal virtual
-  {
+  function _newBundleWithSA(uint256 tokenId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) internal virtual {
     require(_bundles[tokenId].creationTime == 0, "SAStorage: Bundle already added");
     _newEmptyBundle(tokenId);
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     _addSAToBundle(tokenId, listedSale);
   }
 
-//  function _updateBundleAcquisitionTime(uint256 tokenId) internal virtual
-//  returns (bool)
-//  {
-//    if (_bundles[tokenId].sas.length > 0) {
-//      _bundles[tokenId].acquisitionTime = uint32(block.timestamp);
-//      return true;
-//    }
-//    return false;
-//  }
-
-  function _increaseAmountInSA(uint256 tokenId, uint256 i, uint256 diff) internal
-  {
+  function _increaseAmountInSA(uint256 tokenId, uint256 i, uint256 diff) internal {
     _bundles[tokenId].sas[i].remainingAmount = _bundles[tokenId].sas[i].remainingAmount.add(diff);
   }
 
-  function _newEmptyBundle(
-    uint256 tokenId
-  ) internal virtual
-  {
+  function _newEmptyBundle(uint256 tokenId) internal virtual {
     require(_bundles[tokenId].creationTime == 0, "SAStorage: Bundle already added");
     _bundles[tokenId].creationTime = uint32(block.timestamp);
     _bundles[tokenId].acquisitionTime = uint32(block.timestamp);
@@ -86,15 +70,13 @@ contract SAStorage is ISAStorage, LevelAccess {
   }
 
   function _deleteBundle(uint256 tokenId) internal virtual
-  bundleExists(tokenId)
-  {
+  bundleExists(tokenId) {
     delete _bundles[tokenId];
     emit BundleDeleted(tokenId);
   }
 
   function _addSAToBundle(uint256 tokenId, SA memory newSA) internal virtual
-  bundleExists(tokenId)
-  {
+  bundleExists(tokenId) {
     _bundles[tokenId].sas.push(newSA);
     _bundles[tokenId].acquisitionTime = uint32(block.timestamp);
   }

@@ -15,4 +15,6 @@ interface ISAToken {
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) external;
 
+  function getTokenExtras() external view returns(address);
+
 }
