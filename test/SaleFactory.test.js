@@ -1,7 +1,7 @@
 const {expect, assert} = require("chai")
 const {assertThrowsMessage} = require('./helpers')
 
-const saleJson = require('../src/artifacts/contracts/sale/Sale.sol/Sale.json')
+const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
 describe("SaleFactory", async function () {
 
@@ -25,14 +25,19 @@ describe("SaleFactory", async function () {
   let saleSetup
   let saleVestingSchedule
 
-  let owner, factoryAdmin, newFactoryAdmin, apeWallet, seller, buyer, buyer2
+  let owner, validator, factoryAdmin, apeWallet, seller, buyer, buyer2
   let addr0 = '0x0000000000000000000000000000000000000000'
 
-  let timestamp
-  let chainId
+
+  async function getSignatureByValidator(saleId, setup, schedule) {
+    const hash = await factory.encodeForSignature(saleId, setup, schedule)
+    const signingKey = new ethers.utils.SigningKey('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d')
+    const signedDigest = signingKey.signDigest(hash)
+    return ethers.utils.joinSignature(signedDigest)
+  }
 
   before(async function () {
-    [owner, factoryAdmin, newFactoryAdmin, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
+    [owner, validator, factoryAdmin, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
   })
 
   async function getTimestamp() {
@@ -50,14 +55,14 @@ describe("SaleFactory", async function () {
     await storage.deployed()
 
     SaleData = await ethers.getContractFactory("SaleData")
-    saleData = await SaleData.deploy()
+    saleData = await SaleData.deploy(apeWallet.address)
     await saleData.deployed()
 
     SaleFactory = await ethers.getContractFactory("SaleFactory")
-    factory = await SaleFactory.deploy()
+    factory = await SaleFactory.deploy(saleData.address, validator.address)
     await factory.deployed()
-    saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
+    await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
+    await factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
 
     SATokenExtras = await ethers.getContractFactory("SATokenExtras")
     tokenExtras = await SATokenExtras.deploy(profile.address)
@@ -125,24 +130,44 @@ describe("SaleFactory", async function () {
 
     it("should create a new sale", async function () {
 
-      assert.equal(await factory.lastSale(), addr0)
+      let saleId = await saleData.nextSaleId()
 
-      await expect(factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address))
+      let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
+
+      await factory.connect(factoryAdmin).approveSale(saleId, signature)
+
+      await expect(factory.connect(seller).newSale(saleId, saleSetup, saleVestingSchedule))
           .emit(factory, "NewSale")
-      const saleAddress = await factory.lastSale()
+      const saleAddress = await factory.getSaleAddressById(saleId)
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
       assert.isTrue(await factory.isLegitSale(saleAddress))
-      assert.equal(await factory.getSaleAddressById(0), saleAddress)
 
     })
 
-    it("should throw if trying to create a sale as contract owner", async function () {
+    it("should throw if trying to create a sale without a pre-approval", async function () {
 
       await assertThrowsMessage(
-          factory.newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address),
-          'LevelAccess: caller not authorized')
+          factory.newSale(0, saleSetup, saleVestingSchedule),
+          'ECDSA: invalid signature length')
 
     })
+
+    it("should throw if trying to create a sale with a modified setup", async function () {
+
+      let saleId = await saleData.nextSaleId()
+
+      let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
+
+      await factory.connect(factoryAdmin).approveSale(saleId, signature)
+
+      saleSetup.capAmount = 3450000
+
+      await assertThrowsMessage(
+          factory.newSale(saleId, saleSetup, saleVestingSchedule),
+          'SaleFactory: invalid signature or modified params')
+
+    })
+
 
   })
 

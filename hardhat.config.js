@@ -41,7 +41,7 @@ module.exports = {
     }
   },
   paths: {
-    artifacts: './src/artifacts',
+    // artifacts: './src/artifacts',
   },
   networks: {
     hardhat: {

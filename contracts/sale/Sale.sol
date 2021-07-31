@@ -15,30 +15,19 @@ contract Sale {
   ISaleData private _saleData;
 
   uint256 public saleId;
-  address private _apeWallet;
 
   modifier onlySaleOwner() {
     require(msg.sender == _saleData.getSetupById(saleId).owner, "Sale: caller is not the owner");
     _;
   }
 
-  constructor(address apeWallet_, address saleDataAddress){
-    _apeWallet = apeWallet_;
+  constructor(uint saleId_, address saleDataAddress){
+    saleId = saleId_;
     _saleData = ISaleData(saleDataAddress);
   }
 
   function initialize(ISaleData.Setup memory setup_, ISaleData.VestingStep[] memory schedule) external {
-    saleId = _saleData.setUpSale(setup_, schedule);
-  }
-
-  function changeApeWallet(address apeWallet_) external
-  onlySaleOwner {
-    _apeWallet = apeWallet_;
-  }
-
-  function apeWallet() external view
-  returns (address) {
-    return _apeWallet;
+    _saleData.setUpSale(saleId, setup_, schedule);
   }
 
   function isTransferable() external view returns (bool){
@@ -60,12 +49,12 @@ contract Sale {
     ISaleData.Setup memory setup = _saleData.getSetupById(saleId);
     (uint256 tokenPayment, uint256 buyerFee, uint256 sellerFee) = _saleData.setInvest(saleId, msg.sender, amount);
     //    console.log("tokenPayment", tokenPayment);
-    setup.paymentToken.transferFrom(msg.sender, _apeWallet, buyerFee);
+    setup.paymentToken.transferFrom(msg.sender, _saleData.apeWallet(), buyerFee);
     setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
     // mint NFT
     ISAToken nft = ISAToken(setup.satoken);
     nft.mint(msg.sender, address(0), amount, 0);
-    nft.mint(_apeWallet, address(0), sellerFee, 0);
+    nft.mint(_saleData.apeWallet(), address(0), sellerFee, 0);
     //    console.log("Sale: Paying buyer fee", buyerFee);
     //    console.log("Sale: Paying seller fee", sellerFee);
   }

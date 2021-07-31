@@ -11,28 +11,51 @@ contract SaleData is ISaleData, LevelAccess {
   using SafeMath for uint256;
   uint256 public constant MANAGER_LEVEL = 1;
   uint256 public constant ADMIN_LEVEL = 2;
+  address private _apeWallet;
 
   mapping(uint256 => VestingStep[]) private _vestingSchedules;
   mapping(uint256 => Setup) private _setups;
   mapping(uint256 => mapping(address => uint256)) private _approvedAmounts;
-  uint256 private _lastId = 0;
+  uint256 private _nextId;
 
   modifier onlySaleOwner(uint256 saleId) {
     require(msg.sender == _setups[saleId].owner, "Sale: caller is not the owner");
     _;
   }
 
-  function setUpSale(Setup memory setup, VestingStep[] memory schedule) external override
-  onlyLevel(MANAGER_LEVEL) returns (uint256){
-    _setups[_lastId] = setup;
+  constructor(address apeWallet_) {
+    _apeWallet = apeWallet_;
+  }
+
+  function apeWallet() external view override returns (address) {
+    return _apeWallet;
+  }
+
+  function grantManagerLevel(address saleAddress) public override onlyLevel(ADMIN_LEVEL) {
+    levels[saleAddress] = MANAGER_LEVEL;
+    emit LevelSet(MANAGER_LEVEL, saleAddress, msg.sender);
+  }
+
+  function nextSaleId() external view override returns (uint256) {
+    return _nextId;
+  }
+
+  function increaseSaleId() external override onlyLevel(ADMIN_LEVEL) {
+    _nextId++;
+  }
+
+  function setUpSale(uint saleId, Setup memory setup, VestingStep[] memory schedule) external override
+  onlyLevel(MANAGER_LEVEL) {
+    require(_setups[saleId].owner == address(0), "SaleData: id has already been used");
+    require(saleId < _nextId, "SaleData: invalid id");
+    _setups[saleId] = setup;
     for (uint256 i = 0; i < schedule.length; i++) {
       if (i > 0) {
         require(schedule[i].percentage > schedule[i - 1].percentage, "Sale: Vest percentage should be monotonic increasing");
       }
-      _vestingSchedules[_lastId].push(schedule[i]);
+      _vestingSchedules[saleId].push(schedule[i]);
     }
     require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
-    return _lastId++;
   }
 
   function makeTransferable(uint256 saleId) external override
@@ -108,12 +131,6 @@ contract SaleData is ISaleData, LevelAccess {
   onlySaleOwner(saleId) {
     require(_setups[saleId].tokenListTimestamp == 0, "Sale: Token already listed");
     _setups[saleId].tokenListTimestamp = uint64(block.timestamp);
-  }
-
-  function grantManagerLevel(address saleAddress) public override
-  onlyLevel(ADMIN_LEVEL) {
-    levels[saleAddress] = MANAGER_LEVEL;
-    emit LevelSet(MANAGER_LEVEL, saleAddress, msg.sender);
   }
 
   function getVestedPercentage(uint256 saleId) public view override

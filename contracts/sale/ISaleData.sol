@@ -40,6 +40,12 @@ interface ISaleData {
     bool isTokenTransferable;
   }
 
+  function apeWallet() external view returns (address);
+
+  function nextSaleId() external view returns (uint256);
+
+  function increaseSaleId() external;
+
   function normalize(uint256 saleId, uint64 amount) external view returns (uint256);
 
   function denormalize(address sellingToken, uint64 amount) external view returns (uint256);
@@ -60,7 +66,7 @@ interface ISaleData {
 
   function getSetupById(uint256 saleId) external view returns (Setup memory);
 
-  function setUpSale(Setup memory setup, VestingStep[] memory schedule) external returns (uint256);
+  function setUpSale(uint saleId, Setup memory setup, VestingStep[] memory schedule) external;
 
   function grantManagerLevel(address saleAddress) external;
 

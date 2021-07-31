@@ -8,19 +8,15 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "../utils/IERC20Optimized.sol";
 import "./ISAToken.sol";
+import "./ISATokenExtras.sol";
 import "./SAStorage.sol";
 import "../sale/ISale.sol";
-import "./ISATokenExtras.sol";
+import "../sale/ISaleFactory.sol";
 
 // for debugging only
 //import "hardhat/console.sol";
 
-interface ISaleFactory {
-
-  function isLegitSale(address sale) external view returns (bool);
-}
-
-contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
+contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
 
   using SafeMath for uint256;
   using Counters for Counters.Counter;

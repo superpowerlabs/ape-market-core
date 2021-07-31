@@ -3,7 +3,7 @@ const {assertThrowsMessage, formatBundle} = require('./helpers')
 
 // const delay = ms => new Promise(res => setTimeout(res, ms));
 
-const saleJson = require('../src/artifacts/contracts/sale/Sale.sol/Sale.json')
+const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
 describe("Integration Test", function () {
 
@@ -18,10 +18,6 @@ describe("Integration Test", function () {
   let satoken
   let SaleFactory
   let factory
-  let abcSale
-  let abcSaleId
-  let xyzSale
-  let xyzSaleId
   let SATokenExtras
   let tokenExtras
   let SaleData
@@ -31,11 +27,15 @@ describe("Integration Test", function () {
   let saleSetup
   let saleVestingSchedule
 
-  let owner, factoryAdmin, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet
+  let owner, validator, factoryAdmin, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet
   let addr0 = '0x0000000000000000000000000000000000000000'
 
-  let timestamp
-  let chainId
+  async function getSignatureByValidator(saleId, setup, schedule) {
+    const hash = await factory.encodeForSignature(saleId, setup, schedule)
+    const signingKey = new ethers.utils.SigningKey('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d')
+    const signedDigest = signingKey.signDigest(hash)
+    return ethers.utils.joinSignature(signedDigest)
+  }
 
   function CL() {
     let str = ''
@@ -46,11 +46,20 @@ describe("Integration Test", function () {
   }
 
   before(async function () {
-    [owner, factoryAdmin, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet] = await ethers.getSigners()
+    [owner, validator, factoryAdmin, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet] = await ethers.getSigners()
   })
 
   async function getTimestamp() {
     return (await ethers.provider.getBlock()).timestamp
+  }
+
+  async function getSale(saleSetup, saleVestingSchedule) {
+    let saleId = await saleData.nextSaleId()
+    let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
+    await factory.connect(factoryAdmin).approveSale(saleId, signature)
+    await factory.connect(factoryAdmin).newSale(saleId, saleSetup, saleVestingSchedule)
+    let saleAddress = await factory.getSaleAddressById(saleId)
+    return [new ethers.Contract(saleAddress, saleJson.abi, ethers.provider), saleId.toNumber()]
   }
 
   async function initNetworkAndDeploy() {
@@ -60,14 +69,14 @@ describe("Integration Test", function () {
     await profile.deployed()
 
     SaleData = await ethers.getContractFactory("SaleData")
-    saleData = await SaleData.deploy()
+    saleData = await SaleData.deploy(apeWallet.address)
     await saleData.deployed()
 
     SaleFactory = await ethers.getContractFactory("SaleFactory")
-    factory = await SaleFactory.deploy()
+    factory = await SaleFactory.deploy(saleData.address, validator.address)
     await factory.deployed()
-    saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
+    await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
+    await factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
 
     SATokenExtras = await ethers.getContractFactory("SATokenExtras")
     tokenExtras = await SATokenExtras.deploy(profile.address)
@@ -141,11 +150,8 @@ describe("Integration Test", function () {
         }]
 
       CL('Deploy new sale for ABC')
-      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address)
-      let saleAddress = await factory.lastSale()
+      const [abcSale, abcSaleId] = await getSale(saleSetup, saleVestingSchedule)
 
-      abcSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-      abcSaleId = await abcSale.saleId()
       const setup = await saleData.getSetupById(abcSaleId)
       expect(setup.owner).equal(abcOwner.address)
 
@@ -160,10 +166,7 @@ describe("Integration Test", function () {
       saleSetup.pricingPayment = 1;
 
       CL('Deploy new sale for XYZ')
-      await factory.connect(factoryAdmin).newSale(saleSetup, saleVestingSchedule, apeWallet.address, saleData.address)
-      saleAddress = await factory.lastSale()
-      xyzSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-      xyzSaleId = await xyzSale.saleId()
+      const [xyzSale, xyzSaleId] = await getSale(saleSetup, saleVestingSchedule)
 
       CL("Launching XYZ Sale");
       await xyz.connect(xyzOwner).approve(xyzSale.address, normalizeMinMaxAmount(setup.capAmount * 1.05));

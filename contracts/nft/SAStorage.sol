@@ -39,9 +39,9 @@ contract SAStorage is ISAStorage, LevelAccess {
     return _bundles[tokenId];
   }
 
-  function increaseAmountInSA(uint256 tokenId, uint256 i, uint256 diff) external override
+  function increaseAmountInSA(uint256 tokenId, uint256 saIndex, uint256 diff) external override
   onlyLevel(MANAGER_LEVEL) {
-    _increaseAmountInSA(tokenId, i, diff);
+    _increaseAmountInSA(tokenId, saIndex, diff);
   }
 
   function addSAToBundle(uint256 tokenId, SA memory newSA) external override
@@ -58,8 +58,8 @@ contract SAStorage is ISAStorage, LevelAccess {
     _addSAToBundle(tokenId, listedSale);
   }
 
-  function _increaseAmountInSA(uint256 tokenId, uint256 i, uint256 diff) internal {
-    _bundles[tokenId].sas[i].remainingAmount = _bundles[tokenId].sas[i].remainingAmount.add(diff);
+  function _increaseAmountInSA(uint256 tokenId, uint256 saIndex, uint256 diff) internal {
+    _bundles[tokenId].sas[saIndex].remainingAmount = _bundles[tokenId].sas[saIndex].remainingAmount.add(diff);
   }
 
   function _newEmptyBundle(uint256 tokenId) internal virtual {
