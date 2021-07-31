@@ -87,7 +87,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   function mint(address to, address sale, uint256 amount, uint128 vestedPercentage) external override virtual {
     address saleAddress = sale;
     if (sale == address(0)) {
-      require(isContract(msg.sender) && factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
+      require(_extras.isContract(msg.sender) && factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
       saleAddress = msg.sender;
     } else {
       require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SATokenExtras can mint tokens for an existing sale");
@@ -111,33 +111,6 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   returns (bool) {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
     return _extras.vest(tokenId);
-//    //    console.log("vesting", tokenId);
-//    // console.log("gas left before vesting", gasleft());
-//    ISAStorage.Bundle memory bundle = getBundle(tokenId);
-//    uint256 nextId = _tokenIdCounter.current();
-//    bool notEmtpy;
-//    bool minted;
-//    for (uint256 i = 0; i < bundle.sas.length; i++) {
-//      ISAStorage.SA memory sa = bundle.sas[i];
-//      ISale sale = ISale(sa.sale);
-//      (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(ownerOf(tokenId), sa);
-//      //      console.log("vesting", tokenId, vestedAmount);
-//      if (vestedPercentage != 100) {
-//        // we skip vested SAs
-//        if (!minted) {
-//          _mint(msg.sender, sa.sale, vestedAmount, vestedPercentage);
-//          // console.log("gas left after mint", gasleft());
-//          minted = true;
-//        } else {
-//          ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
-//          _addSAToBundle(nextId, newSA);
-//          // console.log("gas left after addNewSA", gasleft());
-//        }
-//        notEmtpy = true;
-//      }
-//    }
-//    _burn(tokenId);
-//    return notEmtpy;
   }
 
   function burn(uint256 tokenId) external virtual override
@@ -163,11 +136,11 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, SAStorage {
   }
 
   // from OpenZeppelin's Address.sol
-  function isContract(address account) internal view returns (bool) {
-    uint256 size;
-    // solium-disable-next-line security/no-inline-assembly
-    assembly {size := extcodesize(account)}
-    return size > 0;
-  }
+//  function isContract(address account) internal view returns (bool) {
+//    uint256 size;
+//    // solium-disable-next-line security/no-inline-assembly
+//    assembly {size := extcodesize(account)}
+//    return size > 0;
+//  }
 
 }

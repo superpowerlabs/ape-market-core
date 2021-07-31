@@ -10,4 +10,6 @@ interface ISATokenExtras {
   function beforeTokenTransfer(address from, address to, uint256 tokenId) external;
 
   function vest(uint256 tokenId) external returns (bool);
+
+  function isContract(address account) external view returns (bool);
 }
