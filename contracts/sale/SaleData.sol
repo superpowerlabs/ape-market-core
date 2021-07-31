@@ -9,8 +9,8 @@ import "./ISaleData.sol";
 contract SaleData is ISaleData, LevelAccess {
 
   using SafeMath for uint256;
-  uint256 public constant MANAGER_LEVEL = 2;
-  uint256 public constant ADMIN_LEVEL = 3;
+  uint256 public constant MANAGER_LEVEL = 1;
+  uint256 public constant ADMIN_LEVEL = 2;
 
   mapping(uint256 => VestingStep[]) private _vestingSchedules;
   mapping(uint256 => Setup) private _setups;

@@ -56,24 +56,16 @@ class DeployUtils {
     await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     await factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdminAddress)
 
+    const SATokenExtras = await ethers.getContractFactory('SATokenExtras')
+    const extras = await SATokenExtras.deploy(profile.address)
+    await extras.deployed()
+
     const SAToken = await ethers.getContractFactory('SAToken')
-    const satoken = await SAToken.deploy(factory.address, storage.address, profile.address)
+    const satoken = await SAToken.deploy(factory.address, extras.address)
     await satoken.deployed()
+    await extras.setToken(satoken.address)
 
-    await storage.grantLevel(await storage.MANAGER_LEVEL(), satoken.address)
-
-    const SAManager = await ethers.getContractFactory('SAManager')
-    const manager = await SAManager.deploy(
-        satoken.address,
-        storage.address,
-        tetherAddress,
-        config.feeAmount,
-        apeWalletAddress
-    )
-    await manager.deployed()
-
-    await satoken.grantLevel(await satoken.MANAGER_LEVEL(), manager.address)
-    await storage.grantLevel(await storage.MANAGER_LEVEL(), manager.address)
+    await satoken.setupUpPayments(tetherAddress, 100, apeWalletAddress)
 
     return {
       Profile: profile.address,
@@ -81,7 +73,7 @@ class DeployUtils {
       SaleData: saleData.address,
       SaleFactory: factory.address,
       SAToken: satoken.address,
-      SAManager: manager.address,
+      SATokenExtras: extras.address,
       tether: tetherAddress,
       tetherOwner: tetherOwner ? tetherOwner.address : addr0,
       factoryAdmin: factoryAdminAddress,

@@ -84,7 +84,8 @@ contract Sale {
   function vest(address saOwner, ISAStorage.SA memory sa) external virtual
   returns (uint128, uint256){
     ISaleData.Setup memory setup = _saleData.getSetupById(saleId);
-    require(msg.sender == address(setup.satoken), "Sale: only SAToken can call vest");
+    ISAToken token = ISAToken(setup.satoken);
+    require(msg.sender == token.getTokenExtras(), "Sale: only SATokenExtras can call vest");
     (uint128 vestedPercentage, uint256 vestedAmount) = _saleData.setVest(saleId, sa.vestedPercentage, sa.remainingAmount);
     // console.log("gas left before transfer", gasleft());
     setup.sellingToken.transfer(saOwner, vestedAmount);

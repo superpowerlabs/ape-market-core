@@ -3,8 +3,6 @@ const {assertThrowsMessage} = require('./helpers')
 
 describe("SAStorage", async function () {
 
-  let Profile
-  let profile
   let SAStorage
   let storage
   let MANAGER_LEVEL
@@ -21,7 +19,7 @@ describe("SAStorage", async function () {
   }
 
   async function initNetworkAndDeploy() {
-    SAStorage = await ethers.getContractFactory("SAStorage")
+    SAStorage = await ethers.getContractFactory("SAStorageExtenderMock")
     storage = await SAStorage.deploy()
     await storage.deployed()
     MANAGER_LEVEL = await storage.MANAGER_LEVEL()

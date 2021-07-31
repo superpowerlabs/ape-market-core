@@ -12,12 +12,11 @@ contract SaleFactory is LevelAccess {
 
   event NewSale(address saleAddress);
 
-
   mapping(address => bool) private _sales;
   mapping(uint256 => address) private _salesById;
   uint256 private _lastSaleId;
 
-  uint256 public constant FACTORY_ADMIN_LEVEL = 5;
+  uint256 public constant FACTORY_ADMIN_LEVEL = 3;
   address private _factoryAdmin;
 
   function isLegitSale(address sale) external view returns (bool) {
