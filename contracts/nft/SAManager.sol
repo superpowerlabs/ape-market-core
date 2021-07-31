@@ -105,7 +105,7 @@ contract SAManager is ISAManager, LevelAccess {
         for (uint256 k = 0; k < newBundle.sas.length; k++) {
           if (bundle.sas[j].sale == newBundle.sas[k].sale &&
             bundle.sas[j].vestedPercentage == newBundle.sas[k].vestedPercentage) {
-            _token.increaseAmountInSA(nextId, k, bundle.sas[j].remainingAmount);
+            newBundle.sas[k].remainingAmount = newBundle.sas[k].remainingAmount.add(bundle.sas[j].remainingAmount);
             // console.log("gas left after increase to SA", gasleft());
             matched = true;
             break;

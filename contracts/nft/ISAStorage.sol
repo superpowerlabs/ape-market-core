@@ -28,8 +28,6 @@ interface ISAStorage {
 //
 //  function updateBundleAcquisitionTime(uint256 bundleId) external returns (bool);
 
-  function increaseAmountInSA(uint256 bundleId, uint256 i, uint256 diff) external;
-
   function addSAToBundle(uint256 bundleId, SA memory newSA) external;
 
 }
