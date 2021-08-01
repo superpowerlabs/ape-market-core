@@ -51,7 +51,6 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     ISaleData.Setup memory setup,
     ISaleData.VestingStep[] memory schedule,
     bytes memory signature
-
   ) external override onlyLevel(FACTORY_ADMIN_LEVEL) {
     require(saleId == _saleData.nextSaleId(), "SaleFactory: invalid sale id");
     require(
