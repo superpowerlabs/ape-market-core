@@ -14,8 +14,8 @@ import "hardhat/console.sol";
 contract SaleFactory is ISaleFactory, LevelAccess {
   uint256 public constant OPERATOR_LEVEL = 3;
 
-  mapping(address => bool) private _sales;
-  mapping(uint256 => address) private _salesById;
+//  mapping(address => bool) private _sales;
+//  mapping(uint256 => address) private _salesById;
 
   mapping(uint256 => bool) private _approvals;
 
@@ -34,11 +34,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
   }
 
   function isLegitSale(address sale) external view override returns (bool) {
-    return _sales[sale];
-  }
-
-  function getSaleAddressById(uint256 i) external view override returns (address) {
-    return _salesById[i];
+    return _saleData.isLegitSale(sale);
   }
 
   function approveSale(
@@ -70,8 +66,8 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     address addr = address(sale);
     _saleData.grantManagerLevel(addr);
     sale.initialize(setup, schedule);
-    _salesById[saleId] = addr;
-    _sales[addr] = true;
+//    _salesById[saleId] = addr;
+//    _sales[addr] = true;
     emit NewSale(saleId, addr);
   }
 

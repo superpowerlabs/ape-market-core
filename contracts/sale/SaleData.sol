@@ -8,14 +8,16 @@ import "./ISaleData.sol";
 
 contract SaleData is ISaleData, LevelAccess {
   using SafeMath for uint256;
-  uint256 public constant MANAGER_LEVEL = 1;
+  uint256 public constant SALE_LEVEL = 1;
   uint256 public constant ADMIN_LEVEL = 2;
   address private _apeWallet;
 
+  mapping(uint256 => address) private _salesById;
   mapping(uint256 => VestingStep[]) private _vestingSchedules;
   mapping(uint256 => Setup) private _setups;
   mapping(uint256 => mapping(address => uint256)) private _approvedAmounts;
   uint256 private _nextId;
+
 
   modifier onlySaleOwner(uint256 saleId) {
     require(msg.sender == _setups[saleId].owner, "Sale: caller is not the owner");
@@ -34,11 +36,6 @@ contract SaleData is ISaleData, LevelAccess {
     _apeWallet = apeWallet_;
   }
 
-  function grantManagerLevel(address saleAddress) public override onlyLevel(ADMIN_LEVEL) {
-    levels[saleAddress] = MANAGER_LEVEL;
-    emit LevelSet(MANAGER_LEVEL, saleAddress, msg.sender);
-  }
-
   function nextSaleId() external view override returns (uint256) {
     return _nextId;
   }
@@ -47,11 +44,25 @@ contract SaleData is ISaleData, LevelAccess {
     _nextId++;
   }
 
+  function isLegitSale(address sale) external view override returns (bool) {
+    return levels[sale] == SALE_LEVEL;
+  }
+
+  function grantManagerLevel(address saleAddress) public override onlyLevel(ADMIN_LEVEL) {
+    levels[saleAddress] = SALE_LEVEL;
+    emit LevelSet(SALE_LEVEL, saleAddress, msg.sender);
+  }
+
+  function getSaleAddressById(uint256 saleId) external view override returns (address) {
+    return _salesById[saleId];
+  }
+
   function setUpSale(
     uint256 saleId,
+    address saleAddress,
     Setup memory setup,
     VestingStep[] memory schedule
-  ) external override onlyLevel(MANAGER_LEVEL) {
+  ) external override onlyLevel(SALE_LEVEL) {
     require(_setups[saleId].owner == address(0), "SaleData: id has already been used");
     require(saleId < _nextId, "SaleData: invalid id");
     _setups[saleId] = setup;
@@ -65,6 +76,7 @@ contract SaleData is ISaleData, LevelAccess {
       _vestingSchedules[saleId].push(schedule[i]);
     }
     require(schedule[schedule.length - 1].percentage == 100, "Sale: Vest percentage should end at 100");
+    _salesById[saleId] = saleAddress;
   }
 
   function makeTransferable(uint256 saleId) external override onlySaleOwner(saleId) {
@@ -78,7 +90,7 @@ contract SaleData is ISaleData, LevelAccess {
     external
     virtual
     override
-    onlyLevel(MANAGER_LEVEL)
+    onlyLevel(SALE_LEVEL)
     returns (
       IERC20Min,
       address,
@@ -123,7 +135,7 @@ contract SaleData is ISaleData, LevelAccess {
     external
     virtual
     override
-    onlyLevel(MANAGER_LEVEL)
+    onlyLevel(SALE_LEVEL)
     returns (
       uint256,
       uint256,
@@ -145,7 +157,7 @@ contract SaleData is ISaleData, LevelAccess {
     external
     virtual
     override
-    onlyLevel(MANAGER_LEVEL)
+    onlyLevel(SALE_LEVEL)
     returns (IERC20Min, uint256)
   {
     // we cannot simply relying on the transfer to do the check, since some of the
@@ -172,7 +184,7 @@ contract SaleData is ISaleData, LevelAccess {
     _setups[saleId].tokenListTimestamp = uint64(block.timestamp);
   }
 
-  function getVestedPercentage(uint256 saleId) public view override onlyLevel(MANAGER_LEVEL) returns (uint128) {
+  function getVestedPercentage(uint256 saleId) public view override onlyLevel(SALE_LEVEL) returns (uint128) {
     Setup memory setup = _setups[saleId];
     VestingStep[] memory vs = _vestingSchedules[saleId];
     if (setup.tokenListTimestamp == 0) {
@@ -193,7 +205,7 @@ contract SaleData is ISaleData, LevelAccess {
     uint256 vestedPercentage,
     uint256 lastVestedPercentage,
     uint256 lockedAmount
-  ) public view override onlyLevel(MANAGER_LEVEL) returns (uint256) {
+  ) public view override onlyLevel(SALE_LEVEL) returns (uint256) {
     uint256 vestedAmount;
     if (vestedPercentage == 100) {
       vestedAmount = lockedAmount;

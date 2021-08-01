@@ -138,7 +138,7 @@ describe("SaleFactory", async function () {
 
       await expect(factory.connect(seller).newSale(saleId, saleSetup, saleVestingSchedule, signature))
           .emit(factory, "NewSale")
-      const saleAddress = await factory.getSaleAddressById(saleId)
+      const saleAddress = await saleData.getSaleAddressById(saleId)
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
       assert.isTrue(await factory.isLegitSale(saleAddress))
 

@@ -12,8 +12,6 @@ interface ISaleFactory {
 
   function isLegitSale(address sale) external view returns (bool);
 
-  function getSaleAddressById(uint256 i) external view returns (address);
-
   function approveSale(
     uint256 saleId
   ) external;

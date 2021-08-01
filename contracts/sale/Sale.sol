@@ -26,7 +26,7 @@ contract Sale {
   }
 
   function initialize(ISaleData.Setup memory setup_, ISaleData.VestingStep[] memory schedule) external {
-    _saleData.setUpSale(saleId, setup_, schedule);
+    _saleData.setUpSale(saleId, address(this), setup_, schedule);
   }
 
   function isTransferable() external view returns (bool) {
