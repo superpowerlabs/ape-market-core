@@ -12,7 +12,7 @@ import "./ISaleFactory.sol";
 import "hardhat/console.sol";
 
 contract SaleFactory is ISaleFactory, LevelAccess {
-  uint256 public constant FACTORY_ADMIN_LEVEL = 3;
+  uint256 public constant OPERATOR_LEVEL = 3;
 
   mapping(address => bool) private _sales;
   mapping(uint256 => address) private _salesById;
@@ -51,7 +51,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     ISaleData.Setup memory setup,
     ISaleData.VestingStep[] memory schedule,
     bytes memory signature
-  ) external override onlyLevel(FACTORY_ADMIN_LEVEL) {
+  ) external override onlyLevel(OPERATOR_LEVEL) {
     require(saleId == _saleData.nextSaleId(), "SaleFactory: invalid sale id");
     require(
       ECDSA.recover(encodeForSignature(saleId, setup, schedule), signature) == _validator,
@@ -62,7 +62,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     emit SaleApproved(saleId, _validator);
   }
 
-  function revokeApproval(uint256 saleId) external override onlyLevel(FACTORY_ADMIN_LEVEL) {
+  function revokeApproval(uint256 saleId) external override onlyLevel(OPERATOR_LEVEL) {
     delete _approvals[saleId];
   }
 

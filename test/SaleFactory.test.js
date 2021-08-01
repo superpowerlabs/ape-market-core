@@ -128,7 +128,7 @@ describe("SaleFactory", async function () {
 
     })
 
-    it("should create a new sale", async function () {
+    it.only("should create a new sale", async function () {
 
       let saleId = await saleData.nextSaleId()
 
