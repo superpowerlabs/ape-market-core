@@ -15,7 +15,9 @@ async function main() {
   const data = await deployUtils.initAndDeploy()
 
   console.log(data)
-  await deployUtils.saveConfig(chainId, data)
+  if (process.env.SAVE_DEPLOYED_ADDRESSES) {
+    await deployUtils.saveConfig(chainId, data)
+  }
 
 }
 
