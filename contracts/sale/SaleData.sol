@@ -31,6 +31,11 @@ contract SaleData is ISaleData, LevelAccess {
     return _apeWallet;
   }
 
+  function updateApeWallet(address apeWallet_) external override
+  onlyLevel(OWNER_LEVEL) {
+    _apeWallet = apeWallet_;
+  }
+
   function grantManagerLevel(address saleAddress) public override onlyLevel(ADMIN_LEVEL) {
     levels[saleAddress] = MANAGER_LEVEL;
     emit LevelSet(MANAGER_LEVEL, saleAddress, msg.sender);

@@ -11,7 +11,7 @@ interface ISaleFactory {
 
   function getSaleAddressById(uint256 i) external view returns (address);
 
-  function approveSale(uint saleId, bytes memory signature) external;
+  function approveSale(uint saleId, ISaleData.Setup memory setup, ISaleData.VestingStep[] memory schedule, bytes memory signature) external;
 
   function revokeApproval(uint saleId) external;
 

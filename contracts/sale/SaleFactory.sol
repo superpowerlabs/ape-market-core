@@ -13,13 +13,20 @@ import "hardhat/console.sol";
 
 contract SaleFactory is ISaleFactory, LevelAccess {
 
+  event SaleApproved(uint saleId, address validator);
   event NewSale(address saleAddress);
 
   uint256 public constant FACTORY_ADMIN_LEVEL = 3;
 
   mapping(address => bool) private _sales;
   mapping(uint256 => address) private _salesById;
-  mapping(uint => bytes) private _approvals;
+
+  struct Approval {
+    bytes signature;
+    address validator;
+  }
+
+  mapping(uint => Approval) private _approvals;
 
   ISaleData private _saleData;
 
@@ -43,11 +50,22 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     return _salesById[i];
   }
 
-  function approveSale(uint saleId, bytes memory signature) external override
+  function approveSale(
+    uint saleId,
+    ISaleData.Setup memory setup,
+    ISaleData.VestingStep[] memory schedule,
+    bytes memory signature
+  ) external override
   onlyLevel(FACTORY_ADMIN_LEVEL) {
     require(saleId == _saleData.nextSaleId(), "SaleFactory: invalid sale id");
+    require(
+      ECDSA.recover(
+        encodeForSignature(saleId, setup, schedule),
+        signature
+      ) == _validator, "SaleFactory: invalid signature or modified params");
     _saleData.increaseSaleId();
-    _approvals[saleId] = signature;
+    _approvals[saleId] = Approval(signature, _validator);
+    emit SaleApproved(saleId, _validator);
   }
 
   function revokeApproval(uint saleId) external override
@@ -63,8 +81,8 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     require(
       ECDSA.recover(
         encodeForSignature(saleId, setup, schedule),
-        _approvals[saleId]
-      ) == _validator, "SaleFactory: invalid signature or modified params");
+        _approvals[saleId].signature
+      ) == _approvals[saleId].validator, "SaleFactory: invalid signature or modified params");
     Sale sale = new Sale(saleId, address(_saleData));
     address addr = address(sale);
     _saleData.grantManagerLevel(addr);

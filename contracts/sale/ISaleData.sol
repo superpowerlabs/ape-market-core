@@ -42,6 +42,8 @@ interface ISaleData {
 
   function apeWallet() external view returns (address);
 
+  function updateApeWallet(address apeWallet_) external;
+
   function nextSaleId() external view returns (uint256);
 
   function increaseSaleId() external;

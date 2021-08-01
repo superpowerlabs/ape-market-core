@@ -134,7 +134,7 @@ describe("SaleFactory", async function () {
 
       let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
 
-      await factory.connect(factoryAdmin).approveSale(saleId, signature)
+      await factory.connect(factoryAdmin).approveSale(saleId, saleSetup, saleVestingSchedule, signature)
 
       await expect(factory.connect(seller).newSale(saleId, saleSetup, saleVestingSchedule))
           .emit(factory, "NewSale")
@@ -158,7 +158,7 @@ describe("SaleFactory", async function () {
 
       let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
 
-      await factory.connect(factoryAdmin).approveSale(saleId, signature)
+      await factory.connect(factoryAdmin).approveSale(saleId, saleSetup, saleVestingSchedule, signature)
 
       saleSetup.capAmount = 3450000
 
