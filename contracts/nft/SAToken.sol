@@ -69,8 +69,6 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     super._beforeTokenTransfer(from, to, tokenId);
     if (from != address(0) && to != address(0)) {
       _extras.beforeTokenTransfer(from, to, tokenId);
-      // do we need this: ?
-//      _updateBundleAcquisitionTime(tokenId);
     }
   }
 
@@ -101,8 +99,6 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     return _tokenIdCounter.current();
   }
 
-  // vest return the number of non empty sas after vest.
-  // if there is no non-empty sas, then SA will burned
   function vest(uint256 tokenId) public virtual override
   returns (bool) {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
@@ -130,13 +126,5 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Only owner can split a token");
     _extras.split(tokenId, keptAmounts);
   }
-
-  // from OpenZeppelin's Address.sol
-//  function isContract(address account) internal view returns (bool) {
-//    uint256 size;
-//    // solium-disable-next-line security/no-inline-assembly
-//    assembly {size := extcodesize(account)}
-//    return size > 0;
-//  }
 
 }
