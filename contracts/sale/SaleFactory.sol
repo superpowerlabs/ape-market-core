@@ -73,6 +73,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     delete _approvals[saleId];
   }
 
+
   function newSale(
     uint saleId,
     ISaleData.Setup memory setup,
@@ -90,6 +91,35 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     _salesById[saleId] = addr;
     _sales[addr] = true;
     emit NewSale(addr);
+  }
+
+
+  /*
+  abi.encodePacked is unable to pack structs. To get a signable hash, we need to
+  put the data contained in the struct in types that are packable. We decided to
+  use two arrays, one for the uint128 contained in VestingStep[], and one for the
+  uint64 contained in Setup. Also, we skip the parameters that initially must be == 0.
+  */
+  function encodeForSignature(
+    uint saleId,
+    ISaleData.Setup memory setup,
+    ISaleData.VestingStep[] memory schedule
+  ) public pure override returns (bytes32){
+    require(setup.remainingAmount == 0 && setup.tokenListTimestamp == 0, "SaleFactory: invalid setup");
+    uint128[] memory steps = _packVestingStep(schedule);
+    uint64[] memory data = _packUint64sInSetup(setup);
+    return keccak256(
+      abi.encodePacked(
+        "\x19\x00"/* EIP-191 */,
+        saleId,
+        setup.satoken,
+        setup.sellingToken,
+        setup.paymentToken,
+        setup.owner,
+        steps,
+        data,
+        setup.isTokenTransferable
+      ));
   }
 
   function _packVestingStep(ISaleData.VestingStep[] memory schedule) internal pure
@@ -117,26 +147,5 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     return data;
   }
 
-  function encodeForSignature(
-    uint saleId,
-    ISaleData.Setup memory setup,
-    ISaleData.VestingStep[] memory schedule
-  ) public pure override returns (bytes32){
-    require(setup.remainingAmount == 0 && setup.tokenListTimestamp == 0, "SaleFactory: invalid setup");
-    uint128[] memory steps = _packVestingStep(schedule);
-    uint64[] memory data = _packUint64sInSetup(setup);
-    return keccak256(
-      abi.encodePacked(
-        "\x19\x00"/* EIP-191 */,
-        saleId,
-        setup.satoken,
-        setup.sellingToken,
-        setup.paymentToken,
-        setup.owner,
-        steps,
-        data,
-        setup.isTokenTransferable
-      ));
-  }
 
 }
