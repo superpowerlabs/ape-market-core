@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 abstract contract LevelAccess {
-
   event LevelSet(uint256 level, address account, address setter);
 
   mapping(address => uint256) public levels;
@@ -14,21 +13,18 @@ abstract contract LevelAccess {
     _;
   }
 
-  constructor () {
+  constructor() {
     levels[msg.sender] = OWNER_LEVEL;
     emit LevelSet(OWNER_LEVEL, msg.sender, address(0));
   }
 
-  function grantLevel(uint256 level, address addr) public virtual
-  onlyLevel(OWNER_LEVEL) {
+  function grantLevel(uint256 level, address addr) public virtual onlyLevel(OWNER_LEVEL) {
     levels[addr] = level;
     emit LevelSet(level, addr, msg.sender);
   }
 
-  function revokeLevel(address addr) public
-  onlyLevel(OWNER_LEVEL) {
+  function revokeLevel(address addr) public onlyLevel(OWNER_LEVEL) {
     delete levels[addr];
     emit LevelSet(0, addr, msg.sender);
   }
-
 }

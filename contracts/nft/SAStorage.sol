@@ -14,9 +14,7 @@ import "../utils/LevelAccess.sol";
   The actual smart agreement nft will extend this contract.
 */
 
-
 contract SAStorage is ISAStorage, LevelAccess {
-
   using SafeMath for uint256;
 
   uint256 public constant MANAGER_LEVEL = 1;
@@ -28,36 +26,46 @@ contract SAStorage is ISAStorage, LevelAccess {
     _;
   }
 
-  modifier SAExists(uint256 tokenId, uint256 i) {
+  modifier sAExists(uint256 tokenId, uint256 i) {
     require(i < _bundles[tokenId].sas.length, "SAStorage: SA does not exist");
     _;
   }
 
-  function getBundle(uint256 tokenId) public override virtual view
-  returns (Bundle memory){
+  function getBundle(uint256 tokenId) public view virtual override returns (Bundle memory) {
     return _bundles[tokenId];
   }
 
-  function increaseAmountInSA(uint256 tokenId, uint256 saIndex, uint256 diff) external override
-  onlyLevel(MANAGER_LEVEL) {
+  function increaseAmountInSA(
+    uint256 tokenId,
+    uint256 saIndex,
+    uint256 diff
+  ) external override onlyLevel(MANAGER_LEVEL) {
     _increaseAmountInSA(tokenId, saIndex, diff);
   }
 
-  function addSAToBundle(uint256 tokenId, SA memory newSA) external override
-  onlyLevel(MANAGER_LEVEL) {
+  function addSAToBundle(uint256 tokenId, SA memory newSA) external override onlyLevel(MANAGER_LEVEL) {
     _addSAToBundle(tokenId, newSA);
   }
 
   // internals
 
-  function _newBundleWithSA(uint256 tokenId, address saleAddress, uint256 remainingAmount, uint128 vestedPercentage) internal virtual {
+  function _newBundleWithSA(
+    uint256 tokenId,
+    address saleAddress,
+    uint256 remainingAmount,
+    uint128 vestedPercentage
+  ) internal virtual {
     require(_bundles[tokenId].creationTime == 0, "SAStorage: Bundle already added");
     _newEmptyBundle(tokenId);
     SA memory listedSale = SA(saleAddress, remainingAmount, vestedPercentage);
     _addSAToBundle(tokenId, listedSale);
   }
 
-  function _increaseAmountInSA(uint256 tokenId, uint256 saIndex, uint256 diff) internal {
+  function _increaseAmountInSA(
+    uint256 tokenId,
+    uint256 saIndex,
+    uint256 diff
+  ) internal {
     _bundles[tokenId].sas[saIndex].remainingAmount = _bundles[tokenId].sas[saIndex].remainingAmount.add(diff);
   }
 
@@ -68,16 +76,13 @@ contract SAStorage is ISAStorage, LevelAccess {
     emit BundleCreated(tokenId);
   }
 
-  function _deleteBundle(uint256 tokenId) internal virtual
-  bundleExists(tokenId) {
+  function _deleteBundle(uint256 tokenId) internal virtual bundleExists(tokenId) {
     delete _bundles[tokenId];
     emit BundleDeleted(tokenId);
   }
 
-  function _addSAToBundle(uint256 tokenId, SA memory newSA) internal virtual
-  bundleExists(tokenId) {
+  function _addSAToBundle(uint256 tokenId, SA memory newSA) internal virtual bundleExists(tokenId) {
     _bundles[tokenId].sas.push(newSA);
     _bundles[tokenId].acquisitionTime = uint32(block.timestamp);
   }
-
 }

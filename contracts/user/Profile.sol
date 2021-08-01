@@ -9,7 +9,6 @@ import "hardhat/console.sol";
 import "./IProfile.sol";
 
 contract Profile is IProfile, Ownable {
-
   mapping(address => bool) private _associatedAccounts;
   uint256 private _validity = 1 days;
 
@@ -18,14 +17,21 @@ contract Profile is IProfile, Ownable {
     ValidityChanged(validity);
   }
 
-  function _getPseudoAddress(address addr1, address addr2) private pure returns (address){
+  function _getPseudoAddress(address addr1, address addr2) private pure returns (address) {
     return address(uint160(uint256(uint160(addr1)) + uint256(uint160(addr2))));
   }
 
-  function associateAccount(address account, uint256 timestamp, bytes memory signature) external override {
+  function associateAccount(
+    address account,
+    uint256 timestamp,
+    bytes memory signature
+  ) external override {
     require(msg.sender != address(0) && account != address(0), "Profile: no invalid accounts");
     require(timestamp + _validity > block.timestamp, "Profile: request is expired");
-    require(ECDSA.recover(encodeForSignature(account, msg.sender, timestamp), signature) == account, "Profile: invalid signature");
+    require(
+      ECDSA.recover(encodeForSignature(account, msg.sender, timestamp), signature) == account,
+      "Profile: invalid signature"
+    );
     _associatedAccounts[_getPseudoAddress(msg.sender, account)] = true;
     emit AccountsAssociated(msg.sender, account);
   }
@@ -44,15 +50,19 @@ contract Profile is IProfile, Ownable {
     return areAccountsAssociated(msg.sender, addr);
   }
 
-  function encodeForSignature(address addr1, address addr2, uint256 timestamp) public pure override returns (bytes32){
-    return keccak256(
-      abi.encodePacked(
-        "\x19\x00", /* EIP-191 */
-        addr1,
-        addr2,
-        timestamp
-      )
-    );
+  function encodeForSignature(
+    address addr1,
+    address addr2,
+    uint256 timestamp
+  ) public pure override returns (bytes32) {
+    return
+      keccak256(
+        abi.encodePacked(
+          "\x19\x00", /* EIP-191 */
+          addr1,
+          addr2,
+          timestamp
+        )
+      );
   }
-
 }
