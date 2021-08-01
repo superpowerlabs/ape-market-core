@@ -62,7 +62,7 @@ describe("SaleFactory", async function () {
     factory = await SaleFactory.deploy(saleData.address, validator.address)
     await factory.deployed()
     await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    await factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
+    await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdmin.address)
 
     SATokenExtras = await ethers.getContractFactory("SATokenExtras")
     tokenExtras = await SATokenExtras.deploy(profile.address)
@@ -91,7 +91,7 @@ describe("SaleFactory", async function () {
     })
 
     it("should verify that the apeFactory is correctly set", async function () {
-      assert.equal((await factory.levels(factoryAdmin.address)).toNumber(), (await factory.FACTORY_ADMIN_LEVEL()).toNumber())
+      assert.equal((await factory.levels(factoryAdmin.address)).toNumber(), (await factory.OPERATOR_LEVEL()).toNumber())
     })
 
   })
@@ -128,15 +128,15 @@ describe("SaleFactory", async function () {
 
     })
 
-    it.only("should create a new sale", async function () {
+    it("should create a new sale", async function () {
 
       let saleId = await saleData.nextSaleId()
 
+      await factory.connect(factoryAdmin).approveSale(saleId)
+
       let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
 
-      await factory.connect(factoryAdmin).approveSale(saleId, saleSetup, saleVestingSchedule, signature)
-
-      await expect(factory.connect(seller).newSale(saleId, saleSetup, saleVestingSchedule))
+      await expect(factory.connect(seller).newSale(saleId, saleSetup, saleVestingSchedule, signature))
           .emit(factory, "NewSale")
       const saleAddress = await factory.getSaleAddressById(saleId)
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
@@ -146,9 +146,12 @@ describe("SaleFactory", async function () {
 
     it("should throw if trying to create a sale without a pre-approval", async function () {
 
+      let saleId = await saleData.nextSaleId()
+      let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
+
       await assertThrowsMessage(
-          factory.newSale(0, saleSetup, saleVestingSchedule),
-          'ECDSA: invalid signature length')
+          factory.newSale(saleId, saleSetup, saleVestingSchedule, signature),
+          'SaleData: invalid id')
 
     })
 
@@ -158,12 +161,12 @@ describe("SaleFactory", async function () {
 
       let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
 
-      await factory.connect(factoryAdmin).approveSale(saleId, saleSetup, saleVestingSchedule, signature)
+      await factory.connect(factoryAdmin).approveSale(saleId)
 
       saleSetup.capAmount = 3450000
 
       await assertThrowsMessage(
-          factory.newSale(saleId, saleSetup, saleVestingSchedule),
+          factory.newSale(saleId, saleSetup, saleVestingSchedule, signature),
           'SaleFactory: invalid signature or modified params')
 
     })

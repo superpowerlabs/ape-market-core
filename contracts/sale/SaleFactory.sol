@@ -17,12 +17,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
   mapping(address => bool) private _sales;
   mapping(uint256 => address) private _salesById;
 
-  struct Approval {
-    bytes signature;
-    address validator;
-  }
-
-  mapping(uint256 => Approval) private _approvals;
+  mapping(uint256 => bool) private _approvals;
 
   ISaleData private _saleData;
 
@@ -47,33 +42,28 @@ contract SaleFactory is ISaleFactory, LevelAccess {
   }
 
   function approveSale(
-    uint256 saleId,
-    ISaleData.Setup memory setup,
-    ISaleData.VestingStep[] memory schedule,
-    bytes memory signature
+    uint256 saleId
   ) external override onlyLevel(OPERATOR_LEVEL) {
     require(saleId == _saleData.nextSaleId(), "SaleFactory: invalid sale id");
-    require(
-      ECDSA.recover(encodeForSignature(saleId, setup, schedule), signature) == _validator,
-      "SaleFactory: invalid signature or modified params"
-    );
     _saleData.increaseSaleId();
-    _approvals[saleId] = Approval(signature, _validator);
-    emit SaleApproved(saleId, _validator);
+    _approvals[saleId] = true;
+    emit SaleApproved(saleId);
   }
 
   function revokeApproval(uint256 saleId) external override onlyLevel(OPERATOR_LEVEL) {
     delete _approvals[saleId];
+    emit SaleRevoked(saleId);
   }
 
   function newSale(
     uint256 saleId,
     ISaleData.Setup memory setup,
-    ISaleData.VestingStep[] memory schedule
+    ISaleData.VestingStep[] memory schedule,
+    bytes memory validatorSignature
   ) external override {
     require(
-      ECDSA.recover(encodeForSignature(saleId, setup, schedule), _approvals[saleId].signature) ==
-        _approvals[saleId].validator,
+      ECDSA.recover(encodeForSignature(saleId, setup, schedule), validatorSignature) ==
+        _validator,
       "SaleFactory: invalid signature or modified params"
     );
     Sale sale = new Sale(saleId, address(_saleData));
@@ -82,7 +72,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     sale.initialize(setup, schedule);
     _salesById[saleId] = addr;
     _sales[addr] = true;
-    emit NewSale(addr);
+    emit NewSale(saleId, addr);
   }
 
   /*
