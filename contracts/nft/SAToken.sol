@@ -17,7 +17,6 @@ import "../sale/ISaleFactory.sol";
 //import "hardhat/console.sol";
 
 contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
-
   using SafeMath for uint256;
   using Counters for Counters.Counter;
 
@@ -30,31 +29,31 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
   IERC20 private _feeToken;
   uint256 public feeAmount; // the amount of fee in _feeToken charged for merge, split and transfer
 
-
   modifier feeRequired() {
     uint256 decimals = _feeToken.decimals();
-    _feeToken.transferFrom(msg.sender, apeWallet, feeAmount.mul(10 ** decimals));
+    _feeToken.transferFrom(msg.sender, apeWallet, feeAmount.mul(10**decimals));
     _;
   }
 
-  constructor(address factoryAddress, address extrasAddress)
-  ERC721("SA NFT Token", "SANFT") {
+  constructor(address factoryAddress, address extrasAddress) ERC721("SA NFT Token", "SANFT") {
     factory = ISaleFactory(factoryAddress);
     _extras = ISATokenExtras(extrasAddress);
     grantLevel(MANAGER_LEVEL, extrasAddress);
   }
 
-  function getTokenExtras() external view override returns(address) {
+  function getTokenExtras() external view override returns (address) {
     return address(_extras);
   }
 
-  function updateFactory(address factoryAddress) external virtual
-  onlyLevel(OWNER_LEVEL) {
+  function updateFactory(address factoryAddress) external virtual onlyLevel(OWNER_LEVEL) {
     factory = ISaleFactory(factoryAddress);
   }
 
-  function setupUpPayments(address feeToken, uint256 feeAmount_, address apeWallet_) external virtual
-  onlyLevel(OWNER_LEVEL) {
+  function setupUpPayments(
+    address feeToken,
+    uint256 feeAmount_,
+    address apeWallet_
+  ) external virtual onlyLevel(OWNER_LEVEL) {
     _feeToken = IERC20(feeToken);
     feeAmount = feeAmount_;
     apeWallet = apeWallet_;
@@ -64,24 +63,33 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     return "https://metadata.ape.market/sanft/";
   }
 
-  function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal
-  override(ERC721, ERC721Enumerable) {
+  function _beforeTokenTransfer(
+    address from,
+    address to,
+    uint256 tokenId
+  ) internal override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
     if (from != address(0) && to != address(0)) {
       _extras.beforeTokenTransfer(from, to, tokenId);
     }
   }
 
-  function supportsInterface(bytes4 interfaceId) public view
-  override(ERC721, ERC721Enumerable)
-  returns (bool) {
+  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
     return super.supportsInterface(interfaceId);
   }
 
-  function mint(address to, address sale, uint256 amount, uint128 vestedPercentage) external override virtual {
+  function mint(
+    address to,
+    address sale,
+    uint256 amount,
+    uint128 vestedPercentage
+  ) external virtual override {
     address saleAddress = sale;
     if (sale == address(0)) {
-      require(_extras.isContract(msg.sender) && factory.isLegitSale(msg.sender), "SAToken: Only legit sales can mint its own NFT!");
+      require(
+        _extras.isContract(msg.sender) && factory.isLegitSale(msg.sender),
+        "SAToken: Only legit sales can mint its own NFT!"
+      );
       saleAddress = msg.sender;
     } else {
       require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SATokenExtras can mint tokens for an existing sale");
@@ -89,7 +97,12 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     _mint(to, saleAddress, amount, vestedPercentage);
   }
 
-  function _mint(address to, address saleAddress, uint256 amount, uint128 vestedPercentage) internal virtual {
+  function _mint(
+    address to,
+    address saleAddress,
+    uint256 amount,
+    uint128 vestedPercentage
+  ) internal virtual {
     _safeMint(to, _tokenIdCounter.current());
     _newBundleWithSA(_tokenIdCounter.current(), saleAddress, amount, vestedPercentage);
     _tokenIdCounter.increment();
@@ -99,14 +112,12 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     return _tokenIdCounter.current();
   }
 
-  function vest(uint256 tokenId) public virtual override
-  returns (bool) {
+  function vest(uint256 tokenId) public virtual override returns (bool) {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
     return _extras.vest(tokenId);
   }
 
-  function burn(uint256 tokenId) external virtual override
-  onlyLevel(MANAGER_LEVEL) {
+  function burn(uint256 tokenId) external virtual override onlyLevel(MANAGER_LEVEL) {
     _burn(tokenId);
   }
 
@@ -126,5 +137,4 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Only owner can split a token");
     _extras.split(tokenId, keptAmounts);
   }
-
 }

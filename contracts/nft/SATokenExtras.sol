@@ -14,10 +14,14 @@ import "hardhat/console.sol";
 
 // this is an extended version of the interface, including ISAStorage functions
 interface ISAToken {
-
   function updateFactory(address factoryAddress) external;
 
-  function mint(address to, address sale, uint256 amount, uint128 vestedPercentage) external;
+  function mint(
+    address to,
+    address sale,
+    uint256 amount,
+    uint128 vestedPercentage
+  ) external;
 
   function nextTokenId() external view returns (uint256);
 
@@ -29,14 +33,16 @@ interface ISAToken {
 
   function getBundle(uint256 bundleId) external view returns (ISAStorage.Bundle memory);
 
-  function increaseAmountInSA(uint256 bundleId, uint256 i, uint256 diff) external;
+  function increaseAmountInSA(
+    uint256 bundleId,
+    uint256 i,
+    uint256 diff
+  ) external;
 
   function addSAToBundle(uint256 bundleId, ISAStorage.SA memory newSA) external;
-
 }
 
 contract SATokenExtras is ISATokenExtras, LevelAccess {
-
   using SafeMath for uint256;
 
   uint256 public constant MANAGER_LEVEL = 1;
@@ -45,7 +51,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
   ISale private _sale;
   IProfile public profile;
 
-  modifier onlySAToken {
+  modifier onlySAToken() {
     require(msg.sender == address(_token), "SATokenExtras: caller is not the SA NFT token");
     _;
   }
@@ -54,15 +60,13 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     profile = IProfile(profileAddress);
   }
 
-  function _getPrimarySaleFeeToken(uint256 tokenId) internal view virtual
-  returns (address) {
+  function _getPrimarySaleFeeToken(uint256 tokenId) internal view virtual returns (address) {
     ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
     ISale sale = ISale(bundle.sas[0].sale);
     return sale.getPaymentToken();
   }
 
-  function vest(uint256 tokenId) external virtual override
-  onlyLevel(MANAGER_LEVEL) returns (bool) {
+  function vest(uint256 tokenId) external virtual override onlyLevel(MANAGER_LEVEL) returns (bool) {
     //    console.log("vesting", tokenId);
     // console.log("gas left before vesting", gasleft());
     ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
@@ -92,23 +96,24 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     return notEmtpy;
   }
 
-  function setToken(address tokenAddress) external
-  onlyLevel(OWNER_LEVEL) {
+  function setToken(address tokenAddress) external onlyLevel(OWNER_LEVEL) {
     require(isContract(tokenAddress), "SATokenExtras: token is not a contract");
     _token = ISAToken(tokenAddress);
     grantLevel(MANAGER_LEVEL, tokenAddress);
   }
 
-  function grantLevel(uint256 level, address addr) public virtual override
-  onlyLevel(OWNER_LEVEL) {
+  function grantLevel(uint256 level, address addr) public virtual override onlyLevel(OWNER_LEVEL) {
     if (level == MANAGER_LEVEL) {
       require(addr == address(_token), "SATokenExtras: only SAToken can manage me");
     }
     super.grantLevel(level, addr);
   }
 
-  function beforeTokenTransfer(address from, address to, uint256 tokenId) external view override
-  onlyLevel(OWNER_LEVEL) {
+  function beforeTokenTransfer(
+    address from,
+    address to,
+    uint256 tokenId
+  ) external view override onlyLevel(OWNER_LEVEL) {
     if (!profile.areAccountsAssociated(from, to)) {
       // check if any sale is not transferable
       ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
@@ -122,8 +127,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     }
   }
 
-  function merge(uint256[] memory tokenIds) external virtual override
-  onlyLevel(MANAGER_LEVEL) {
+  function merge(uint256[] memory tokenIds) external virtual override onlyLevel(MANAGER_LEVEL) {
     uint256 nextId = _token.nextTokenId();
     uint256 counter;
     bool minted;
@@ -164,8 +168,10 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
         bool matched = false;
         newBundle = _token.getBundle(nextId);
         for (uint256 k = 0; k < newBundle.sas.length; k++) {
-          if (bundle.sas[j].sale == newBundle.sas[k].sale &&
-            bundle.sas[j].vestedPercentage == newBundle.sas[k].vestedPercentage) {
+          if (
+            bundle.sas[j].sale == newBundle.sas[k].sale &&
+            bundle.sas[j].vestedPercentage == newBundle.sas[k].vestedPercentage
+          ) {
             _token.increaseAmountInSA(nextId, k, bundle.sas[j].remainingAmount);
             // console.log("gas left after increase to SA", gasleft());
             matched = true;
@@ -181,8 +187,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     }
   }
 
-  function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual override
-  onlyLevel(MANAGER_LEVEL) {
+  function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual override onlyLevel(MANAGER_LEVEL) {
     ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
     ISAStorage.SA[] memory sas = bundle.sas;
     // console.log("gas left before split", gasleft());
@@ -198,13 +203,22 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
         continue;
       }
       if (!minted) {
-        _token.mint(_token.ownerOf(tokenId), sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
+        _token.mint(
+          _token.ownerOf(tokenId),
+          sas[i].sale,
+          sas[i].remainingAmount.sub(keptAmounts[i]),
+          sas[i].vestedPercentage
+        );
         // console.log("gas left after first mint", gasleft());
         _token.mint(_token.ownerOf(tokenId), sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
         // console.log("gas left after second mint", gasleft());
         minted = true;
       } else {
-        ISAStorage.SA memory newSA = ISAStorage.SA(sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
+        ISAStorage.SA memory newSA = ISAStorage.SA(
+          sas[i].sale,
+          sas[i].remainingAmount.sub(keptAmounts[i]),
+          sas[i].vestedPercentage
+        );
         _token.addSAToBundle(nextId, newSA);
         // console.log("gas left after adding newSA", gasleft());
         if (keptAmounts[i] != 0) {
@@ -222,8 +236,9 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
   function isContract(address account) public view override returns (bool) {
     uint256 size;
     // solium-disable-next-line security/no-inline-assembly
-    assembly {size := extcodesize(account)}
+    assembly {
+      size := extcodesize(account)
+    }
     return size > 0;
   }
-
 }

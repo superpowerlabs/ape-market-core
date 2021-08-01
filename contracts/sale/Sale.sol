@@ -9,7 +9,6 @@ import "../nft/ISAStorage.sol";
 import "./ISaleData.sol";
 
 contract Sale {
-
   using SafeMath for uint256;
 
   ISaleData private _saleData;
@@ -21,7 +20,7 @@ contract Sale {
     _;
   }
 
-  constructor(uint saleId_, address saleDataAddress){
+  constructor(uint256 saleId_, address saleDataAddress) {
     saleId = saleId_;
     _saleData = ISaleData(saleDataAddress);
   }
@@ -30,18 +29,16 @@ contract Sale {
     _saleData.setUpSale(saleId, setup_, schedule);
   }
 
-  function isTransferable() external view returns (bool){
+  function isTransferable() external view returns (bool) {
     return _saleData.getSetupById(saleId).isTokenTransferable;
   }
 
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
-  function launch() external virtual
-  onlySaleOwner {
+  function launch() external virtual onlySaleOwner {
     (IERC20Min sellingToken, address owner, uint256 amount) = _saleData.setLaunch(saleId);
     sellingToken.transferFrom(owner, address(this), amount);
   }
-
 
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
@@ -59,23 +56,24 @@ contract Sale {
     //    console.log("Sale: Paying seller fee", sellerFee);
   }
 
-  function withdrawPayment(uint256 amount) external virtual
-  onlySaleOwner {
+  function withdrawPayment(uint256 amount) external virtual onlySaleOwner {
     _saleData.getSetupById(saleId).paymentToken.transfer(msg.sender, amount);
   }
 
-  function withdrawToken(uint256 amount) external virtual
-  onlySaleOwner {
+  function withdrawToken(uint256 amount) external virtual onlySaleOwner {
     (IERC20Min sellingToken, uint256 fee) = _saleData.setWithdrawToken(saleId, amount);
     sellingToken.transfer(msg.sender, amount + fee);
   }
 
-  function vest(address saOwner, ISAStorage.SA memory sa) external virtual
-  returns (uint128, uint256){
+  function vest(address saOwner, ISAStorage.SA memory sa) external virtual returns (uint128, uint256) {
     ISaleData.Setup memory setup = _saleData.getSetupById(saleId);
     ISAToken token = ISAToken(setup.satoken);
     require(msg.sender == token.getTokenExtras(), "Sale: only SATokenExtras can call vest");
-    (uint128 vestedPercentage, uint256 vestedAmount) = _saleData.setVest(saleId, sa.vestedPercentage, sa.remainingAmount);
+    (uint128 vestedPercentage, uint256 vestedAmount) = _saleData.setVest(
+      saleId,
+      sa.vestedPercentage,
+      sa.remainingAmount
+    );
     // console.log("gas left before transfer", gasleft());
     setup.sellingToken.transfer(saOwner, vestedAmount);
     // console.log("gas left after transfer", gasleft());
