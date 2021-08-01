@@ -106,8 +106,21 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     ISaleData.VestingStep[] memory schedule
   ) public pure override returns (bytes32){
     require(setup.remainingAmount == 0 && setup.tokenListTimestamp == 0, "SaleFactory: invalid setup");
-    uint128[] memory steps = _packVestingStep(schedule);
-    uint64[] memory data = _packUint64sInSetup(setup);
+    uint128[] memory steps = new uint128[](schedule.length * 2);
+    uint j = 0;
+    for (uint8 i = 0; i < schedule.length; i++) {
+      steps[j++] = schedule[i].timestamp;
+      steps[j++] = schedule[i].percentage;
+    }
+    uint64[7] memory data = [
+    setup.minAmount,
+    setup.capAmount,
+    setup.pricingToken,
+    setup.pricingPayment,
+    setup.tokenListTimestamp,
+    setup.tokenFeePercentage,
+    setup.paymentFeePercentage
+    ];
     return keccak256(
       abi.encodePacked(
         "\x19\x00"/* EIP-191 */,
@@ -121,31 +134,5 @@ contract SaleFactory is ISaleFactory, LevelAccess {
         setup.isTokenTransferable
       ));
   }
-
-  function _packVestingStep(ISaleData.VestingStep[] memory schedule) internal pure
-  returns (uint128[] memory) {
-    uint128[] memory steps = new uint128[](schedule.length * 2);
-    uint j = 0;
-    for (uint8 i = 0; i < schedule.length; i++) {
-      steps[j++] = schedule[i].timestamp;
-      steps[j++] = schedule[i].percentage;
-    }
-    return steps;
-  }
-
-  function _packUint64sInSetup(ISaleData.Setup memory setup) internal pure
-  returns (uint64[] memory) {
-    uint64[] memory data = new uint64[](7);
-    uint j = 0;
-    data[j++] = setup.minAmount;
-    data[j++] = setup.capAmount;
-    data[j++] = setup.pricingToken;
-    data[j++] = setup.pricingPayment;
-    data[j++] = setup.tokenListTimestamp;
-    data[j++] = setup.tokenFeePercentage;
-    data[j++] = setup.paymentFeePercentage;
-    return data;
-  }
-
 
 }
