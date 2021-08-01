@@ -120,7 +120,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     ];
     return keccak256(
       abi.encodePacked(
-        "\x19\x00"/* EIP-191 */,
+        "\x19\x00", /* EIP-191 */
         saleId,
         setup.satoken,
         setup.sellingToken,
