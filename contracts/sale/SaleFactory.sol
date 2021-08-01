@@ -13,9 +13,6 @@ import "hardhat/console.sol";
 
 contract SaleFactory is ISaleFactory, LevelAccess {
 
-  event SaleApproved(uint saleId, address validator);
-  event NewSale(address saleAddress);
-
   uint256 public constant FACTORY_ADMIN_LEVEL = 3;
 
   mapping(address => bool) private _sales;

@@ -5,6 +5,9 @@ import "./ISaleData.sol";
 
 interface ISaleFactory {
 
+  event SaleApproved(uint saleId, address validator);
+  event NewSale(address saleAddress);
+
   function updateValidator(address validator) external;
 
   function isLegitSale(address sale) external view returns (bool);
