@@ -48,6 +48,12 @@ interface ISaleData {
 
   function increaseSaleId() external;
 
+  function isLegitSale(address sale) external view returns (bool);
+
+  function grantManagerLevel(address saleAddress) external;
+
+  function getSaleAddressById(uint256 saleId) external view returns (address);
+
   function normalize(uint256 saleId, uint64 amount) external view returns (uint256);
 
   function denormalize(address sellingToken, uint64 amount) external view returns (uint256);
@@ -94,11 +100,10 @@ interface ISaleData {
 
   function setUpSale(
     uint256 saleId,
+    address saleAddress,
     Setup memory setup,
     VestingStep[] memory schedule
   ) external;
-
-  function grantManagerLevel(address saleAddress) external;
 
   function getVestedPercentage(uint256 saleId) external view returns (uint128);
 

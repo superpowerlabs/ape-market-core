@@ -56,7 +56,7 @@ class DeployUtils {
     await factory.deployed()
 
     await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    await factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdminAddress)
+    await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdminAddress)
 
     const SATokenExtras = await ethers.getContractFactory('SATokenExtras')
     const extras = await SATokenExtras.deploy(profile.address)

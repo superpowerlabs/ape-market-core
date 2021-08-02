@@ -56,9 +56,9 @@ describe("Integration Test", function () {
   async function getSale(saleSetup, saleVestingSchedule) {
     let saleId = await saleData.nextSaleId()
     let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
-    await factory.connect(factoryAdmin).approveSale(saleId, saleSetup, saleVestingSchedule, signature)
-    await factory.connect(factoryAdmin).newSale(saleId, saleSetup, saleVestingSchedule)
-    let saleAddress = await factory.getSaleAddressById(saleId)
+    await factory.connect(factoryAdmin).approveSale(saleId)
+    await factory.connect(factoryAdmin).newSale(saleId, saleSetup, saleVestingSchedule, signature)
+    let saleAddress = await saleData.getSaleAddressById(saleId)
     return [new ethers.Contract(saleAddress, saleJson.abi, ethers.provider), saleId.toNumber()]
   }
 
@@ -76,7 +76,7 @@ describe("Integration Test", function () {
     factory = await SaleFactory.deploy(saleData.address, validator.address)
     await factory.deployed()
     await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    await factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdmin.address)
+    await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdmin.address)
 
     SATokenExtras = await ethers.getContractFactory("SATokenExtras")
     tokenExtras = await SATokenExtras.deploy(profile.address)
