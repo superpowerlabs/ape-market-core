@@ -1,7 +1,7 @@
 const path = require('path')
 const fs = require('fs-extra')
 
-const configPath = path.resolve(__dirname, '../../src/config')
+const configPath = path.resolve(__dirname, '../../config')
 const config = require(configPath)
 
 const addr0 = '0x0000000000000000000000000000000000000000'
@@ -26,6 +26,7 @@ class DeployUtils {
     let tetherOwner = config.tether[chainId]
     let apeWalletAddress = config.apeWallet
     let factoryAdminAddress = config.factoryAdmin
+    let validatorAddress = config.validator
 
     if (chainId === 1337) {
       tetherOwner = signers[1]
@@ -35,6 +36,7 @@ class DeployUtils {
       tetherAddress = tether.address;
       apeWalletAddress = signers[6].address
       factoryAdminAddress = signers[7].address
+      validatorAddress = signers[1].address
     }
 
     const Profile = await ethers.getContractFactory('Profile')
@@ -46,15 +48,15 @@ class DeployUtils {
     await storage.deployed()
 
     const SaleData = await ethers.getContractFactory('SaleData')
-    const saleData = await SaleData.deploy()
+    const saleData = await SaleData.deploy(apeWalletAddress)
     await saleData.deployed()
 
     const SaleFactory = await ethers.getContractFactory('SaleFactory')
-    const factory = await SaleFactory.deploy()
+    const factory = await SaleFactory.deploy(saleData.address, validatorAddress)
     await factory.deployed()
 
     await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    await factory.grantLevel(await factory.FACTORY_ADMIN_LEVEL(), factoryAdminAddress)
+    await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdminAddress)
 
     const SATokenExtras = await ethers.getContractFactory('SATokenExtras')
     const extras = await SATokenExtras.deploy(profile.address)

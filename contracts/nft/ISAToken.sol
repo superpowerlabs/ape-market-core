@@ -2,8 +2,12 @@
 pragma solidity ^0.8.0;
 
 interface ISAToken {
-
-  function mint(address to, address sale, uint256 amount, uint128 vestedPercentage) external;
+  function mint(
+    address to,
+    address sale,
+    uint256 amount,
+    uint128 vestedPercentage
+  ) external;
 
   function nextTokenId() external view returns (uint256);
 
@@ -15,6 +19,5 @@ interface ISAToken {
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) external;
 
-  function getTokenExtras() external view returns(address);
-
+  function getTokenExtras() external view returns (address);
 }
