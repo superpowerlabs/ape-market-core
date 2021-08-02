@@ -68,33 +68,29 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
   }
 
   function vest(uint256 tokenId) external virtual override onlyLevel(MANAGER_LEVEL) returns (bool) {
-    //    console.log("vesting", tokenId);
-    // console.log("gas left before vesting", gasleft());
     ISATokenData.SA[] memory bundle = _token.getBundle(tokenId);
     uint256 nextId = _token.nextTokenId();
-    bool notEmtpy;
+    bool notEmpty;
     bool minted;
     for (uint256 i = 0; i < bundle.length; i++) {
       ISATokenData.SA memory sa = bundle[i];
       ISale sale = ISale(sa.sale);
       (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(_token.ownerOf(tokenId), sa);
-      //      console.log("vesting", tokenId, vestedAmount);
-      if (vestedPercentage != 100) {
-        // we skip vested SAs
+      if (vestedPercentage > 0 && vestedPercentage < 100) {
         if (!minted) {
           _token.mint(_token.ownerOf(tokenId), sa.sale, vestedAmount, vestedPercentage);
-          // console.log("gas left after mint", gasleft());
           minted = true;
         } else {
           ISATokenData.SA memory newSA = ISATokenData.SA(sa.sale, vestedAmount, vestedPercentage);
           _token.addSAToBundle(nextId, newSA);
-          // console.log("gas left after addNewSA", gasleft());
         }
-        notEmtpy = true;
+        notEmpty = true;
       }
     }
-    _token.burn(tokenId);
-    return notEmtpy;
+    if (notEmpty) {
+      _token.burn(tokenId);
+    }
+    return notEmpty;
   }
 
   function setToken(address tokenAddress) external onlyLevel(OWNER_LEVEL) {
@@ -188,12 +184,12 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     ISATokenData.SA[] memory bundle = _token.getBundle(tokenId);
     ISATokenData.SA[] memory sas = bundle;
     // console.log("gas left before split", gasleft());
-    require(keptAmounts.length == bundle.length, "SANFT: length of sa does not match split");
+    require(keptAmounts.length == bundle.length, "SATokenExtras: length of sa does not match split");
     bool minted;
     uint256 nextId = _token.nextTokenId();
     uint256 j;
     for (uint256 i = 0; i < keptAmounts.length; i++) {
-      require(sas[i].remainingAmount >= keptAmounts[i], "SANFT: Split is incorrect");
+      require(sas[i].remainingAmount >= keptAmounts[i], "SATokenExtras: Split is incorrect");
       if (keptAmounts[i] == sas[j].remainingAmount) {
         // no changes
         j++;

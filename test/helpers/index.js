@@ -11,6 +11,7 @@ module.exports = {
       if (!shouldBeTrue) {
         console.error('Expected: ', message)
         console.error(e.message)
+        console.log(e)
       }
       assert.isTrue(shouldBeTrue)
     }

@@ -157,6 +157,7 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
   }
 
   function merge(uint256[] memory tokenIds) external virtual override feeRequired {
+    require(tokenIds.length > 1, "SAToken: are you trying to merge a single token?");
     for (uint256 i = 0; i < tokenIds.length; i++) {
       require(ownerOf(tokenIds[i]) == msg.sender, "SAToken: Only owner can merge tokens");
     }

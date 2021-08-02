@@ -78,8 +78,11 @@ contract Sale {
       sa.vestedPercentage,
       sa.remainingAmount
     );
+//    console.log( vestedPercentage, vestedAmount);
     // console.log("gas left before transfer", gasleft());
-    setup.sellingToken.transfer(saOwner, vestedAmount);
+    if (vestedAmount > 0) {
+      setup.sellingToken.transfer(saOwner, vestedAmount);
+    }
     // console.log("gas left after transfer", gasleft());
     return (vestedPercentage, vestedAmount);
   }
