@@ -49,7 +49,7 @@ contract Sale {
   function invest(uint256 amount) external virtual {
     ISaleData.Setup memory setup = _saleData.getSetupById(_saleId);
     (uint256 tokenPayment, uint256 buyerFee, uint256 sellerFee) = _saleData.setInvest(_saleId, msg.sender, amount);
-//        console.log("tokenPayment", tokenPayment);
+    //        console.log("tokenPayment", tokenPayment);
     setup.paymentToken.transferFrom(msg.sender, _saleData.apeWallet(), buyerFee);
     setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
     // mint NFT
@@ -73,12 +73,8 @@ contract Sale {
     ISaleData.Setup memory setup = _saleData.getSetupById(_saleId);
     ISAToken token = ISAToken(setup.satoken);
     require(msg.sender == token.getTokenExtras(), "Sale: only SATokenExtras can call vest");
-    (uint128 vestedPercentage, uint256 vestedAmount) = _saleData.setVest(
-      _saleId,
-      sa.vestedPercentage,
-      sa.remainingAmount
-    );
-//    console.log( vestedPercentage, vestedAmount);
+    (uint128 vestedPercentage, uint256 vestedAmount) = _saleData.setVest(_saleId, sa.vestedPercentage, sa.remainingAmount);
+    //    console.log( vestedPercentage, vestedAmount);
     // console.log("gas left before transfer", gasleft());
     if (vestedAmount > 0) {
       setup.sellingToken.transfer(saOwner, vestedAmount);

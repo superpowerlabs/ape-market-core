@@ -28,7 +28,6 @@
     "clear": "rm -rf cache && rm -rf src/artifacts",
     "compile": "npx hardhat compile",
     "size": "npx hardhat size-contracts",
-    "lint": "solhint 'contracts/**/*.sol' && prettier -c 'contracts/**/*.sol'",
-    "lint:fix": "prettier --write \"contracts/**/*.sol\""
+    "lint": "prettier --write 'contracts/**/*.sol' && solhint 'contracts/**/*.sol'"
   }
 }

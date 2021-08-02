@@ -71,10 +71,7 @@ contract SaleData is ISaleData, LevelAccess {
     _setups[saleId] = setup;
     for (uint256 i = 0; i < schedule.length; i++) {
       if (i > 0) {
-        require(
-          schedule[i].percentage > schedule[i - 1].percentage,
-          "Sale: Vest percentage should be monotonic increasing"
-        );
+        require(schedule[i].percentage > schedule[i - 1].percentage, "Sale: Vest percentage should be monotonic increasing");
       }
       _vestingSchedules[saleId].push(schedule[i]);
     }
@@ -90,15 +87,15 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function setLaunch(uint256 saleId)
-  external
-  virtual
-  override
-  onlyLevel(SALE_LEVEL)
-  returns (
-    IERC20Min,
-    address,
-    uint256
-  )
+    external
+    virtual
+    override
+    onlyLevel(SALE_LEVEL)
+    returns (
+      IERC20Min,
+      address,
+      uint256
+    )
   {
     uint256 capAmount = normalize(saleId, _setups[saleId].capAmount);
     uint256 fee = capAmount.mul(_setups[saleId].tokenFeePercentage).div(100);
@@ -108,14 +105,14 @@ contract SaleData is ISaleData, LevelAccess {
 
   function normalize(uint256 saleId, uint64 amount) public view override returns (uint256) {
     uint256 decimals = _setups[saleId].sellingToken.decimals();
-    return uint256(amount).mul(10 ** decimals).div(1000);
+    return uint256(amount).mul(10**decimals).div(1000);
   }
 
   function denormalize(address sellingToken, uint64 amount) public view override returns (uint256) {
     // this should be called by the DApp to send the Setup object
     IERC20Min token = IERC20Min(sellingToken);
     uint256 decimals = token.decimals();
-    return uint256(amount).mul(1000).div(10 ** decimals);
+    return uint256(amount).mul(1000).div(10**decimals);
   }
 
   function getSetupById(uint256 saleId) external view override returns (Setup memory) {
@@ -135,15 +132,15 @@ contract SaleData is ISaleData, LevelAccess {
     address investor,
     uint256 amount
   )
-  external
-  virtual
-  override
-  onlyLevel(SALE_LEVEL)
-  returns (
-    uint256,
-    uint256,
-    uint256
-  )
+    external
+    virtual
+    override
+    onlyLevel(SALE_LEVEL)
+    returns (
+      uint256,
+      uint256,
+      uint256
+    )
   {
     require(_approvedAmounts[saleId][investor] >= amount, "Sale: Amount if above approved amount");
     require(amount >= normalize(saleId, _setups[saleId].minAmount), "Sale: Amount is too low");
@@ -157,11 +154,11 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function setWithdrawToken(uint256 saleId, uint256 amount)
-  external
-  virtual
-  override
-  onlyLevel(SALE_LEVEL)
-  returns (IERC20Min, uint256)
+    external
+    virtual
+    override
+    onlyLevel(SALE_LEVEL)
+    returns (IERC20Min, uint256)
   {
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
@@ -177,9 +174,9 @@ contract SaleData is ISaleData, LevelAccess {
     uint128 lastVestedPercentage,
     uint256 lockedAmount
   ) external virtual override returns (uint128, uint256) {
-//    console.log("lastVestedPercentage, lockedAmount", lastVestedPercentage, lockedAmount);
+    //    console.log("lastVestedPercentage, lockedAmount", lastVestedPercentage, lockedAmount);
     uint128 vestedPercentage = getVestedPercentage(saleId);
-//    console.log('vestedPercentage', vestedPercentage);
+    //    console.log('vestedPercentage', vestedPercentage);
     if (vestedPercentage > 0) {
       uint256 vestedAmount = getVestedAmount(vestedPercentage, lastVestedPercentage, lockedAmount);
       return (vestedPercentage, vestedAmount);

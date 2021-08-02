@@ -27,13 +27,13 @@ interface ISAToken {
 
   function burn(uint256 tokenId) external;
 
-//  function vest(uint256 tokenId) external returns (bool);
-//
-//  function merge(uint256[] memory tokenIds) external;
-//
-//  function split(uint256 tokenId, uint256[] memory keptAmounts) external;
+  //  function vest(uint256 tokenId) external returns (bool);
+  //
+  //  function merge(uint256[] memory tokenIds) external;
+  //
+  //  function split(uint256 tokenId, uint256[] memory keptAmounts) external;
 
-//  function getTokenExtras() external view returns (address);
+  //  function getTokenExtras() external view returns (address);
 
   function increaseAmountInSA(
     uint256 bundleId,
@@ -46,7 +46,6 @@ interface ISAToken {
   function ownerOf(uint256 tokenId) external view returns (address owner);
 
   function addSAToBundle(uint256 bundleId, ISATokenData.SA memory newSA) external;
-
 }
 
 contract SATokenExtras is ISATokenExtras, LevelAccess {
@@ -164,9 +163,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
         bool matched = false;
         newBundle = _token.getBundle(nextId);
         for (uint256 k = 0; k < newBundle.length; k++) {
-          if (
-            bundle[j].sale == newBundle[k].sale && bundle[j].vestedPercentage == newBundle[k].vestedPercentage
-          ) {
+          if (bundle[j].sale == newBundle[k].sale && bundle[j].vestedPercentage == newBundle[k].vestedPercentage) {
             _token.increaseAmountInSA(nextId, k, bundle[j].remainingAmount);
             matched = true;
             break;
@@ -196,12 +193,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
         continue;
       }
       if (!minted) {
-        _token.mint(
-          _token.ownerOf(tokenId),
-          sas[i].sale,
-          sas[i].remainingAmount.sub(keptAmounts[i]),
-          sas[i].vestedPercentage
-        );
+        _token.mint(_token.ownerOf(tokenId), sas[i].sale, sas[i].remainingAmount.sub(keptAmounts[i]), sas[i].vestedPercentage);
         // console.log("gas left after first mint", gasleft());
         _token.mint(_token.ownerOf(tokenId), sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
         // console.log("gas left after second mint", gasleft());
