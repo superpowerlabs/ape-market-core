@@ -6,18 +6,21 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../utils/LevelAccess.sol";
 import "./ISaleData.sol";
 
+import "hardhat/console.sol";
+
 contract SaleData is ISaleData, LevelAccess {
   using SafeMath for uint256;
   uint256 public constant SALE_LEVEL = 1;
   uint256 public constant ADMIN_LEVEL = 2;
+
+  uint256 private _nextId;
   address private _apeWallet;
 
   mapping(uint256 => address) private _salesById;
+
   mapping(uint256 => VestingStep[]) private _vestingSchedules;
   mapping(uint256 => Setup) private _setups;
   mapping(uint256 => mapping(address => uint256)) private _approvedAmounts;
-  uint256 private _nextId;
-
 
   modifier onlySaleOwner(uint256 saleId) {
     require(msg.sender == _setups[saleId].owner, "Sale: caller is not the owner");

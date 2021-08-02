@@ -1,5 +1,5 @@
 const {expect, assert} = require("chai")
-const {assertThrowsMessage, formatBundle} = require('./helpers')
+const {assertThrowsMessage, formatBundle, getTimestamp} = require('./helpers')
 
 // const delay = ms => new Promise(res => setTimeout(res, ms));
 
@@ -48,10 +48,6 @@ describe("Integration Test", function () {
   before(async function () {
     [owner, validator, factoryAdmin, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet] = await ethers.getSigners()
   })
-
-  async function getTimestamp() {
-    return (await ethers.provider.getBlock()).timestamp
-  }
 
   async function getSale(saleSetup, saleVestingSchedule) {
     let saleId = await saleData.nextSaleId()
@@ -301,7 +297,7 @@ describe("Integration Test", function () {
       expect(bundle.sas[0].remainingAmount).equal(normalize(10000));
 
       // move forward in time
-      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp() + 20]);
+      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp(ethers) + 20]);
 
       await satoken.connect(investor1).vest(nft);
       nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
@@ -316,7 +312,7 @@ describe("Integration Test", function () {
       nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
       network = await ethers.provider.getNetwork();
 
-      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp() + 1020]);
+      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp(ethers) + 1020]);
 
       await satoken.connect(investor1).vest(nft);
       expect(await abc.balanceOf(investor1.address)).equal(normalize(10000));

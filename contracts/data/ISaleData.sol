@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 //import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-//import "../nft/ISAStorage.sol";
 import "../nft/ISAToken.sol";
 
 interface IERC20Min {

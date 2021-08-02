@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./ISATokenExtras.sol";
-import "./ISAStorage.sol";
+import "../data/ISATokenData.sol";
 import "../sale/ISale.sol";
 import "../utils/LevelAccess.sol";
 import "../utils/IERC20Optimized.sol";
@@ -12,10 +12,10 @@ import "../user/IProfile.sol";
 
 import "hardhat/console.sol";
 
-// this is an extended version of the interface, including ISAStorage functions
+/**
+ * @dev External interface of SAToken declared to support ownerOf detection.
+ */
 interface ISAToken {
-  function updateFactory(address factoryAddress) external;
-
   function mint(
     address to,
     address sale,
@@ -27,19 +27,26 @@ interface ISAToken {
 
   function burn(uint256 tokenId) external;
 
-  function vest(uint256 tokenId) external returns (bool);
+//  function vest(uint256 tokenId) external returns (bool);
+//
+//  function merge(uint256[] memory tokenIds) external;
+//
+//  function split(uint256 tokenId, uint256[] memory keptAmounts) external;
 
-  function ownerOf(uint256 tokenId) external view returns (address);
-
-  function getBundle(uint256 bundleId) external view returns (ISAStorage.Bundle memory);
+//  function getTokenExtras() external view returns (address);
 
   function increaseAmountInSA(
     uint256 bundleId,
-    uint256 i,
+    uint256 saIndex,
     uint256 diff
   ) external;
 
-  function addSAToBundle(uint256 bundleId, ISAStorage.SA memory newSA) external;
+  function getBundle(uint256 tokenId) external view returns (ISATokenData.SA[] memory);
+
+  function ownerOf(uint256 tokenId) external view returns (address owner);
+
+  function addSAToBundle(uint256 bundleId, ISATokenData.SA memory newSA) external;
+
 }
 
 contract SATokenExtras is ISATokenExtras, LevelAccess {
@@ -60,21 +67,15 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     profile = IProfile(profileAddress);
   }
 
-  function _getPrimarySaleFeeToken(uint256 tokenId) internal view virtual returns (address) {
-    ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
-    ISale sale = ISale(bundle.sas[0].sale);
-    return sale.getPaymentToken();
-  }
-
   function vest(uint256 tokenId) external virtual override onlyLevel(MANAGER_LEVEL) returns (bool) {
     //    console.log("vesting", tokenId);
     // console.log("gas left before vesting", gasleft());
-    ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
+    ISATokenData.SA[] memory bundle = _token.getBundle(tokenId);
     uint256 nextId = _token.nextTokenId();
     bool notEmtpy;
     bool minted;
-    for (uint256 i = 0; i < bundle.sas.length; i++) {
-      ISAStorage.SA memory sa = bundle.sas[i];
+    for (uint256 i = 0; i < bundle.length; i++) {
+      ISATokenData.SA memory sa = bundle[i];
       ISale sale = ISale(sa.sale);
       (uint128 vestedPercentage, uint256 vestedAmount) = sale.vest(_token.ownerOf(tokenId), sa);
       //      console.log("vesting", tokenId, vestedAmount);
@@ -85,7 +86,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
           // console.log("gas left after mint", gasleft());
           minted = true;
         } else {
-          ISAStorage.SA memory newSA = ISAStorage.SA(sa.sale, vestedAmount, vestedPercentage);
+          ISATokenData.SA memory newSA = ISATokenData.SA(sa.sale, vestedAmount, vestedPercentage);
           _token.addSAToBundle(nextId, newSA);
           // console.log("gas left after addNewSA", gasleft());
         }
@@ -116,9 +117,9 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
   ) external view override onlyLevel(OWNER_LEVEL) {
     if (!profile.areAccountsAssociated(from, to)) {
       // check if any sale is not transferable
-      ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
-      for (uint256 i = 0; i < bundle.sas.length; i++) {
-        ISale sale = ISale(bundle.sas[i].sale);
+      ISATokenData.SA[] memory bundle = _token.getBundle(tokenId);
+      for (uint256 i = 0; i < bundle.length; i++) {
+        ISale sale = ISale(bundle[i].sale);
         //          console.log(sale.isTransferable());
         if (!sale.isTransferable()) {
           revert("SAToken: token not transferable");
@@ -132,7 +133,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     uint256 counter;
     bool minted;
     // console.log("gas left before merge", gasleft());
-    ISAStorage.Bundle memory bundle;
+    ISATokenData.SA[] memory bundle;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       for (uint256 w = 0; w < tokenIds.length; w++) {
         if (w != i && tokenIds[w] == tokenIds[i]) {
@@ -141,12 +142,11 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
       }
       bundle = _token.getBundle(tokenIds[i]);
       bool notEmpty;
-      for (uint256 j = 0; j < bundle.sas.length; j++) {
-        if (bundle.sas[j].remainingAmount != 0) {
+      for (uint256 j = 0; j < bundle.length; j++) {
+        if (bundle[j].remainingAmount != 0) {
           notEmpty = true;
           if (!minted) {
-            _token.mint(_token.ownerOf(tokenIds[0]), bundle.sas[j].sale, 0, 0);
-            // console.log("gas left after mint", gasleft());
+            _token.mint(_token.ownerOf(tokenIds[0]), bundle[j].sale, 0, 0);
             minted = true;
           }
           break;
@@ -157,30 +157,27 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
       }
     }
     require(counter > 1, "SATokenExtras: Not enough SAs for merging");
-    ISAStorage.Bundle memory newBundle;
+    ISATokenData.SA[] memory newBundle;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       bundle = _token.getBundle(tokenIds[i]);
-      for (uint256 j = 0; j < bundle.sas.length; j++) {
-        if (bundle.sas[j].remainingAmount == 0) {
+      for (uint256 j = 0; j < bundle.length; j++) {
+        if (bundle[j].remainingAmount == 0) {
           // we will skip empty SAs to save storage
           continue;
         }
         bool matched = false;
         newBundle = _token.getBundle(nextId);
-        for (uint256 k = 0; k < newBundle.sas.length; k++) {
+        for (uint256 k = 0; k < newBundle.length; k++) {
           if (
-            bundle.sas[j].sale == newBundle.sas[k].sale &&
-            bundle.sas[j].vestedPercentage == newBundle.sas[k].vestedPercentage
+            bundle[j].sale == newBundle[k].sale && bundle[j].vestedPercentage == newBundle[k].vestedPercentage
           ) {
-            _token.increaseAmountInSA(nextId, k, bundle.sas[j].remainingAmount);
-            // console.log("gas left after increase to SA", gasleft());
+            _token.increaseAmountInSA(nextId, k, bundle[j].remainingAmount);
             matched = true;
             break;
           }
         }
         if (!matched) {
-          _token.addSAToBundle(nextId, bundle.sas[j]);
-          // console.log("gas left after adding new SA", gasleft());
+          _token.addSAToBundle(nextId, bundle[j]);
         }
       }
       _token.burn(tokenIds[i]);
@@ -188,10 +185,10 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
   }
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual override onlyLevel(MANAGER_LEVEL) {
-    ISAStorage.Bundle memory bundle = _token.getBundle(tokenId);
-    ISAStorage.SA[] memory sas = bundle.sas;
+    ISATokenData.SA[] memory bundle = _token.getBundle(tokenId);
+    ISATokenData.SA[] memory sas = bundle;
     // console.log("gas left before split", gasleft());
-    require(keptAmounts.length == bundle.sas.length, "SANFT: length of sa does not match split");
+    require(keptAmounts.length == bundle.length, "SANFT: length of sa does not match split");
     bool minted;
     uint256 nextId = _token.nextTokenId();
     uint256 j;
@@ -214,7 +211,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
         // console.log("gas left after second mint", gasleft());
         minted = true;
       } else {
-        ISAStorage.SA memory newSA = ISAStorage.SA(
+        ISATokenData.SA memory newSA = ISATokenData.SA(
           sas[i].sale,
           sas[i].remainingAmount.sub(keptAmounts[i]),
           sas[i].vestedPercentage
@@ -222,7 +219,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
         _token.addSAToBundle(nextId, newSA);
         // console.log("gas left after adding newSA", gasleft());
         if (keptAmounts[i] != 0) {
-          newSA = ISAStorage.SA(sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
+          newSA = ISATokenData.SA(sas[i].sale, keptAmounts[i], sas[i].vestedPercentage);
           _token.addSAToBundle(nextId + 1, newSA);
           // console.log("gas left after newSA to second token", gasleft());
           j++;

@@ -7,19 +7,21 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "../utils/IERC20Optimized.sol";
+import "../utils/LevelAccess.sol";
 import "./ISAToken.sol";
 import "./ISATokenExtras.sol";
-import "./SAStorage.sol";
+import "../data/SATokenData.sol";
 import "../sale/ISale.sol";
 import "../sale/ISaleFactory.sol";
 
 // for debugging only
 //import "hardhat/console.sol";
 
-contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
+contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess {
   using SafeMath for uint256;
   using Counters for Counters.Counter;
 
+  uint256 public constant MANAGER_LEVEL = 1;
   Counters.Counter private _tokenIdCounter;
 
   ISaleFactory public factory;
@@ -35,7 +37,11 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     _;
   }
 
-  constructor(address factoryAddress, address extrasAddress) ERC721("SA NFT Token", "SANFT") {
+  constructor(
+    address saleData,
+    address factoryAddress,
+    address extrasAddress
+  ) ERC721("SA NFT Token", "SANFT") SATokenData(saleData) {
     factory = ISaleFactory(factoryAddress);
     _extras = ISATokenExtras(extrasAddress);
     grantLevel(MANAGER_LEVEL, extrasAddress);
@@ -87,7 +93,7 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     address saleAddress = sale;
     if (sale == address(0)) {
       require(
-        _extras.isContract(msg.sender) && factory.isLegitSale(msg.sender),
+        _extras.isContract(msg.sender) && _saleData.isLegitSale(msg.sender),
         "SAToken: Only legit sales can mint its own NFT!"
       );
       saleAddress = msg.sender;
@@ -104,7 +110,10 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
     uint128 vestedPercentage
   ) internal virtual {
     _safeMint(to, _tokenIdCounter.current());
-    _newBundleWithSA(_tokenIdCounter.current(), saleAddress, amount, vestedPercentage);
+    require(_bundles[_tokenIdCounter.current()].length == 0, "SAToken: Bundle already exists");
+    SA memory sa = SA(saleAddress, amount, vestedPercentage);
+    uint256 packedSa = _packSA(sa);
+    _bundles[_tokenIdCounter.current()].push(packedSa);
     _tokenIdCounter.increment();
   }
 
@@ -123,7 +132,28 @@ contract SAToken is ISAToken, SAStorage, ERC721, ERC721Enumerable {
 
   function _burn(uint256 tokenId) internal virtual override {
     super._burn(tokenId);
-    _deleteBundle(tokenId);
+  }
+
+  function addSAToBundle(uint256 tokenId, SA memory newSA) external override onlyLevel(MANAGER_LEVEL) {
+    _bundles[tokenId].push(_packSA(newSA));
+  }
+
+  function getBundle(uint256 tokenId) external view override returns (SA[] memory) {
+    SA[] memory sas = new SA[](_bundles[tokenId].length);
+    for (uint i=0;i< _bundles[tokenId].length; i++) {
+      sas[i] = _unpackUint256(_bundles[tokenId][i]);
+    }
+    return sas;
+  }
+
+  function increaseAmountInSA(
+    uint256 tokenId,
+    uint256 saIndex,
+    uint256 diff
+  ) external override onlyLevel(MANAGER_LEVEL) {
+    SA memory sa = _unpackUint256(_bundles[tokenId][saIndex]);
+    sa.remainingAmount.add(diff);
+    _bundles[tokenId][saIndex] = _packSA(sa);
   }
 
   function merge(uint256[] memory tokenIds) external virtual override feeRequired {

@@ -1,5 +1,5 @@
 const {expect, assert} = require("chai")
-const {assertThrowsMessage} = require('./helpers')
+const {assertThrowsMessage, signNewSale} = require('./helpers')
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
@@ -11,8 +11,6 @@ describe("SaleFactory", async function () {
   let sellingToken
   let Tether
   let tether
-  let SAStorage
-  let storage
   let SAToken
   let satoken
   let SaleFactory
@@ -26,15 +24,6 @@ describe("SaleFactory", async function () {
   let saleVestingSchedule
 
   let owner, validator, factoryAdmin, apeWallet, seller, buyer, buyer2
-  let addr0 = '0x0000000000000000000000000000000000000000'
-
-
-  async function getSignatureByValidator(saleId, setup, schedule) {
-    const hash = await factory.encodeForSignature(saleId, setup, schedule)
-    const signingKey = new ethers.utils.SigningKey('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d')
-    const signedDigest = signingKey.signDigest(hash)
-    return ethers.utils.joinSignature(signedDigest)
-  }
 
   before(async function () {
     [owner, validator, factoryAdmin, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
@@ -49,10 +38,6 @@ describe("SaleFactory", async function () {
     Profile = await ethers.getContractFactory("Profile")
     profile = await Profile.deploy()
     await profile.deployed()
-
-    SAStorage = await ethers.getContractFactory("SAStorage")
-    storage = await SAStorage.deploy()
-    await storage.deployed()
 
     SaleData = await ethers.getContractFactory("SaleData")
     saleData = await SaleData.deploy(apeWallet.address)
@@ -69,7 +54,7 @@ describe("SaleFactory", async function () {
     await tokenExtras.deployed()
 
     SAToken = await ethers.getContractFactory("SAToken")
-    satoken = await SAToken.deploy(factory.address, tokenExtras.address)
+    satoken = await SAToken.deploy(saleData.address, factory.address, tokenExtras.address)
     await satoken.deployed()
 
     ERC20Token = await ethers.getContractFactory("ERC20Token")
@@ -134,20 +119,20 @@ describe("SaleFactory", async function () {
 
       await factory.connect(factoryAdmin).approveSale(saleId)
 
-      let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
+      let signature = signNewSale(ethers, factory, saleId, saleSetup, saleVestingSchedule)
 
       await expect(factory.connect(seller).newSale(saleId, saleSetup, saleVestingSchedule, signature))
           .emit(factory, "NewSale")
       const saleAddress = await saleData.getSaleAddressById(saleId)
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-      assert.isTrue(await factory.isLegitSale(saleAddress))
+      assert.isTrue(await saleData.isLegitSale(saleAddress))
 
     })
 
     it("should throw if trying to create a sale without a pre-approval", async function () {
 
       let saleId = await saleData.nextSaleId()
-      let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
+      let signature = signNewSale(ethers, factory, saleId, saleSetup, saleVestingSchedule)
 
       await assertThrowsMessage(
           factory.newSale(saleId, saleSetup, saleVestingSchedule, signature),
@@ -159,7 +144,7 @@ describe("SaleFactory", async function () {
 
       let saleId = await saleData.nextSaleId()
 
-      let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
+      let signature = signNewSale(ethers, factory, saleId, saleSetup, saleVestingSchedule)
 
       await factory.connect(factoryAdmin).approveSale(saleId)
 
