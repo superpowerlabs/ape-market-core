@@ -31,12 +31,6 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
   IERC20 private _feeToken;
   uint256 public feeAmount; // the amount of fee in _feeToken charged for merge, split and transfer
 
-  modifier feeRequired() {
-    uint256 decimals = _feeToken.decimals();
-    _feeToken.transferFrom(msg.sender, apeWallet, feeAmount.mul(10**decimals));
-    _;
-  }
-
   constructor(
     address saleData,
     address factoryAddress,
@@ -91,6 +85,7 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
     uint128 vestedPercentage
   ) external virtual override {
     address saleAddress = sale;
+    //    console.log(saleAddress, 1);
     if (sale == address(0)) {
       require(
         _extras.isContract(msg.sender) && _saleData.isLegitSale(msg.sender),
@@ -100,6 +95,7 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
     } else {
       require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SATokenExtras can mint tokens for an existing sale");
     }
+    //    console.log(saleAddress, 2);
     _mint(to, saleAddress, amount, vestedPercentage);
   }
 
@@ -114,6 +110,7 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
     SA memory sa = SA(saleAddress, amount, vestedPercentage);
     uint256 packedSa = _packSA(sa);
     _bundles[_tokenIdCounter.current()].push(packedSa);
+    //    console.log("Minting %s", _tokenIdCounter.current());
     _tokenIdCounter.increment();
   }
 
@@ -127,6 +124,7 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
   }
 
   function burn(uint256 tokenId) external virtual override onlyLevel(MANAGER_LEVEL) {
+    //    console.log("Burning %s", tokenId);
     _burn(tokenId);
   }
 
@@ -156,16 +154,25 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
     _bundles[tokenId][saIndex] = _packSA(sa);
   }
 
-  function merge(uint256[] memory tokenIds) external virtual override feeRequired {
-    require(tokenIds.length > 1, "SAToken: are you trying to merge a single token?");
-    for (uint256 i = 0; i < tokenIds.length; i++) {
-      require(ownerOf(tokenIds[i]) == msg.sender, "SAToken: Only owner can merge tokens");
-    }
-    _extras.merge(tokenIds);
+  function _feeRequired(uint256 tokenId) internal {
+    SA memory sa = _unpackUint256(_bundles[tokenId][0]);
+    ISale sale = ISale(sa.sale);
+    sale.payFee(msg.sender, feeAmount);
   }
 
-  function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual override feeRequired {
+  function areMergeable(uint256[] memory tokenIds) external view override returns (string memory) {
+    return _extras.areMergeable(msg.sender, tokenIds);
+  }
+
+  function merge(uint256[] memory tokenIds) external virtual override {
+    // The APE dApp should check areMergeable before calling a merge, to avoid the risk that the user spends a gas for nothing
+    _feeRequired(tokenIds[0]);
+    _extras.merge(msg.sender, tokenIds);
+  }
+
+  function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual override {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Only owner can split a token");
+    _feeRequired(tokenId);
     _extras.split(tokenId, keptAmounts);
   }
 }

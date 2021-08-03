@@ -142,7 +142,7 @@ contract SaleData is ISaleData, LevelAccess {
       uint256
     )
   {
-    require(_approvedAmounts[saleId][investor] >= amount, "Sale: Amount if above approved amount");
+    require(_approvedAmounts[saleId][investor] >= amount, "Sale: Amount is above approved amount");
     require(amount >= normalize(saleId, _setups[saleId].minAmount), "Sale: Amount is too low");
     require(amount <= _setups[saleId].remainingAmount, "Sale: Amount is too high");
     _approvedAmounts[saleId][investor] = _approvedAmounts[saleId][investor].sub(amount);

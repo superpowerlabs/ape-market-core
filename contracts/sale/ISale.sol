@@ -28,6 +28,8 @@ interface ISale {
 
   function normalize(uint32 amount) external view returns (uint256);
 
+  function payFee(address payer, uint256 feeAmount) external;
+
   function withdrawPayment(uint256 amount) external;
 
   function withdrawToken(uint256 amount) external;

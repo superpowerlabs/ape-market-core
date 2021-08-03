@@ -60,6 +60,14 @@ contract Sale {
     //    console.log("Sale: Paying seller fee", sellerFee);
   }
 
+  function payFee(address payer, uint256 feeAmount) external {
+    ISaleData.Setup memory setup = _saleData.getSetupById(_saleId);
+    require(msg.sender == address(setup.satoken), "Sale: only SAToken can call this function");
+    uint256 decimals = setup.paymentToken.decimals();
+    //    console.log(feeAmount.mul(10**decimals));
+    setup.paymentToken.transferFrom(payer, _saleData.apeWallet(), feeAmount.mul(10**decimals));
+  }
+
   function withdrawPayment(uint256 amount) external virtual onlySaleOwner {
     _saleData.getSetupById(_saleId).paymentToken.transfer(msg.sender, amount);
   }

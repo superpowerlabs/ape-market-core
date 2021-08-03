@@ -5,7 +5,7 @@ const {assertThrowsMessage, formatBundle, getTimestamp} = require('./helpers')
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe("Integration Test", function () {
+describe.skip("Integration Test", function () {
 
   let Profile
   let profile

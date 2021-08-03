@@ -17,6 +17,8 @@ interface ISAToken {
 
   function vest(uint256 tokenId) external returns (bool);
 
+  function areMergeable(uint256[] memory tokenIds) external view returns (string memory);
+
   function merge(uint256[] memory tokenIds) external;
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) external;

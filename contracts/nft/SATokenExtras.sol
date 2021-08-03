@@ -123,12 +123,58 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     }
   }
 
-  function merge(uint256[] memory tokenIds) external virtual override onlyLevel(MANAGER_LEVEL) {
+  function areMergeable(address owner, uint256[] memory tokenIds) external view virtual override returns (string memory) {
+    // it returns an error code
+    if (tokenIds.length < 2) return "ERROR 1: Cannot merge a single token";
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      if (_token.ownerOf(tokenIds[i]) != owner) return "ERROR 2: All tokens must be owned by msg.sender";
+    }
     uint256 nextId = _token.nextTokenId();
     uint256 counter;
-    bool minted;
+    ISATokenData.SA[] memory bundle;
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      for (uint256 w = 0; w < tokenIds.length; w++) {
+        if (w != i && tokenIds[w] == tokenIds[i]) return "ERROR 3: Token cannot be merged with itself";
+      }
+      bundle = _token.getBundle(tokenIds[i]);
+      for (uint256 j = 0; j < bundle.length; j++) {
+        if (bundle[j].remainingAmount != 0) {
+          counter++;
+          break;
+        }
+      }
+    }
+    if (counter == 1) return "ERROR 4: Not enough not empty tokens";
+    ISATokenData.SA[] memory newBundle = _token.getBundle(nextId);
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      bundle = _token.getBundle(tokenIds[i]);
+      for (uint256 j = 0; j < bundle.length; j++) {
+        if (bundle[j].remainingAmount == 0) {
+          continue;
+        }
+        for (uint256 k = 0; k < newBundle.length; k++) {
+          if (bundle[j].sale == newBundle[k].sale) {
+            if (bundle[j].vestedPercentage != newBundle[k].vestedPercentage) {
+              return "ERROR 5: Inconsistent vested percentages";
+            }
+            break;
+          }
+        }
+      }
+    }
+    return "SUCCESS: Tokens are mergeable";
+  }
+
+  function merge(address owner, uint256[] memory tokenIds) external virtual override onlyLevel(MANAGER_LEVEL) {
+    require(tokenIds.length > 1, "SAToken: are you trying to merge a single token?");
+    for (uint256 i = 0; i < tokenIds.length; i++) {
+      require(_token.ownerOf(tokenIds[i]) == owner, "SAToken: Only owner can merge tokens");
+    }
+    uint256 nextId = _token.nextTokenId();
+    uint256 counter;
     // console.log("gas left before merge", gasleft());
     ISATokenData.SA[] memory bundle;
+    address firstSale;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       for (uint256 w = 0; w < tokenIds.length; w++) {
         if (w != i && tokenIds[w] == tokenIds[i]) {
@@ -136,44 +182,46 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
         }
       }
       bundle = _token.getBundle(tokenIds[i]);
-      bool notEmpty;
       for (uint256 j = 0; j < bundle.length; j++) {
         if (bundle[j].remainingAmount != 0) {
-          notEmpty = true;
-          if (!minted) {
-            _token.mint(_token.ownerOf(tokenIds[0]), bundle[j].sale, 0, 0);
-            minted = true;
+          counter++;
+          if (firstSale != address(0)) {
+            firstSale = bundle[j].sale;
           }
           break;
         }
       }
-      if (notEmpty) {
-        counter++;
-      }
     }
     require(counter > 1, "SATokenExtras: Not enough SAs for merging");
-    ISATokenData.SA[] memory newBundle;
+    uint256 index = 0;
+    ISATokenData.SA[] memory newBundle = new ISATokenData.SA[](counter);
     for (uint256 i = 0; i < tokenIds.length; i++) {
       bundle = _token.getBundle(tokenIds[i]);
       for (uint256 j = 0; j < bundle.length; j++) {
         if (bundle[j].remainingAmount == 0) {
-          // we will skip empty SAs to save storage
           continue;
         }
         bool matched = false;
-        newBundle = _token.getBundle(nextId);
         for (uint256 k = 0; k < newBundle.length; k++) {
           if (bundle[j].sale == newBundle[k].sale && bundle[j].vestedPercentage == newBundle[k].vestedPercentage) {
-            _token.increaseAmountInSA(nextId, k, bundle[j].remainingAmount);
+            newBundle[k].remainingAmount += bundle[j].remainingAmount;
             matched = true;
             break;
           }
         }
         if (!matched) {
-          _token.addSAToBundle(nextId, bundle[j]);
+          newBundle[index++] = bundle[j];
         }
       }
       _token.burn(tokenIds[i]);
+    }
+    for (uint256 k = 0; k < newBundle.length; k++) {
+      //      console.log(newBundle[k].sale, newBundle[k].remainingAmount, newBundle[k].vestedPercentage);
+      if (k == 0) {
+        _token.mint(owner, newBundle[k].sale, newBundle[k].remainingAmount, newBundle[k].vestedPercentage);
+      } else if (newBundle[k].sale != address(0)) {
+        _token.addSAToBundle(nextId, newBundle[k]);
+      }
     }
   }
 

@@ -2,7 +2,9 @@
 pragma solidity ^0.8.0;
 
 interface ISATokenExtras {
-  function merge(uint256[] memory tokenIds) external;
+  function areMergeable(address owner, uint256[] memory tokenIds) external view returns (string memory);
+
+  function merge(address owner, uint256[] memory tokenIds) external;
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) external;
 
