@@ -5,36 +5,36 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "hardhat/console.sol";
 
-import "../data/ISATokenData.sol";
-import "../data/ISaleData.sol";
+import "../nft/ISAToken.sol";
+import "./ISaleData.sol";
 
 contract Sale {
   using SafeMath for uint256;
 
   ISaleData private _saleData;
 
-  uint256 private _saleId;
+  uint16 private _saleId;
 
   modifier onlySaleOwner() {
     require(msg.sender == _saleData.getSetupById(_saleId).owner, "Sale: caller is not the owner");
     _;
   }
 
-  constructor(uint256 saleId_, address saleData) {
+  constructor(uint16 saleId_, address saleData) {
     _saleId = saleId_;
     _saleData = ISaleData(saleData);
   }
 
-  function saleId() external view returns (uint256) {
+  function saleId() external view returns (uint16) {
     return _saleId;
   }
 
-  function initialize(ISaleData.Setup memory setup_, ISaleData.VestingStep[] memory schedule) external {
-    _saleData.setUpSale(_saleId, address(this), setup_, schedule);
-  }
-
-  function isTransferable() external view returns (bool) {
-    return _saleData.getSetupById(_saleId).isTokenTransferable;
+  function initialize(
+    ISaleData.Setup memory setup_,
+    ISaleData.VestingStep[] memory schedule,
+    address paymentToken
+  ) external {
+    _saleData.setUpSale(_saleId, address(this), setup_, schedule, paymentToken);
   }
 
   // Sale creator calls this function to start the sale.
@@ -50,10 +50,11 @@ contract Sale {
     ISaleData.Setup memory setup = _saleData.getSetupById(_saleId);
     (uint256 tokenPayment, uint256 buyerFee, uint256 sellerFee) = _saleData.setInvest(_saleId, msg.sender, amount);
     //        console.log("tokenPayment", tokenPayment);
-    setup.paymentToken.transferFrom(msg.sender, _saleData.apeWallet(), buyerFee);
-    setup.paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
+    IERC20Min paymentToken = IERC20Min(_saleData.paymentTokenById(setup.paymentToken));
+    paymentToken.transferFrom(msg.sender, _saleData.apeWallet(), buyerFee);
+    paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
     // mint NFT
-    ISAToken nft = ISAToken(setup.satoken);
+    ISAToken nft = _saleData.getSAToken();
     nft.mint(msg.sender, address(0), amount, 0);
     nft.mint(_saleData.apeWallet(), address(0), sellerFee, 0);
     //    console.log("Sale: Paying buyer fee", buyerFee);
@@ -61,15 +62,17 @@ contract Sale {
   }
 
   function payFee(address payer, uint256 feeAmount) external {
-    ISaleData.Setup memory setup = _saleData.getSetupById(_saleId);
-    require(msg.sender == address(setup.satoken), "Sale: only SAToken can call this function");
-    uint256 decimals = setup.paymentToken.decimals();
-    //    console.log(feeAmount.mul(10**decimals));
-    setup.paymentToken.transferFrom(payer, _saleData.apeWallet(), feeAmount.mul(10**decimals));
+    require(msg.sender == _saleData.getSAToken().getTokenExtras(), "Sale: only SATokenExtras can call this function");
+    uint256 amount = _saleData.calculateFee(_saleId, feeAmount);
+    if (amount > 0) {
+      IERC20Min paymentToken = IERC20Min(_saleData.paymentTokenById(_saleData.getSetupById(_saleId).paymentToken));
+      paymentToken.transferFrom(payer, _saleData.apeWallet(), amount);
+    }
   }
 
   function withdrawPayment(uint256 amount) external virtual onlySaleOwner {
-    _saleData.getSetupById(_saleId).paymentToken.transfer(msg.sender, amount);
+    IERC20Min paymentToken = IERC20Min(_saleData.paymentTokenById(_saleData.getSetupById(_saleId).paymentToken));
+    paymentToken.transfer(msg.sender, amount);
   }
 
   function withdrawToken(uint256 amount) external virtual onlySaleOwner {
@@ -77,17 +80,18 @@ contract Sale {
     sellingToken.transfer(msg.sender, amount + fee);
   }
 
-  function vest(address saOwner, ISATokenData.SA memory sa) external virtual returns (uint128, uint256) {
-    ISaleData.Setup memory setup = _saleData.getSetupById(_saleId);
-    ISAToken token = ISAToken(setup.satoken);
-    require(msg.sender == token.getTokenExtras(), "Sale: only SATokenExtras can call vest");
-    (uint128 vestedPercentage, uint256 vestedAmount) = _saleData.setVest(_saleId, sa.vestedPercentage, sa.remainingAmount);
-    //    console.log( vestedPercentage, vestedAmount);
-    // console.log("gas left before transfer", gasleft());
-    if (vestedAmount > 0) {
-      setup.sellingToken.transfer(saOwner, vestedAmount);
+  function vest(
+    address saOwner,
+    uint120 fullAmount,
+    uint120 remainingAmount,
+    uint256 requestedAmount
+  ) external virtual returns (bool) {
+    require(msg.sender == _saleData.getSAToken().getTokenExtras(), "Sale: only SATokenExtras can call vest");
+    if (_saleData.isVested(_saleId, fullAmount, remainingAmount, requestedAmount)) {
+      _saleData.getSetupById(_saleId).sellingToken.transfer(saOwner, requestedAmount);
+      return true;
+    } else {
+      return false;
     }
-    // console.log("gas left after transfer", gasleft());
-    return (vestedPercentage, vestedAmount);
   }
 }

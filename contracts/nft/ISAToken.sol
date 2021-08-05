@@ -1,9 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../data/ISATokenData.sol";
+import "../sale/ISaleData.sol";
 
 interface ISAToken {
+  struct SA {
+    uint16 saleId;
+    uint120 fullAmount;
+    uint120 remainingAmount;
+  }
+
+  function saleData() external view returns (ISaleData);
+
   function mint(
     address to,
     address sale,
@@ -15,9 +23,13 @@ interface ISAToken {
 
   function burn(uint256 tokenId) external;
 
-  function vest(uint256 tokenId) external returns (bool);
+  function withdraw(
+    uint256 tokenId,
+    uint16 saleId,
+    uint256 amount
+  ) external;
 
-  function areMergeable(uint256[] memory tokenIds) external view returns (string memory);
+  function areMergeable(uint256[] memory tokenIds) external view returns (bool, string memory);
 
   function merge(uint256[] memory tokenIds) external;
 
@@ -31,7 +43,9 @@ interface ISAToken {
     uint256 diff
   ) external;
 
-  function addSAToBundle(uint256 bundleId, ISATokenData.SA memory newSA) external;
+  function addSAToBundle(uint256 bundleId, SA memory newSA) external;
 
-  function getBundle(uint256 bundleId) external view returns (ISATokenData.SA[] memory);
+  function getBundle(uint256 bundleId) external view returns (SA[] memory);
+
+  function getOwnerOf(uint256 tokenId) external view returns (address);
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../data/ISaleData.sol";
+import "./ISaleData.sol";
 
 interface ISaleFactory {
   event SaleApproved(uint256 saleId);
@@ -15,15 +15,17 @@ interface ISaleFactory {
   function revokeApproval(uint256 saleId) external;
 
   function newSale(
-    uint256 saleId,
+    uint8 saleId,
     ISaleData.Setup memory setup,
     ISaleData.VestingStep[] memory schedule,
-    bytes memory validatorSignature
+    bytes memory validatorSignature,
+    address paymentToken
   ) external;
 
   function encodeForSignature(
     uint256 saleId,
     ISaleData.Setup memory setup,
-    ISaleData.VestingStep[] memory schedule
-  ) external pure returns (bytes32);
+    ISaleData.VestingStep[] memory schedule,
+    address paymentToken
+  ) external view returns (bytes32);
 }

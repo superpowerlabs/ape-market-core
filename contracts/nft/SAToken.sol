@@ -4,25 +4,22 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 import "../utils/IERC20Optimized.sol";
 import "../utils/LevelAccess.sol";
 import "./ISAToken.sol";
 import "./ISATokenExtras.sol";
-import "../data/SATokenData.sol";
 import "../sale/ISale.sol";
 import "../sale/ISaleFactory.sol";
 
 // for debugging only
 //import "hardhat/console.sol";
 
-contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess {
+contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   using SafeMath for uint256;
-  using Counters for Counters.Counter;
 
   uint256 public constant MANAGER_LEVEL = 1;
-  Counters.Counter private _tokenIdCounter;
+  uint256 private _nextTokenId;
 
   ISaleFactory public factory;
   ISATokenExtras private _extras;
@@ -31,14 +28,22 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
   IERC20 private _feeToken;
   uint256 public feeAmount; // the amount of fee in _feeToken charged for merge, split and transfer
 
+  mapping(uint256 => SA[]) internal _bundles;
+  ISaleData internal _saleData;
+
   constructor(
-    address saleData,
+    address saleData_,
     address factoryAddress,
     address extrasAddress
-  ) ERC721("SA NFT Token", "SANFT") SATokenData(saleData) {
+  ) ERC721("SA NFT Token", "SANFT") {
+    _saleData = ISaleData(saleData_);
     factory = ISaleFactory(factoryAddress);
     _extras = ISATokenExtras(extrasAddress);
     grantLevel(MANAGER_LEVEL, extrasAddress);
+  }
+
+  function saleData() external view override returns (ISaleData) {
+    return _saleData;
   }
 
   function getTokenExtras() external view override returns (address) {
@@ -95,36 +100,41 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
     } else {
       require(levels[msg.sender] == MANAGER_LEVEL, "SAToken: Only SATokenExtras can mint tokens for an existing sale");
     }
+    ISale _sale = ISale(saleAddress);
+    uint16 saleId = _sale.saleId();
     //    console.log(saleAddress, 2);
-    _mint(to, saleAddress, amount, vestedPercentage);
+    _mint(to, saleId, amount, vestedPercentage);
   }
 
   function _mint(
     address to,
-    address saleAddress,
+    uint16 saleId,
     uint256 amount,
     uint128 vestedPercentage
   ) internal virtual {
-    _safeMint(to, _tokenIdCounter.current());
-    require(_bundles[_tokenIdCounter.current()].length == 0, "SAToken: Bundle already exists");
-    SA memory sa = SA(saleAddress, amount, vestedPercentage);
-    uint256 packedSa = _packSA(sa);
-    _bundles[_tokenIdCounter.current()].push(packedSa);
-    //    console.log("Minting %s", _tokenIdCounter.current());
-    _tokenIdCounter.increment();
+    require(_bundles[_nextTokenId].length == 0, "SAToken: Bundle already exists");
+    _safeMint(to, _nextTokenId);
+    SA memory sa = SA(saleId, uint120(amount), uint120(amount));
+    _bundles[_nextTokenId].push(sa);
+    //    console.log("Minting %s", _nextTokenId);
+    _nextTokenId++;
   }
 
   function nextTokenId() external view virtual override returns (uint256) {
-    return _tokenIdCounter.current();
+    return _nextTokenId;
   }
 
-  function vest(uint256 tokenId) public virtual override returns (bool) {
-    require(ownerOf(tokenId) == msg.sender, "SAToken: Caller is not NFT owner");
-    return _extras.vest(tokenId);
+  function withdraw(
+    uint256 tokenId,
+    uint16 saleId,
+    uint256 amount
+  ) public virtual override {
+    _extras.withdraw(tokenId, saleId, amount);
   }
 
   function burn(uint256 tokenId) external virtual override onlyLevel(MANAGER_LEVEL) {
     //    console.log("Burning %s", tokenId);
+    delete _bundles[tokenId];
     _burn(tokenId);
   }
 
@@ -133,15 +143,11 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
   }
 
   function addSAToBundle(uint256 tokenId, SA memory newSA) external override onlyLevel(MANAGER_LEVEL) {
-    _bundles[tokenId].push(_packSA(newSA));
+    _bundles[tokenId].push(newSA);
   }
 
   function getBundle(uint256 tokenId) external view override returns (SA[] memory) {
-    SA[] memory sas = new SA[](_bundles[tokenId].length);
-    for (uint256 i = 0; i < _bundles[tokenId].length; i++) {
-      sas[i] = _unpackUint256(_bundles[tokenId][i]);
-    }
-    return sas;
+    return _bundles[tokenId];
   }
 
   function increaseAmountInSA(
@@ -149,30 +155,38 @@ contract SAToken is ISAToken, SATokenData, ERC721, ERC721Enumerable, LevelAccess
     uint256 saIndex,
     uint256 diff
   ) external override onlyLevel(MANAGER_LEVEL) {
-    SA memory sa = _unpackUint256(_bundles[tokenId][saIndex]);
-    sa.remainingAmount.add(diff);
-    _bundles[tokenId][saIndex] = _packSA(sa);
+    SA memory sa = _bundles[tokenId][saIndex];
+    sa.remainingAmount = uint120(uint256(sa.remainingAmount).add(diff));
+    sa.fullAmount = uint120(uint256(sa.fullAmount).add(diff));
+    _bundles[tokenId][saIndex] = sa;
   }
 
   function _feeRequired(uint256 tokenId) internal {
-    SA memory sa = _unpackUint256(_bundles[tokenId][0]);
-    ISale sale = ISale(sa.sale);
+    // TODO:
+    // this must be granular
+    SA memory sa = _bundles[tokenId][0];
+    ISale sale = ISale(_saleData.getSaleAddressById(sa.saleId));
     sale.payFee(msg.sender, feeAmount);
   }
 
-  function areMergeable(uint256[] memory tokenIds) external view override returns (string memory) {
-    return _extras.areMergeable(msg.sender, tokenIds);
+  function areMergeable(uint256[] memory tokenIds) public view override returns (bool, string memory) {
+    (bool isMergeable, string memory message, ) = _extras.areMergeable(msg.sender, tokenIds);
+    return (isMergeable, message);
   }
 
   function merge(uint256[] memory tokenIds) external virtual override {
-    // The APE dApp should check areMergeable before calling a merge, to avoid the risk that the user spends a gas for nothing
-    _feeRequired(tokenIds[0]);
+    // The APE dApp should check areMergeable before calling a merge, to avoid the risk that the user consumes gas for nothing.
+    // It should also verify that the user has approved the token as a operator for the paymentToken
     _extras.merge(msg.sender, tokenIds);
   }
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) public virtual override {
     require(ownerOf(tokenId) == msg.sender, "SAToken: Only owner can split a token");
-    _feeRequired(tokenId);
+    //    _feeRequired(tokenId);
     _extras.split(tokenId, keptAmounts);
+  }
+
+  function getOwnerOf(uint256 tokenId) external view override returns (address) {
+    return ownerOf(tokenId);
   }
 }

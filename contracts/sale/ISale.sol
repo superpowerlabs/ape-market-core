@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 //import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "../data/ISATokenData.sol";
+import "../nft/ISAToken.sol";
 
 interface ISale {
   function getPaymentToken() external view returns (address);
@@ -12,7 +12,7 @@ interface ISale {
 
   function apeWallet() external view returns (address);
 
-  function saleId() external view returns (uint256);
+  function saleId() external view returns (uint16);
 
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
@@ -38,9 +38,12 @@ interface ISale {
 
   function makeTransferable() external;
 
-  function isTransferable() external view returns (bool);
-
   function isTokenListed() external view returns (bool);
 
-  function vest(address saOwner, ISATokenData.SA memory sa) external returns (uint128, uint256);
+  function vest(
+    address saOwner,
+    uint120 fullAmount,
+    uint120 remainingAmount,
+    uint256 requestedAmount
+  ) external returns (bool);
 }

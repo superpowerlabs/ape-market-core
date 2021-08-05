@@ -111,11 +111,11 @@ describe("SAToken", async function () {
     };
     saleVestingSchedule = [
       {
-        timestamp: 10,
+        waitTime: 10,
         percentage: 50
       },
       {
-        timestamp: 1000,
+        waitTime: 1000,
         percentage: 100
       }]
 

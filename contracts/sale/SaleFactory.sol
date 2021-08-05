@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import "../utils/LevelAccess.sol";
-import "../data/ISaleData.sol";
-import "./Sale.sol";
+import "./ISaleData.sol";
 import "./ISaleFactory.sol";
+import "./Sale.sol";
 
 // for debugging only
 import "hardhat/console.sol";
@@ -43,19 +43,20 @@ contract SaleFactory is ISaleFactory, LevelAccess {
   }
 
   function newSale(
-    uint256 saleId,
+    uint8 saleId,
     ISaleData.Setup memory setup,
     ISaleData.VestingStep[] memory schedule,
-    bytes memory validatorSignature
+    bytes memory validatorSignature,
+    address paymentToken
   ) external override {
     require(
-      ECDSA.recover(encodeForSignature(saleId, setup, schedule), validatorSignature) == _validator,
+      ECDSA.recover(encodeForSignature(saleId, setup, schedule, paymentToken), validatorSignature) == _validator,
       "SaleFactory: invalid signature or modified params"
     );
     Sale sale = new Sale(saleId, address(_saleData));
     address addr = address(sale);
     _saleData.grantManagerLevel(addr);
-    sale.initialize(setup, schedule);
+    sale.initialize(setup, schedule, paymentToken);
     //    _salesById[saleId] = addr;
     //    _sales[addr] = true;
     emit NewSale(saleId, addr);
@@ -67,39 +68,63 @@ contract SaleFactory is ISaleFactory, LevelAccess {
   use two arrays, one for the uint128 contained in VestingStep[], and one for the
   uint64 contained in Setup. Also, we skip the parameters that initially must be == 0.
   */
+
+  struct Setup {
+    // 1st word:
+    IERC20Min sellingToken;
+    // 2nd word:
+    address owner; // 160
+    // pricingPayments and pricingToken builds a fraction to define the price of the token
+    uint64 pricingToken;
+    uint32 tokenListTimestamp;
+    // 3rd word:
+    uint120 remainingAmount; // selling token
+    uint32 minAmount; // USD
+    uint32 capAmount; // USD, it can be = totalValue (no cap to single investment)
+    uint64 pricingPayment;
+    uint8 tokenFeePercentage;
+    // 4th word:
+    address saleAddress;
+    uint32 totalValue; // USD
+    uint8 paymentToken; //
+    uint8 paymentFeePercentage;
+    uint8 softCapPercentage; // if 0, no soft cap
+    // more 32 available
+    bool isTokenTransferable;
+  }
+
   function encodeForSignature(
     uint256 saleId,
     ISaleData.Setup memory setup,
-    ISaleData.VestingStep[] memory schedule
-  ) public pure override returns (bytes32) {
+    ISaleData.VestingStep[] memory schedule,
+    address paymentToken
+  ) public view override returns (bytes32) {
     require(setup.remainingAmount == 0 && setup.tokenListTimestamp == 0, "SaleFactory: invalid setup");
-    uint128[] memory steps = new uint128[](schedule.length * 2);
-    uint256 j = 0;
-    for (uint8 i = 0; i < schedule.length; i++) {
-      steps[j++] = schedule[i].timestamp;
-      steps[j++] = schedule[i].percentage;
-    }
-    uint64[7] memory data = [
-      setup.minAmount,
-      setup.capAmount,
-      setup.pricingToken,
-      setup.pricingPayment,
-      setup.tokenListTimestamp,
-      setup.tokenFeePercentage,
-      setup.paymentFeePercentage
+    uint256[] memory steps = _saleData.packVestingSteps(schedule);
+    uint256[11] memory data = [
+      uint256(setup.pricingToken),
+      uint256(setup.tokenListTimestamp),
+      uint256(setup.remainingAmount),
+      uint256(setup.minAmount),
+      uint256(setup.capAmount),
+      uint256(setup.pricingPayment),
+      uint256(setup.tokenFeePercentage),
+      uint256(setup.totalValue),
+      uint256(setup.paymentToken),
+      uint256(setup.paymentFeePercentage),
+      uint256(setup.softCapPercentage)
     ];
     return
       keccak256(
         abi.encodePacked(
           "\x19\x00", /* EIP-191 */
           saleId,
-          setup.satoken,
           setup.sellingToken,
-          setup.paymentToken,
           setup.owner,
           steps,
           data,
-          setup.isTokenTransferable
+          setup.isTokenTransferable,
+          paymentToken
         )
       );
   }

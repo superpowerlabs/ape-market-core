@@ -2,7 +2,14 @@
 pragma solidity ^0.8.0;
 
 interface ISATokenExtras {
-  function areMergeable(address owner, uint256[] memory tokenIds) external view returns (string memory);
+  function areMergeable(address owner, uint256[] memory tokenIds)
+    external
+    view
+    returns (
+      bool,
+      string memory,
+      uint256 count
+    );
 
   function merge(address owner, uint256[] memory tokenIds) external;
 
@@ -14,7 +21,11 @@ interface ISATokenExtras {
     uint256 tokenId
   ) external;
 
-  function vest(uint256 tokenId) external returns (bool);
+  function withdraw(
+    uint256 tokenId,
+    uint16 saleId,
+    uint256 amount
+  ) external;
 
   function isContract(address account) external view returns (bool);
 }
