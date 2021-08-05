@@ -30,21 +30,21 @@ interface ISaleData {
     // 2nd word:
     address owner; // 160
     // pricingPayments and pricingToken builds a fraction to define the price of the token
-    uint64 pricingToken;
+    uint32 minAmount; // USD
+    uint32 capAmount; // USD, it can be = totalValue (no cap to single investment)
     uint32 tokenListTimestamp;
     // 3rd word:
     uint120 remainingAmount; // selling token
-    uint32 minAmount; // USD
-    uint32 capAmount; // USD, it can be = totalValue (no cap to single investment)
+    uint64 pricingToken;
     uint64 pricingPayment;
-    uint8 tokenFeePercentage;
-    // 4th word:
+    uint8 tokenFeePercentage; // the fee in token paid by sellers at launch
+    // 4th word, 24 more bits available:
     address saleAddress;
     uint32 totalValue; // USD
     uint8 paymentToken; //
-    uint8 paymentFeePercentage;
+    uint8 paymentFeePercentage; // the fee in USD paid by buyers when investing
+    uint8 changeFeePercentage; // the fee in USD paid by buyers when merging, splitting...
     uint8 softCapPercentage; // if 0, no soft cap
-    // more 32 available
     bool isTokenTransferable;
   }
 

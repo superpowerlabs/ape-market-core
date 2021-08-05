@@ -18,12 +18,12 @@ contract SaleFactory is ISaleFactory, LevelAccess {
 
   ISaleData private _saleData;
 
-  mapping(uint => address) private _validators;
-  uint private _nextValidatorId;
+  mapping(uint256 => address) private _validators;
+  uint256 private _nextValidatorId;
 
   constructor(address saleData, address[] memory validators) {
     _saleData = ISaleData(saleData);
-    for (uint i = 0; i < validators.length; i++) {
+    for (uint256 i = 0; i < validators.length; i++) {
       _validators[i] = validators[i];
     }
     _nextValidatorId = validators.length;
@@ -34,16 +34,16 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     _validators[_nextValidatorId++] = newValidator;
   }
 
-  function isValidator(address validator) public override returns (bool){
-    for (uint i = 0; i < _nextValidatorId; i++) {
-      if(_validators[i] != validator) return true;
+  function isValidator(address validator) public override returns (bool) {
+    for (uint256 i = 0; i < _nextValidatorId; i++) {
+      if (_validators[i] != validator) return true;
     }
     return false;
   }
 
   function revokeValidator(address validator) external override onlyLevel(OWNER_LEVEL) {
-    for (uint i = 0; i < _nextValidatorId; i++) {
-      if(_validators[i] == validator) {
+    for (uint256 i = 0; i < _nextValidatorId; i++) {
+      if (_validators[i] == validator) {
         delete _validators[i];
         break;
       }
@@ -70,10 +70,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     address paymentToken
   ) external override {
     address validator = ECDSA.recover(encodeForSignature(saleId, setup, schedule, paymentToken), validatorSignature);
-    require(
-      isValidator(validator),
-      "SaleFactory: invalid signature or modified params"
-    );
+    require(isValidator(validator), "SaleFactory: invalid signature or modified params");
     Sale sale = new Sale(saleId, address(_saleData));
     address addr = address(sale);
     _saleData.grantManagerLevel(addr);
@@ -95,30 +92,31 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     require(setup.remainingAmount == 0 && setup.tokenListTimestamp == 0, "SaleFactory: invalid setup");
     uint256[] memory steps = _saleData.packVestingSteps(schedule);
     uint256[11] memory data = [
-    uint256(setup.pricingToken),
-    uint256(setup.tokenListTimestamp),
-    uint256(setup.remainingAmount),
-    uint256(setup.minAmount),
-    uint256(setup.capAmount),
-    uint256(setup.pricingPayment),
-    uint256(setup.tokenFeePercentage),
-    uint256(setup.totalValue),
-    uint256(setup.paymentToken),
-    uint256(setup.paymentFeePercentage),
-    uint256(setup.softCapPercentage)
+      uint256(setup.pricingToken),
+      uint256(setup.tokenListTimestamp),
+      uint256(setup.remainingAmount),
+      uint256(setup.minAmount),
+      uint256(setup.capAmount),
+      uint256(setup.pricingPayment),
+      uint256(setup.tokenFeePercentage),
+      uint256(setup.totalValue),
+      uint256(setup.paymentToken),
+      uint256(setup.paymentFeePercentage),
+      uint256(setup.changeFeePercentage),
+      uint256(setup.softCapPercentage)
     ];
     return
-    keccak256(
-      abi.encodePacked(
-        "\x19\x00", /* EIP-191 */
-        saleId,
-        setup.sellingToken,
-        setup.owner,
-        steps,
-        data,
-        setup.isTokenTransferable,
-        paymentToken
-      )
-    );
+      keccak256(
+        abi.encodePacked(
+          "\x19\x00", /* EIP-191 */
+          saleId,
+          setup.sellingToken,
+          setup.owner,
+          steps,
+          data,
+          setup.isTokenTransferable,
+          paymentToken
+        )
+      );
   }
 }

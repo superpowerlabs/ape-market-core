@@ -26,8 +26,6 @@ interface ISale {
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external;
 
-  function normalize(uint32 amount) external view returns (uint256);
-
   function payFee(address payer, uint256 feeAmount) external;
 
   function withdrawPayment(uint256 amount) external;

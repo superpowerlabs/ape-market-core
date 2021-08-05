@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../utils/LevelAccess.sol";
+import "../utils/AddressMin.sol";
 import "./ISaleData.sol";
 import "./ITokenRegistry.sol";
 
@@ -122,6 +123,9 @@ contract SaleData is ISaleData, LevelAccess {
 
   function validateSetup(Setup memory setup) public view override returns (bool, string memory) {
     // TODO
+    if (setup.minAmount > setup.capAmount) return (false, "minAmount larger than capAmount");
+    if (setup.capAmount > setup.fullAmount) return (false, "capAmount larger than fullAmount");
+    if (!AddressMin.isContract(address(setup.sellingToken))) return (false, "sellingToken is not a contract");
     return (true, "Setup is valid");
   }
 
@@ -147,7 +151,7 @@ contract SaleData is ISaleData, LevelAccess {
     require(_setups[saleId].owner == address(0), "SaleData: id has already been used");
     require(saleId < _nextId, "SaleData: invalid id");
     (bool isValid, string memory message) = validateSetup(setup);
-    require(isValid, message);
+    require(isValid, string(abi.encodePacked("SaleData: ", message)));
     setup.saleAddress = saleAddress;
     setup.paymentToken = _registry.idByAddress(paymentToken);
     if (setup.paymentToken == 0) {
@@ -155,7 +159,7 @@ contract SaleData is ISaleData, LevelAccess {
     }
     _setups[saleId] = setup;
     (isValid, message) = validateVestingSteps(schedule);
-    require(isValid, message);
+    require(isValid, string(abi.encodePacked("SaleData: ", message)));
     uint256[] memory steps = packVestingSteps(schedule);
     for (uint256 i = 0; i < steps.length; i++) {
       _schedule[saleId].push(steps[i]);
@@ -199,9 +203,9 @@ contract SaleData is ISaleData, LevelAccess {
     return (_setups[saleId].sellingToken, _setups[saleId].owner, uint256(_setups[saleId].remainingAmount).add(fee));
   }
 
-  function normalize(uint16 saleId, uint64 amount) public view override returns (uint120) {
+  function normalize(uint16 saleId, uint32 amount) public view override returns (uint120) {
     uint256 decimals = _setups[saleId].sellingToken.decimals();
-    return uint120(uint256(amount).mul(10**decimals));
+    return uint120(uint256(amount).mul(10**decimals).div(1000));
   }
 
   function getSetupById(uint16 saleId) external view override returns (Setup memory) {
@@ -211,9 +215,9 @@ contract SaleData is ISaleData, LevelAccess {
   function approveInvestor(
     uint16 saleId,
     address investor,
-    uint256 amount
+    uint32 amount
   ) external virtual override onlySaleOwner(saleId) {
-    _approvedAmounts[saleId][investor] = uint32(amount);
+    _approvedAmounts[saleId][investor] = amount;
   }
 
   function setInvest(
@@ -231,10 +235,10 @@ contract SaleData is ISaleData, LevelAccess {
       uint256
     )
   {
-    require(_approvedAmounts[saleId][investor] >= amount, "Sale: Amount is above approved amount");
-    require(uint120(amount) >= normalize(saleId, _setups[saleId].minAmount), "Sale: Amount is too low");
+    require(amount <= _approvedAmounts[saleId][investor], "SaleData: Amount is above approved amount");
+    require(amount >= _setups[saleId].minAmount, "SaleData: Amount is too low");
     // TODO convert
-    require(amount <= _setups[saleId].remainingAmount, "Sale: Amount is too high");
+    require(uint120(amount) <= _setups[saleId].remainingAmount, "SaleData: Not enough tokens available");
     if (amount == _approvedAmounts[saleId][investor]) {
       delete _approvedAmounts[saleId][investor];
     } else {
@@ -259,8 +263,7 @@ contract SaleData is ISaleData, LevelAccess {
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
     require(amount <= _setups[saleId].remainingAmount, "Sale: Cannot withdraw more than remaining");
-    uint256 capAmount = normalize(saleId, _setups[saleId].capAmount);
-    uint256 fee = capAmount.mul(_setups[saleId].tokenFeePercentage).div(100);
+    uint256 fee = uint256(_setups[saleId].capAmount).mul(_setups[saleId].tokenFeePercentage).div(100);
     _setups[saleId].remainingAmount = uint120(uint256(_setups[saleId].remainingAmount).sub(amount));
     return (_setups[saleId].sellingToken, fee);
   }

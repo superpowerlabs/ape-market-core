@@ -9,6 +9,7 @@ import "./ISAToken.sol";
 import "../sale/ISale.sol";
 import "../utils/LevelAccess.sol";
 import "../utils/IERC20Optimized.sol";
+import "../utils/AddressMin.sol";
 import "../user/IProfile.sol";
 
 import "hardhat/console.sol";
@@ -65,7 +66,6 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
           _token.mint(owner, _token.saleData().getSaleAddressById(sas[i].saleId), sas[i].fullAmount, sas[i].remainingAmount);
           minted = true;
         } else {
-          //          ISAToken.SA memory newSA = ISAToken.SA(sas[i].saleId, sas[i].fullAmount, sas[i].remainingAmount);
           _token.addSAToBundle(nextId, ISAToken.SA(sas[i].saleId, sas[i].fullAmount, sas[i].remainingAmount));
         }
       }
@@ -73,7 +73,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
   }
 
   function setToken(address tokenAddress) external onlyLevel(OWNER_LEVEL) {
-    require(isContract(tokenAddress), "SATokenExtras: token is not a contract");
+    require(AddressMin.isContract(tokenAddress), "SATokenExtras: token is not a contract");
     _token = ISAToken(tokenAddress);
     grantLevel(MANAGER_LEVEL, tokenAddress);
   }
@@ -136,7 +136,7 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
 
   function merge(address tokenOwner, uint256[] memory tokenIds) external virtual override onlyLevel(MANAGER_LEVEL) {
     (bool isMergeable, string memory message, uint256 counter) = areMergeable(tokenOwner, tokenIds);
-    require(isMergeable, message);
+    require(isMergeable, string(abi.encodePacked("SATokenExtras: ", message)));
     ISAToken.SA[] memory bundle;
     uint256 index = 0;
     ISAToken.SA[] memory newBundle = new ISAToken.SA[](counter);
@@ -187,7 +187,12 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
     _token.burn(tokenId);
   }
 
-  function _mintToken(uint tokenId, uint16 saleId, uint120 fullAmount,uint120 amount) internal returns (uint) {
+  function _mintToken(
+    uint256 tokenId,
+    uint16 saleId,
+    uint120 fullAmount,
+    uint120 amount
+  ) internal returns (uint256) {
     if (tokenId == 0) {
       tokenId = _token.nextTokenId();
       _token.mint(_token.getOwnerOf(tokenId), _token.saleData().getSaleAddressById(saleId), fullAmount, amount);
@@ -196,15 +201,5 @@ contract SATokenExtras is ISATokenExtras, LevelAccess {
       _token.addSAToBundle(tokenId, newSA);
     }
     return tokenId;
-  }
-
-  // from OpenZeppelin's Address.sol
-  function isContract(address account) public view override returns (bool) {
-    uint256 size;
-    // solium-disable-next-line security/no-inline-assembly
-    assembly {
-      size := extcodesize(account)
-    }
-    return size > 0;
   }
 }

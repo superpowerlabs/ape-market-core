@@ -13,6 +13,7 @@ interface ISaleFactory {
   function isValidator(address validator) external returns (bool);
 
   function revokeValidator(address validator) external;
+
   function approveSale(uint256 saleId) external;
 
   function revokeApproval(uint256 saleId) external;

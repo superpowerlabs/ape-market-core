@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 import "../utils/IERC20Optimized.sol";
 import "../utils/LevelAccess.sol";
+import "../utils/AddressMin.sol";
 import "./ISAToken.sol";
 import "./ISATokenExtras.sol";
 import "../sale/ISale.sol";
@@ -93,7 +94,7 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     //    console.log(saleAddress, 1);
     if (sale == address(0)) {
       require(
-        _extras.isContract(msg.sender) && _saleData.isLegitSale(msg.sender),
+        AddressMin.isContract(msg.sender) && _saleData.isLegitSale(msg.sender),
         "SAToken: Only legit sales can mint its own NFT!"
       );
       saleAddress = msg.sender;

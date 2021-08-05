@@ -26,6 +26,4 @@ interface ISATokenExtras {
     uint16 saleId,
     uint256 amount
   ) external;
-
-  function isContract(address account) external view returns (bool);
 }
