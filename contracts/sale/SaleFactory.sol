@@ -69,30 +69,6 @@ contract SaleFactory is ISaleFactory, LevelAccess {
   uint64 contained in Setup. Also, we skip the parameters that initially must be == 0.
   */
 
-  struct Setup {
-    // 1st word:
-    IERC20Min sellingToken;
-    // 2nd word:
-    address owner; // 160
-    // pricingPayments and pricingToken builds a fraction to define the price of the token
-    uint64 pricingToken;
-    uint32 tokenListTimestamp;
-    // 3rd word:
-    uint120 remainingAmount; // selling token
-    uint32 minAmount; // USD
-    uint32 capAmount; // USD, it can be = totalValue (no cap to single investment)
-    uint64 pricingPayment;
-    uint8 tokenFeePercentage;
-    // 4th word:
-    address saleAddress;
-    uint32 totalValue; // USD
-    uint8 paymentToken; //
-    uint8 paymentFeePercentage;
-    uint8 softCapPercentage; // if 0, no soft cap
-    // more 32 available
-    bool isTokenTransferable;
-  }
-
   function encodeForSignature(
     uint256 saleId,
     ISaleData.Setup memory setup,
