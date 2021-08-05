@@ -108,7 +108,7 @@ interface ISaleData {
     uint256 amount
   ) external;
 
-  function calculateFee(uint16 saleId, uint256 feeAmount) external returns (uint256);
+  function normalizeFee(uint16 saleId, uint256 feeAmount) external returns (uint256);
 
   function setInvest(
     uint16 saleId,

@@ -55,15 +55,13 @@ contract Sale {
     paymentToken.transferFrom(msg.sender, address(this), tokenPayment);
     // mint NFT
     ISAToken nft = _saleData.getSAToken();
-    nft.mint(msg.sender, address(0), amount, 0);
-    nft.mint(_saleData.apeWallet(), address(0), sellerFee, 0);
-    //    console.log("Sale: Paying buyer fee", buyerFee);
-    //    console.log("Sale: Paying seller fee", sellerFee);
+    nft.mint(msg.sender, address(0), uint120(amount), uint120(amount));
+    nft.mint(_saleData.apeWallet(), address(0), uint120(sellerFee), uint120(sellerFee));
   }
 
   function payFee(address payer, uint256 feeAmount) external {
     require(msg.sender == _saleData.getSAToken().getTokenExtras(), "Sale: only SATokenExtras can call this function");
-    uint256 amount = _saleData.calculateFee(_saleId, feeAmount);
+    uint256 amount = _saleData.normalizeFee(_saleId, feeAmount);
     if (amount > 0) {
       IERC20Min paymentToken = IERC20Min(_saleData.paymentTokenById(_saleData.getSetupById(_saleId).paymentToken));
       paymentToken.transferFrom(payer, _saleData.apeWallet(), amount);

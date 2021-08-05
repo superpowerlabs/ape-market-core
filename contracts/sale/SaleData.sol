@@ -39,7 +39,7 @@ contract SaleData is ISaleData, LevelAccess {
   ) {
     _apeWallet = apeWallet_;
     _registry = ITokenRegistry(registry);
-    _saToken = ISAToken(_saToken);
+    _saToken = ISAToken(saToken);
   }
 
   function getSAToken() external view override returns (ISAToken) {
@@ -125,7 +125,7 @@ contract SaleData is ISaleData, LevelAccess {
     return (true, "Setup is valid");
   }
 
-  function validateVestingSteps(VestingStep[] memory schedule) public view override returns (bool, string memory) {
+  function validateVestingSteps(VestingStep[] memory schedule) public pure override returns (bool, string memory) {
     for (uint256 i = 0; i < schedule.length; i++) {
       if (i > 0) {
         if (schedule[i].percentage <= schedule[i - 1].percentage)
@@ -254,7 +254,7 @@ contract SaleData is ISaleData, LevelAccess {
     onlyLevel(SALE_LEVEL)
     returns (IERC20Min, uint256)
   {
-    // TODO: this functions looks wrong
+    // TODO: this function looks wrong
 
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
@@ -265,7 +265,7 @@ contract SaleData is ISaleData, LevelAccess {
     return (_setups[saleId].sellingToken, fee);
   }
 
-  function calculateFee(uint16 saleId, uint256 feeAmount) external override returns (uint256) {
+  function normalizeFee(uint16 saleId, uint256 feeAmount) external view override returns (uint256) {
     IERC20Min paymentToken = IERC20Min(_registry.addressById(_setups[saleId].paymentToken));
     uint256 decimals = paymentToken.decimals();
     return feeAmount.mul(10**decimals);

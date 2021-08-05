@@ -15,8 +15,8 @@ interface ISAToken {
   function mint(
     address to,
     address sale,
-    uint256 amount,
-    uint128 vestedPercentage
+    uint120 fullAmount,
+    uint120 remainingAmount
   ) external;
 
   function nextTokenId() external view returns (uint256);

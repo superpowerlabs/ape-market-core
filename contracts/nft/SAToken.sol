@@ -86,8 +86,8 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
   function mint(
     address to,
     address sale,
-    uint256 amount,
-    uint128 vestedPercentage
+    uint120 fullAmount,
+    uint120 remainingAmount
   ) external virtual override {
     address saleAddress = sale;
     //    console.log(saleAddress, 1);
@@ -103,18 +103,18 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     ISale _sale = ISale(saleAddress);
     uint16 saleId = _sale.saleId();
     //    console.log(saleAddress, 2);
-    _mint(to, saleId, amount, vestedPercentage);
+    _mint(to, saleId, fullAmount, remainingAmount);
   }
 
   function _mint(
     address to,
     uint16 saleId,
-    uint256 amount,
-    uint128 vestedPercentage
+    uint120 fullAmount,
+    uint120 remainingAmount
   ) internal virtual {
     require(_bundles[_nextTokenId].length == 0, "SAToken: Bundle already exists");
     _safeMint(to, _nextTokenId);
-    SA memory sa = SA(saleId, uint120(amount), uint120(amount));
+    SA memory sa = SA(saleId, fullAmount, remainingAmount);
     _bundles[_nextTokenId].push(sa);
     //    console.log("Minting %s", _nextTokenId);
     _nextTokenId++;

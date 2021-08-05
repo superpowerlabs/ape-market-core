@@ -18,16 +18,36 @@ contract SaleFactory is ISaleFactory, LevelAccess {
 
   ISaleData private _saleData;
 
-  address private _factoryAdmin;
-  address private _validator;
+  mapping(uint => address) private _validators;
+  uint private _nextValidatorId;
 
-  constructor(address saleData, address validator) {
+  constructor(address saleData, address[] memory validators) {
     _saleData = ISaleData(saleData);
-    _validator = validator;
+    for (uint i = 0; i < validators.length; i++) {
+      _validators[i] = validators[i];
+    }
+    _nextValidatorId = validators.length;
   }
 
-  function updateValidator(address validator) external override onlyLevel(OWNER_LEVEL) {
-    _validator = validator;
+  function addValidator(address newValidator) external override onlyLevel(OWNER_LEVEL) {
+    require(!isValidator(newValidator), "SaleFactory: validator already set");
+    _validators[_nextValidatorId++] = newValidator;
+  }
+
+  function isValidator(address validator) public override returns (bool){
+    for (uint i = 0; i < _nextValidatorId; i++) {
+      if(_validators[i] != validator) return true;
+    }
+    return false;
+  }
+
+  function revokeValidator(address validator) external override onlyLevel(OWNER_LEVEL) {
+    for (uint i = 0; i < _nextValidatorId; i++) {
+      if(_validators[i] == validator) {
+        delete _validators[i];
+        break;
+      }
+    }
   }
 
   function approveSale(uint256 saleId) external override onlyLevel(OPERATOR_LEVEL) {
@@ -49,24 +69,21 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     bytes memory validatorSignature,
     address paymentToken
   ) external override {
+    address validator = ECDSA.recover(encodeForSignature(saleId, setup, schedule, paymentToken), validatorSignature);
     require(
-      ECDSA.recover(encodeForSignature(saleId, setup, schedule, paymentToken), validatorSignature) == _validator,
+      isValidator(validator),
       "SaleFactory: invalid signature or modified params"
     );
     Sale sale = new Sale(saleId, address(_saleData));
     address addr = address(sale);
     _saleData.grantManagerLevel(addr);
     sale.initialize(setup, schedule, paymentToken);
-    //    _salesById[saleId] = addr;
-    //    _sales[addr] = true;
     emit NewSale(saleId, addr);
   }
 
   /*
   abi.encodePacked is unable to pack structs. To get a signable hash, we need to
-  put the data contained in the struct in types that are packable. We decided to
-  use two arrays, one for the uint128 contained in VestingStep[], and one for the
-  uint64 contained in Setup. Also, we skip the parameters that initially must be == 0.
+  put the data contained in the struct in types that are packable.
   */
 
   function encodeForSignature(
@@ -78,30 +95,30 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     require(setup.remainingAmount == 0 && setup.tokenListTimestamp == 0, "SaleFactory: invalid setup");
     uint256[] memory steps = _saleData.packVestingSteps(schedule);
     uint256[11] memory data = [
-      uint256(setup.pricingToken),
-      uint256(setup.tokenListTimestamp),
-      uint256(setup.remainingAmount),
-      uint256(setup.minAmount),
-      uint256(setup.capAmount),
-      uint256(setup.pricingPayment),
-      uint256(setup.tokenFeePercentage),
-      uint256(setup.totalValue),
-      uint256(setup.paymentToken),
-      uint256(setup.paymentFeePercentage),
-      uint256(setup.softCapPercentage)
+    uint256(setup.pricingToken),
+    uint256(setup.tokenListTimestamp),
+    uint256(setup.remainingAmount),
+    uint256(setup.minAmount),
+    uint256(setup.capAmount),
+    uint256(setup.pricingPayment),
+    uint256(setup.tokenFeePercentage),
+    uint256(setup.totalValue),
+    uint256(setup.paymentToken),
+    uint256(setup.paymentFeePercentage),
+    uint256(setup.softCapPercentage)
     ];
     return
-      keccak256(
-        abi.encodePacked(
-          "\x19\x00", /* EIP-191 */
-          saleId,
-          setup.sellingToken,
-          setup.owner,
-          steps,
-          data,
-          setup.isTokenTransferable,
-          paymentToken
-        )
-      );
+    keccak256(
+      abi.encodePacked(
+        "\x19\x00", /* EIP-191 */
+        saleId,
+        setup.sellingToken,
+        setup.owner,
+        steps,
+        data,
+        setup.isTokenTransferable,
+        paymentToken
+      )
+    );
   }
 }

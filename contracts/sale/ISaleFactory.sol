@@ -8,8 +8,11 @@ interface ISaleFactory {
   event SaleRevoked(uint256 saleId);
   event NewSale(uint256 saleId, address saleAddress);
 
-  function updateValidator(address validator) external;
+  function addValidator(address newValidator) external;
 
+  function isValidator(address validator) external returns (bool);
+
+  function revokeValidator(address validator) external;
   function approveSale(uint256 saleId) external;
 
   function revokeApproval(uint256 saleId) external;
