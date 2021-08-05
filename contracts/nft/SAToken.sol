@@ -150,17 +150,6 @@ contract SAToken is ISAToken, ERC721, ERC721Enumerable, LevelAccess {
     return _bundles[tokenId];
   }
 
-  function increaseAmountInSA(
-    uint256 tokenId,
-    uint256 saIndex,
-    uint256 diff
-  ) external override onlyLevel(MANAGER_LEVEL) {
-    SA memory sa = _bundles[tokenId][saIndex];
-    sa.remainingAmount = uint120(uint256(sa.remainingAmount).add(diff));
-    sa.fullAmount = uint120(uint256(sa.fullAmount).add(diff));
-    _bundles[tokenId][saIndex] = sa;
-  }
-
   function _feeRequired(uint256 tokenId) internal {
     // TODO:
     // this must be granular
