@@ -25,26 +25,32 @@ interface ISaleData {
   }
 
   struct Setup {
-    // 1st word:
+    //// 1st word:
     IERC20Min sellingToken;
+    uint88 firstTwoVestingSteps;
+    // 8 more bits available here
+    //
     // 2nd word:
-    address owner; // 160
-    // pricingPayments and pricingToken builds a fraction to define the price of the token
-    uint32 minAmount; // USD
-    uint32 capAmount; // USD, it can be = totalValue (no cap to single investment)
+    address owner;
+    uint32 minAmount; // << USD
+    uint32 capAmount; // << USD, it can be = totalValue (no cap to single investment)
     uint32 tokenListTimestamp;
+    //
     // 3rd word:
-    uint120 remainingAmount; // selling token
+    uint120 remainingAmount; // << selling token
+    // pricingPayments and pricingToken builds a fraction to define the price of the token
     uint64 pricingToken;
     uint64 pricingPayment;
-    uint8 tokenFeePercentage; // the fee in token paid by sellers at launch
+    uint8 paymentToken; // << TokenRegistry Id of the token used for the payments (USDT, USDC...)
+    //
     // 4th word, 24 more bits available:
     address saleAddress;
-    uint32 totalValue; // USD
-    uint8 paymentToken; //
-    uint8 paymentFeePercentage; // the fee in USD paid by buyers when investing
-    uint8 changeFeePercentage; // the fee in USD paid by buyers when merging, splitting...
-    uint8 softCapPercentage; // if 0, no soft cap
+    uint32 totalValue; // << USD
+    uint8 tokenFeePercentage; // << the fee in sellingToken due by sellers at launch
+    uint8 extraFeePercentage; // << the optional fee in USD paid by seller at launch
+    uint8 paymentFeePercentage; // << the fee in USD paid by buyers when investing
+    uint8 changeFeePercentage; // << the fee in sellingToken due when merging, splitting...
+    uint8 softCapPercentage; // << if 0, no soft cap - not sure we will implement it
     bool isTokenTransferable;
   }
 
@@ -54,17 +60,23 @@ interface ISaleData {
 
   function updateApeWallet(address apeWallet_) external;
 
+  function updateFees(
+    uint16 saleId,
+    uint8 tokenFeePercentage,
+    uint8 extraFeePercentage,
+    uint8 paymentFeePercentage,
+    uint8 changeFeePercentage
+  ) external;
+
   function nextSaleId() external view returns (uint256);
 
   function increaseSaleId() external;
 
   function isLegitSale(address sale) external view returns (bool);
 
-  function grantManagerLevel(address saleAddress) external;
-
   function getSaleAddressById(uint16 saleId) external view returns (address);
 
-  function packVestingSteps(VestingStep[] memory schedule) external view returns (uint256[] memory);
+  function packVestingSteps(VestingStep[] memory schedule) external view returns (uint88, uint256[] memory);
 
   function calculateVestedPercentage(
     uint256[] memory steps,
@@ -98,17 +110,13 @@ interface ISaleData {
       uint256
     );
 
-  function normalize(uint16 saleId, uint64 amount) external view returns (uint120);
-
   function getSetupById(uint16 saleId) external view returns (Setup memory);
 
   function approveInvestor(
     uint16 saleId,
     address investor,
-    uint256 amount
+    uint32 amount
   ) external;
-
-  function normalizeFee(uint16 saleId, uint256 feeAmount) external returns (uint256);
 
   function setInvest(
     uint16 saleId,

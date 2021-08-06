@@ -55,6 +55,23 @@ contract SaleData is ISaleData, LevelAccess {
     _apeWallet = apeWallet_;
   }
 
+  function updateFees(
+    uint16 saleId,
+    uint8 tokenFeePercentage,
+    uint8 extraFeePercentage,
+    uint8 paymentFeePercentage,
+    uint8 changeFeePercentage
+  ) external override onlyLevel(OWNER_LEVEL) {
+    require(_setups[saleId].saleAddress != address(0), "SaleData: sale does not exist");
+    // Values can be at most 100 (the full percentage)
+    // and any value > 100 is skipped.
+    // This way, the function can be used to update only one field
+    if (tokenFeePercentage < 101) _setups[saleId].tokenFeePercentage = tokenFeePercentage;
+    if (extraFeePercentage < 101) _setups[saleId].extraFeePercentage = extraFeePercentage;
+    if (paymentFeePercentage < 101) _setups[saleId].paymentFeePercentage = paymentFeePercentage;
+    if (changeFeePercentage < 101) _setups[saleId].changeFeePercentage = changeFeePercentage;
+  }
+
   function nextSaleId() external view override returns (uint256) {
     return _nextId;
   }
@@ -67,35 +84,32 @@ contract SaleData is ISaleData, LevelAccess {
     return levels[sale] == SALE_LEVEL;
   }
 
-  function grantManagerLevel(address saleAddress)
-    public
-    override
-    // the ADMIN_LEVEL is given by SaleFactory to the newly deployed Sale
-    onlyLevel(ADMIN_LEVEL)
-  {
-    levels[saleAddress] = SALE_LEVEL;
-  }
-
   function getSaleAddressById(uint16 saleId) external view override returns (address) {
     return _setups[saleId].saleAddress;
   }
 
-  function packVestingSteps(VestingStep[] memory schedule) public view override returns (uint256[] memory) {
-    (bool valid, string memory message) = validateVestingSteps(schedule);
-    require(valid, message);
-    uint256 len = schedule.length / 7;
-    if (schedule.length % 7 > 0) len++;
-    uint256[] memory steps = new uint256[](len);
-    uint256 j = 0;
-    for (uint256 i = 0; i < schedule.length; i++) {
-      uint256 k = i % 6;
-      steps[j] += (uint256(schedule[i].percentage) + 1000 * uint256(schedule[i].waitTime)) * (k > 0 ? 10**(12 * k) : 1);
-      console.log(steps[j]);
-      if (k == 5) {
-        j++;
+  function _stepMath(VestingStep memory step, uint k) internal pure returns (uint) {
+    return (uint256(step.percentage) + 1000 * uint256(step.waitTime % (10 ** 12))) * (10 ** (12 * k));
+  }
+
+  function packVestingSteps(VestingStep[] memory schedule) public view override returns (uint88, uint256[] memory) {
+    uint88 firstTwoSteps = uint88(_stepMath(schedule[0], 0) + _stepMath(schedule[1], 1));
+    uint256[] memory steps;
+    if (schedule.length > 2) {
+      uint256 len = (schedule.length - 2)  / 7;
+      if ((schedule.length - 2) % 7 > 0) len++;
+      steps = new uint256[](len);
+      uint256 j = 0;
+      for (uint256 i = 2; i < schedule.length; i++) {
+        uint256 k = (i - 2) % 6;
+        steps[j] += _stepMath(schedule[i], k);
+        console.log("steps[%s]", j, steps[j]);
+        if (k == 5) {
+          j++;
+        }
       }
     }
-    return steps;
+    return (firstTwoSteps, steps);
   }
 
   function calculateVestedPercentage(
@@ -122,9 +136,9 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function validateSetup(Setup memory setup) public view override returns (bool, string memory) {
-    // TODO
+    // TODO see what is missed
     if (setup.minAmount > setup.capAmount) return (false, "minAmount larger than capAmount");
-    if (setup.capAmount > setup.fullAmount) return (false, "capAmount larger than fullAmount");
+    if (setup.capAmount > setup.totalValue) return (false, "capAmount larger than fullAmount");
     if (!AddressMin.isContract(address(setup.sellingToken))) return (false, "sellingToken is not a contract");
     return (true, "Setup is valid");
   }
@@ -147,23 +161,25 @@ contract SaleData is ISaleData, LevelAccess {
     Setup memory setup,
     VestingStep[] memory schedule,
     address paymentToken
-  ) external override onlyLevel(SALE_LEVEL) {
+  ) external override onlyLevel(ADMIN_LEVEL) {
     require(_setups[saleId].owner == address(0), "SaleData: id has already been used");
     require(saleId < _nextId, "SaleData: invalid id");
-    (bool isValid, string memory message) = validateSetup(setup);
+    (bool isValid, string memory message) = validateVestingSteps(schedule);
+    require(isValid, string(abi.encodePacked("SaleData: ", message)));
+    (uint88 firstTwoSteps, uint256[] memory steps) = packVestingSteps(schedule);
+    for (uint256 i = 0; i < steps.length; i++) {
+      _schedule[saleId].push(steps[i]);
+    }
+    (isValid, message) = validateSetup(setup);
     require(isValid, string(abi.encodePacked("SaleData: ", message)));
     setup.saleAddress = saleAddress;
     setup.paymentToken = _registry.idByAddress(paymentToken);
     if (setup.paymentToken == 0) {
       setup.paymentToken = _registry.addToken(paymentToken);
     }
+    setup.firstTwoVestingSteps = firstTwoSteps;
     _setups[saleId] = setup;
-    (isValid, message) = validateVestingSteps(schedule);
-    require(isValid, string(abi.encodePacked("SaleData: ", message)));
-    uint256[] memory steps = packVestingSteps(schedule);
-    for (uint256 i = 0; i < steps.length; i++) {
-      _schedule[saleId].push(steps[i]);
-    }
+    levels[saleAddress] = SALE_LEVEL;
   }
 
   function paymentTokenById(uint8 id) external view override returns (address) {
@@ -198,14 +214,8 @@ contract SaleData is ISaleData, LevelAccess {
     )
   {
     _setups[saleId].remainingAmount = fromTotalValueToTokensAmount(saleId);
-    console.log("_setups[saleId].remainingAmount", _setups[saleId].remainingAmount);
     uint256 fee = uint256(_setups[saleId].remainingAmount).mul(_setups[saleId].tokenFeePercentage).div(100);
     return (_setups[saleId].sellingToken, _setups[saleId].owner, uint256(_setups[saleId].remainingAmount).add(fee));
-  }
-
-  function normalize(uint16 saleId, uint32 amount) public view override returns (uint120) {
-    uint256 decimals = _setups[saleId].sellingToken.decimals();
-    return uint120(uint256(amount).mul(10**decimals).div(1000));
   }
 
   function getSetupById(uint16 saleId) external view override returns (Setup memory) {
@@ -266,12 +276,6 @@ contract SaleData is ISaleData, LevelAccess {
     uint256 fee = uint256(_setups[saleId].capAmount).mul(_setups[saleId].tokenFeePercentage).div(100);
     _setups[saleId].remainingAmount = uint120(uint256(_setups[saleId].remainingAmount).sub(amount));
     return (_setups[saleId].sellingToken, fee);
-  }
-
-  function normalizeFee(uint16 saleId, uint256 feeAmount) external view override returns (uint256) {
-    IERC20Min paymentToken = IERC20Min(_registry.addressById(_setups[saleId].paymentToken));
-    uint256 decimals = paymentToken.decimals();
-    return feeAmount.mul(10**decimals);
   }
 
   function isVested(

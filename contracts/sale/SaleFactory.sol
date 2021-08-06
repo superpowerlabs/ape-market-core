@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import "../utils/LevelAccess.sol";
-import "./ISaleData.sol";
+import "./ISaleSetupHasher.sol";
 import "./ISaleFactory.sol";
 import "./Sale.sol";
 
@@ -17,12 +17,14 @@ contract SaleFactory is ISaleFactory, LevelAccess {
   mapping(uint256 => bool) private _approvals;
 
   ISaleData private _saleData;
+  ISaleSetupHasher private _hasher;
 
   mapping(uint256 => address) private _validators;
   uint256 private _nextValidatorId;
 
-  constructor(address saleData, address[] memory validators) {
+  constructor(address saleData, address hasher, address[] memory validators) {
     _saleData = ISaleData(saleData);
+    _hasher = ISaleSetupHasher(hasher);
     for (uint256 i = 0; i < validators.length; i++) {
       _validators[i] = validators[i];
     }
@@ -34,7 +36,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     _validators[_nextValidatorId++] = newValidator;
   }
 
-  function isValidator(address validator) public override returns (bool) {
+  function isValidator(address validator) public view override returns (bool) {
     for (uint256 i = 0; i < _nextValidatorId; i++) {
       if (_validators[i] != validator) return true;
     }
@@ -57,7 +59,7 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     emit SaleApproved(saleId);
   }
 
-  function revokeApproval(uint256 saleId) external override onlyLevel(OPERATOR_LEVEL) {
+  function revokeSale(uint256 saleId) external override onlyLevel(OPERATOR_LEVEL) {
     delete _approvals[saleId];
     emit SaleRevoked(saleId);
   }
@@ -69,54 +71,12 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     bytes memory validatorSignature,
     address paymentToken
   ) external override {
-    address validator = ECDSA.recover(encodeForSignature(saleId, setup, schedule, paymentToken), validatorSignature);
+    address validator = ECDSA.recover(_hasher.encodeForSignature(saleId, setup, schedule, paymentToken), validatorSignature);
     require(isValidator(validator), "SaleFactory: invalid signature or modified params");
     Sale sale = new Sale(saleId, address(_saleData));
     address addr = address(sale);
-    _saleData.grantManagerLevel(addr);
-    sale.initialize(setup, schedule, paymentToken);
+    _saleData.setUpSale(saleId, addr, setup, schedule, paymentToken);
     emit NewSale(saleId, addr);
   }
 
-  /*
-  abi.encodePacked is unable to pack structs. To get a signable hash, we need to
-  put the data contained in the struct in types that are packable.
-  */
-
-  function encodeForSignature(
-    uint256 saleId,
-    ISaleData.Setup memory setup,
-    ISaleData.VestingStep[] memory schedule,
-    address paymentToken
-  ) public view override returns (bytes32) {
-    require(setup.remainingAmount == 0 && setup.tokenListTimestamp == 0, "SaleFactory: invalid setup");
-    uint256[] memory steps = _saleData.packVestingSteps(schedule);
-    uint256[11] memory data = [
-      uint256(setup.pricingToken),
-      uint256(setup.tokenListTimestamp),
-      uint256(setup.remainingAmount),
-      uint256(setup.minAmount),
-      uint256(setup.capAmount),
-      uint256(setup.pricingPayment),
-      uint256(setup.tokenFeePercentage),
-      uint256(setup.totalValue),
-      uint256(setup.paymentToken),
-      uint256(setup.paymentFeePercentage),
-      uint256(setup.changeFeePercentage),
-      uint256(setup.softCapPercentage)
-    ];
-    return
-      keccak256(
-        abi.encodePacked(
-          "\x19\x00", /* EIP-191 */
-          saleId,
-          setup.sellingToken,
-          setup.owner,
-          steps,
-          data,
-          setup.isTokenTransferable,
-          paymentToken
-        )
-      );
-  }
 }
