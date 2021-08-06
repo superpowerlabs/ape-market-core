@@ -88,15 +88,15 @@ contract SaleData is ISaleData, LevelAccess {
     return _setups[saleId].saleAddress;
   }
 
-  function _stepMath(VestingStep memory step, uint k) internal pure returns (uint) {
-    return (uint256(step.percentage) + 1000 * uint256(step.waitTime % (10 ** 12))) * (10 ** (12 * k));
+  function _stepMath(VestingStep memory step, uint256 k) internal pure returns (uint256) {
+    return (uint256(step.percentage) + 1000 * uint256(step.waitTime % (10**12))) * (10**(12 * k));
   }
 
   function packVestingSteps(VestingStep[] memory schedule) public view override returns (uint88, uint256[] memory) {
     uint88 firstTwoSteps = uint88(_stepMath(schedule[0], 0) + _stepMath(schedule[1], 1));
     uint256[] memory steps;
     if (schedule.length > 2) {
-      uint256 len = (schedule.length - 2)  / 7;
+      uint256 len = (schedule.length - 2) / 7;
       if ((schedule.length - 2) % 7 > 0) len++;
       steps = new uint256[](len);
       uint256 j = 0;
@@ -113,10 +113,16 @@ contract SaleData is ISaleData, LevelAccess {
   }
 
   function calculateVestedPercentage(
-    uint256[] memory steps,
+    uint88 firstTwoSteps,
+    uint256[] memory schedule,
     uint256 tokenListTimestamp,
-    uint256 timestamp
-  ) public view override returns (uint256) {
+    uint256 waitTime
+  ) public pure override returns (uint256) {
+    uint256[] memory steps = new uint256[](schedule.length + 1);
+    steps[0] = uint256(firstTwoSteps);
+    for (uint256 i = 0; i < schedule.length; i++) {
+      steps[i + 1] = schedule[i];
+    }
     for (uint256 i = steps.length; i >= 1; i--) {
       uint256 ts0 = steps[i - 1];
       for (uint256 k = 6; k >= 1; k--) {
@@ -124,8 +130,7 @@ contract SaleData is ISaleData, LevelAccess {
         if (step != 0) {
           uint256 ts = step / 1000;
           uint256 percentage = step % 1000;
-          console.log(ts, percentage);
-          if (ts + tokenListTimestamp < timestamp) {
+          if (ts + tokenListTimestamp < waitTime) {
             return percentage;
           }
         }
@@ -286,7 +291,12 @@ contract SaleData is ISaleData, LevelAccess {
   ) external virtual override returns (bool) {
     uint256 tokenListTimestamp = uint256(_setups[saleId].tokenListTimestamp);
     require(tokenListTimestamp != 0, "SaleData: token not listed yet");
-    uint256 vestedPercentage = calculateVestedPercentage(_schedule[saleId], tokenListTimestamp, block.timestamp);
+    uint256 vestedPercentage = calculateVestedPercentage(
+      _setups[saleId].firstTwoVestingSteps,
+      _schedule[saleId],
+      tokenListTimestamp,
+      block.timestamp
+    );
     uint256 unvestedAmount = vestedPercentage == 100 ? 0 : uint256(fullAmount).mul(100 - vestedPercentage).div(100);
     return requestedAmount <= uint256(remainingAmount).sub(unvestedAmount);
   }

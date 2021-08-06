@@ -22,7 +22,11 @@ contract SaleFactory is ISaleFactory, LevelAccess {
   mapping(uint256 => address) private _validators;
   uint256 private _nextValidatorId;
 
-  constructor(address saleData, address hasher, address[] memory validators) {
+  constructor(
+    address saleData,
+    address hasher,
+    address[] memory validators
+  ) {
     _saleData = ISaleData(saleData);
     _hasher = ISaleSetupHasher(hasher);
     for (uint256 i = 0; i < validators.length; i++) {
@@ -78,5 +82,4 @@ contract SaleFactory is ISaleFactory, LevelAccess {
     _saleData.setUpSale(saleId, addr, setup, schedule, paymentToken);
     emit NewSale(saleId, addr);
   }
-
 }

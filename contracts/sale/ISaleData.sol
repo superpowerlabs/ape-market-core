@@ -79,10 +79,11 @@ interface ISaleData {
   function packVestingSteps(VestingStep[] memory schedule) external view returns (uint88, uint256[] memory);
 
   function calculateVestedPercentage(
-    uint256[] memory steps,
+    uint88 firstTwoSteps,
+    uint256[] memory schedule,
     uint256 tokenListTimestamp,
-    uint256 timestamp
-  ) external view returns (uint256);
+    uint256 waitTime
+  ) external pure returns (uint256);
 
   function validateSetup(Setup memory setup) external view returns (bool, string memory);
 

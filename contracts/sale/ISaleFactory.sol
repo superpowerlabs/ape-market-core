@@ -25,5 +25,4 @@ interface ISaleFactory {
     bytes memory validatorSignature,
     address paymentToken
   ) external;
-
 }
