@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.0;
 
-// A minimalistic version of OpenZeppelin Address.sol
-
 /**
- * @dev Collection of functions related to the address type
+ * @dev A minimalistic version of OpenZeppelin's Address.sol
  */
 library AddressMin {
   /**

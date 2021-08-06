@@ -20,7 +20,6 @@ contract SaleData is ISaleData, LevelAccess {
   ISAToken private _saToken;
 
   mapping(uint16 => Setup) private _setups;
-  mapping(uint16 => uint256[]) private _schedule;
 
   // both the following in USD
   mapping(uint16 => mapping(address => uint32)) private _approvedAmounts;
@@ -88,101 +87,84 @@ contract SaleData is ISaleData, LevelAccess {
     return _setups[saleId].saleAddress;
   }
 
-  function _stepMath(VestingStep memory step, uint256 k) internal pure returns (uint256) {
-    return (uint256(step.percentage) + 1000 * uint256(step.waitTime % (10**12))) * (10**(12 * k));
-  }
-
-  function packVestingSteps(VestingStep[] memory schedule) public view override returns (uint88, uint256[] memory) {
-    uint88 firstTwoSteps = uint88(_stepMath(schedule[0], 0) + _stepMath(schedule[1], 1));
-    uint256[] memory steps;
-    if (schedule.length > 2) {
-      uint256 len = (schedule.length - 2) / 7;
-      if ((schedule.length - 2) % 7 > 0) len++;
-      steps = new uint256[](len);
-      uint256 j = 0;
-      for (uint256 i = 2; i < schedule.length; i++) {
-        uint256 k = (i - 2) % 6;
-        steps[j] += _stepMath(schedule[i], k);
-        console.log("steps[%s]", j, steps[j]);
-        if (k == 5) {
-          j++;
-        }
+  /**
+* @dev Validate a VestingStep[].
+   It can be called by the dApp during the configuration of the Sale setup.
+* @param vestingStepsArray The array of VestingStep
+*/
+  function validateVestingSteps(VestingStep[] memory vestingStepsArray) external pure override returns (bool, string memory) {
+    for (uint256 i = 0; i < vestingStepsArray.length; i++) {
+      if (i > 0) {
+        if (vestingStepsArray[i].percentage <= vestingStepsArray[i - 1].percentage)
+          return (false, "Vest percentage should be monotonic increasing");
+        if (vestingStepsArray[i].waitTime <= vestingStepsArray[i - 1].waitTime)
+          return (false, "Timestamps should be monotonic increasing");
       }
     }
-    return (firstTwoSteps, steps);
+    if (vestingStepsArray[vestingStepsArray.length - 1].percentage != 100) return (false, "Vest percentage should end at 100");
+    return (true, "Vesting steps are valid");
+  }
+
+  /**
+ * @dev Packs a VestingStep[] of at most 15 elements in a single uint256. It must
+     be called by the dApp to avoid extra computation during the configuration of
+     the Sale setup.
+ * @param vestingStepsArray The array of VestingStep
+ */
+  function packVestingSteps(VestingStep[] memory vestingStepsArray) external view override returns (uint256) {
+    uint256 steps;
+    for (uint256 i = 0; i < vestingStepsArray.length; i++) {
+      steps += ((vestingStepsArray[i].percentage - 1) + 100 * (vestingStepsArray[i].waitTime % (10**3))) * (10**(5 * i));
+    }
+    return steps;
   }
 
   function calculateVestedPercentage(
-    uint88 firstTwoSteps,
-    uint256[] memory schedule,
+    uint256 steps,
     uint256 tokenListTimestamp,
-    uint256 waitTime
-  ) public pure override returns (uint256) {
-    uint256[] memory steps = new uint256[](schedule.length + 1);
-    steps[0] = uint256(firstTwoSteps);
-    for (uint256 i = 0; i < schedule.length; i++) {
-      steps[i + 1] = schedule[i];
-    }
-    for (uint256 i = steps.length; i >= 1; i--) {
-      uint256 ts0 = steps[i - 1];
-      for (uint256 k = 6; k >= 1; k--) {
-        uint256 step = ts0 / (10**(12 * (k - 1)));
-        if (step != 0) {
-          uint256 ts = step / 1000;
-          uint256 percentage = step % 1000;
-          if (ts + tokenListTimestamp < waitTime) {
-            return percentage;
-          }
+    uint256 currentTimestamp
+  ) public view returns (uint8) {
+    for (uint256 k = 16; k >= 1; k--) {
+      uint256 step = steps / (10**(5 * (k - 1)));
+      if (step != 0) {
+        uint256 ts = step / 100;
+        uint256 percentage = step % 100;
+        if (ts == 99) {
+          ts = 100;
         }
-        ts0 %= (10**(12 * (k - 1)));
+        if ((ts * 24 * 3600) + tokenListTimestamp <= currentTimestamp) {
+          return uint8(percentage);
+        }
       }
+      steps %= (10**(5 * (k - 1)));
     }
+
     return 0;
   }
 
   function validateSetup(Setup memory setup) public view override returns (bool, string memory) {
     // TODO see what is missed
     if (setup.minAmount > setup.capAmount) return (false, "minAmount larger than capAmount");
-    if (setup.capAmount > setup.totalValue) return (false, "capAmount larger than fullAmount");
+    if (setup.capAmount > setup.totalValue) return (false, "capAmount larger than totalValue");
     if (!AddressMin.isContract(address(setup.sellingToken))) return (false, "sellingToken is not a contract");
     return (true, "Setup is valid");
-  }
-
-  function validateVestingSteps(VestingStep[] memory schedule) public pure override returns (bool, string memory) {
-    for (uint256 i = 0; i < schedule.length; i++) {
-      if (i > 0) {
-        if (schedule[i].percentage <= schedule[i - 1].percentage)
-          return (false, "Vest percentage should be monotonic increasing");
-        if (schedule[i].waitTime <= schedule[i - 1].waitTime) return (false, "Timestamps should be monotonic increasing");
-      }
-    }
-    if (schedule[schedule.length - 1].percentage != 100) return (false, "Vest percentage should end at 100");
-    return (true, "Vesting steps are valid");
   }
 
   function setUpSale(
     uint16 saleId,
     address saleAddress,
     Setup memory setup,
-    VestingStep[] memory schedule,
     address paymentToken
   ) external override onlyLevel(ADMIN_LEVEL) {
     require(_setups[saleId].owner == address(0), "SaleData: id has already been used");
     require(saleId < _nextId, "SaleData: invalid id");
-    (bool isValid, string memory message) = validateVestingSteps(schedule);
-    require(isValid, string(abi.encodePacked("SaleData: ", message)));
-    (uint88 firstTwoSteps, uint256[] memory steps) = packVestingSteps(schedule);
-    for (uint256 i = 0; i < steps.length; i++) {
-      _schedule[saleId].push(steps[i]);
-    }
-    (isValid, message) = validateSetup(setup);
+    (bool isValid, string memory message) = validateSetup(setup);
     require(isValid, string(abi.encodePacked("SaleData: ", message)));
     setup.saleAddress = saleAddress;
     setup.paymentToken = _registry.idByAddress(paymentToken);
     if (setup.paymentToken == 0) {
       setup.paymentToken = _registry.addToken(paymentToken);
     }
-    setup.firstTwoVestingSteps = firstTwoSteps;
     _setups[saleId] = setup;
     levels[saleAddress] = SALE_LEVEL;
   }
@@ -293,7 +275,7 @@ contract SaleData is ISaleData, LevelAccess {
     require(tokenListTimestamp != 0, "SaleData: token not listed yet");
     uint256 vestedPercentage = calculateVestedPercentage(
       _setups[saleId].firstTwoVestingSteps,
-      _schedule[saleId],
+      _extraVestingSteps[saleId],
       tokenListTimestamp,
       block.timestamp
     );

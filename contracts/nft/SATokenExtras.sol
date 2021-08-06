@@ -8,7 +8,6 @@ import "./ISATokenExtras.sol";
 import "./ISAToken.sol";
 import "../sale/ISale.sol";
 import "../utils/LevelAccess.sol";
-import "../utils/IERC20Optimized.sol";
 import "../utils/AddressMin.sol";
 import "../user/IProfile.sol";
 

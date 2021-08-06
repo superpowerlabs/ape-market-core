@@ -18,40 +18,40 @@ interface IERC20Min {
 }
 
 interface ISaleData {
-  // used only for input. Stored as uint256[]
+  // VestingStep is used only for input.
+  // The actual schedule is stored as a single uint256
   struct VestingStep {
-    uint32 waitTime;
-    uint8 percentage;
+    uint256 waitTime;
+    uint256 percentage;
   }
 
   struct Setup {
-    //// 1st word:
-    IERC20Min sellingToken;
-    uint88 firstTwoVestingSteps;
-    // 8 more bits available here
     //
-    // 2nd word:
     address owner;
     uint32 minAmount; // << USD
     uint32 capAmount; // << USD, it can be = totalValue (no cap to single investment)
     uint32 tokenListTimestamp;
     //
-    // 3rd word:
     uint120 remainingAmount; // << selling token
     // pricingPayments and pricingToken builds a fraction to define the price of the token
     uint64 pricingToken;
     uint64 pricingPayment;
     uint8 paymentToken; // << TokenRegistry Id of the token used for the payments (USDT, USDC...)
     //
-    // 4th word, 24 more bits available:
+    uint256 vestingSteps; // < at most 15 vesting events
+    //
+    IERC20Min sellingToken;
+    // 96 more bits available here
+    //
     address saleAddress;
     uint32 totalValue; // << USD
+    bool isTokenTransferable;
     uint8 tokenFeePercentage; // << the fee in sellingToken due by sellers at launch
     uint8 extraFeePercentage; // << the optional fee in USD paid by seller at launch
     uint8 paymentFeePercentage; // << the fee in USD paid by buyers when investing
     uint8 changeFeePercentage; // << the fee in sellingToken due when merging, splitting...
     uint8 softCapPercentage; // << if 0, no soft cap - not sure we will implement it
-    bool isTokenTransferable;
+    // 24 more bits available:
   }
 
   function getSAToken() external view returns (ISAToken);
@@ -76,14 +76,13 @@ interface ISaleData {
 
   function getSaleAddressById(uint16 saleId) external view returns (address);
 
-  function packVestingSteps(VestingStep[] memory schedule) external view returns (uint88, uint256[] memory);
+  function packVestingSteps(VestingStep[] memory vestingSteps) external view returns (uint256);
 
   function calculateVestedPercentage(
-    uint88 firstTwoSteps,
-    uint256[] memory schedule,
+    uint256 steps,
     uint256 tokenListTimestamp,
-    uint256 waitTime
-  ) external pure returns (uint256);
+    uint256 currentTimestamp
+  ) public view returns (uint8);
 
   function validateSetup(Setup memory setup) external view returns (bool, string memory);
 
