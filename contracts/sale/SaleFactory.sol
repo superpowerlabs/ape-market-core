@@ -97,17 +97,18 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   function newSale(
     uint8 saleId,
     ISaleData.Setup memory setup,
+    uint256[] memory extraVestingSteps,
     bytes memory validatorSignature,
     address paymentToken
   ) external override {
     address validator = ECDSA.recover(
-      ISaleSetupHasher(_get("SaleSetupHasher")).encodeForSignature(saleId, setup, paymentToken),
+      ISaleSetupHasher(_get("SaleSetupHasher")).packAndHashSaleConfiguration(saleId, setup, extraVestingSteps, paymentToken),
       validatorSignature
     );
     require(isValidator(validator), "SaleFactory: invalid signature or modified params");
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
-    ISaleData(_get("SaleData")).setUpSale(saleId, addr, setup, paymentToken);
+    ISaleData(_get("SaleData")).setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
     emit NewSale(saleId, addr);
   }
 }

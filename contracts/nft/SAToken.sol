@@ -25,7 +25,6 @@ contract SAToken is ISAToken, RegistryUser, ERC721, ERC721Enumerable {
   uint256 public feeAmount; // the amount of fee in _feeToken charged for merge, split and transfer
 
   mapping(uint256 => SA[]) internal _bundles;
-  ISaleData internal _saleData;
 
   constructor(address apeRegistry_) RegistryUser(apeRegistry_) ERC721("SA NFT Token", "SANFT") {}
 

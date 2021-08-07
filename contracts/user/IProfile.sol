@@ -20,7 +20,7 @@ interface IProfile {
 
   function isMyAssociated(address addr) external view returns (bool);
 
-  function encodeForSignature(
+  function hashAndPackAssociatedAccounts(
     address addr1,
     address addr2,
     uint256 timestamp

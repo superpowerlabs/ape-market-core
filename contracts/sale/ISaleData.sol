@@ -49,8 +49,8 @@ interface ISaleData {
     uint8 tokenFeePercentage; // << the fee in sellingToken due by sellers at launch
     uint8 extraFeePercentage; // << the optional fee in USD paid by seller at launch
     uint8 paymentFeePercentage; // << the fee in USD paid by buyers when investing
-    uint8 changeFeePercentage; // << the fee in sellingToken due when merging, splitting...
     uint8 softCapPercentage; // << if 0, no soft cap - not sure we will implement it
+    uint8 changeFeePercentage; // << some extra data
     // 24 more bits available:
   }
 
@@ -60,14 +60,6 @@ interface ISaleData {
 
   function updateApeWallet(address apeWallet_) external;
 
-  function updateFees(
-    uint16 saleId,
-    uint8 tokenFeePercentage,
-    uint8 extraFeePercentage,
-    uint8 paymentFeePercentage,
-    uint8 changeFeePercentage
-  ) external;
-
   function nextSaleId() external view returns (uint256);
 
   function increaseSaleId() external;
@@ -76,22 +68,23 @@ interface ISaleData {
 
   function getSaleAddressById(uint16 saleId) external view returns (address);
 
-  function packVestingSteps(VestingStep[] memory vestingSteps) external view returns (uint256);
-
   function calculateVestedPercentage(
-    uint256 steps,
+    uint256 vestingSteps,
+    uint256[] memory extraVestingSteps,
     uint256 tokenListTimestamp,
     uint256 currentTimestamp
   ) external view returns (uint8);
 
-  function validateSetup(Setup memory setup) external view returns (bool, string memory);
-
-  function validateVestingSteps(VestingStep[] memory schedule) external view returns (bool, string memory);
+  function validateAndPackVestingSteps(VestingStep[] memory vestingStepsArray)
+    external
+    view
+    returns (uint256[] memory, string memory);
 
   function setUpSale(
     uint16 saleId,
     address saleAddress,
     Setup memory setup,
+    uint256[] memory extraVestingSteps,
     address paymentToken
   ) external;
 

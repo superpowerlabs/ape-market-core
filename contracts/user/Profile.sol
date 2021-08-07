@@ -14,7 +14,7 @@ contract Profile is IProfile, Ownable {
 
   function changeValidity(uint256 validity) external override onlyOwner {
     _validity = validity;
-    ValidityChanged(validity);
+    emit ValidityChanged(validity);
   }
 
   function _getPseudoAddress(address addr1, address addr2) private pure returns (address) {
@@ -29,7 +29,7 @@ contract Profile is IProfile, Ownable {
     require(msg.sender != address(0) && account != address(0), "Profile: no invalid accounts");
     require(timestamp + _validity > block.timestamp, "Profile: request is expired");
     require(
-      ECDSA.recover(encodeForSignature(account, msg.sender, timestamp), signature) == account,
+      ECDSA.recover(hashAndPackAssociatedAccounts(account, msg.sender, timestamp), signature) == account,
       "Profile: invalid signature"
     );
     _associatedAccounts[_getPseudoAddress(msg.sender, account)] = true;
@@ -50,7 +50,7 @@ contract Profile is IProfile, Ownable {
     return areAccountsAssociated(msg.sender, addr);
   }
 
-  function encodeForSignature(
+  function hashAndPackAssociatedAccounts(
     address addr1,
     address addr2,
     uint256 timestamp

@@ -17,20 +17,21 @@ contract SaleData is ISaleData, RegistryUser {
   address private _apeWallet;
   ISAToken private _saToken;
 
-  mapping(uint16 => Setup) private _setups;
-  mapping(address => uint16) private _saleIdByAddress;
+  mapping(uint256 => Setup) private _setups;
+  mapping(address => uint256) private _saleIdByAddress;
+  mapping(uint256 => uint256[]) private _extraVestingSteps;
 
   // both the following in USD
   mapping(uint16 => mapping(address => uint32)) private _approvedAmounts;
   mapping(uint16 => mapping(address => uint32)) private _valuesInEscrow;
 
   modifier onlySaleOwner(uint16 saleId) {
-    require(msg.sender == _setups[saleId].owner, "Sale: caller is not the owner");
+    require(msg.sender == _setups[uint256(saleId)].owner, "Sale: caller is not the owner");
     _;
   }
 
   modifier onlySale(uint16 saleId) {
-    require(msg.sender == _setups[saleId].saleAddress, "Sale: caller is not a sale");
+    require(msg.sender == _setups[uint256(saleId)].saleAddress, "Sale: caller is not a sale");
     _;
   }
 
@@ -50,23 +51,6 @@ contract SaleData is ISaleData, RegistryUser {
     _apeWallet = apeWallet_;
   }
 
-  function updateFees(
-    uint16 saleId,
-    uint8 tokenFeePercentage,
-    uint8 extraFeePercentage,
-    uint8 paymentFeePercentage,
-    uint8 changeFeePercentage
-  ) external override onlyOwner {
-    require(_setups[saleId].saleAddress != address(0), "SaleData: sale does not exist");
-    // Values can be at most 100 (the full percentage)
-    // and any value > 100 is skipped.
-    // This way, the function can be used to update only one field
-    if (tokenFeePercentage < 101) _setups[saleId].tokenFeePercentage = tokenFeePercentage;
-    if (extraFeePercentage < 101) _setups[saleId].extraFeePercentage = extraFeePercentage;
-    if (paymentFeePercentage < 101) _setups[saleId].paymentFeePercentage = paymentFeePercentage;
-    if (changeFeePercentage < 101) _setups[saleId].changeFeePercentage = changeFeePercentage;
-  }
-
   function nextSaleId() external view override returns (uint256) {
     return _nextId;
   }
@@ -76,94 +60,109 @@ contract SaleData is ISaleData, RegistryUser {
   }
 
   function getSaleIdByAddress(address sale) external view override returns (uint16) {
-    return _saleIdByAddress[sale];
+    return uint16(_saleIdByAddress[sale]);
   }
 
   function getSaleAddressById(uint16 saleId) external view override returns (address) {
-    return _setups[saleId].saleAddress;
+    return _setups[uint256(saleId)].saleAddress;
   }
 
   /**
-* @dev Validate a VestingStep[].
-   It can be called by the dApp during the configuration of the Sale setup.
+* @dev Validate and pack a VestingStep[].
+       It should be called by the dApp during the configuration of the Sale setup.
 * @param vestingStepsArray The array of VestingStep
 */
-  function validateVestingSteps(VestingStep[] memory vestingStepsArray) external pure override returns (bool, string memory) {
+  function validateAndPackVestingSteps(VestingStep[] memory vestingStepsArray)
+    external
+    view
+    override
+    returns (uint256[] memory, string memory)
+  {
+    uint256 len = vestingStepsArray.length / 15;
+    uint256[] memory errorCode = new uint256[](1);
+    if (vestingStepsArray.length % 15 > 0) len++;
+    uint256[] memory steps = new uint256[](len);
+    uint256 j;
+    uint256 k;
     for (uint256 i = 0; i < vestingStepsArray.length; i++) {
+      if (vestingStepsArray[i].waitTime > 999) {
+        errorCode[0] = 4;
+        return (errorCode, "waitTime cannot be more than 999 days");
+      }
       if (i > 0) {
-        if (vestingStepsArray[i].percentage <= vestingStepsArray[i - 1].percentage)
-          return (false, "Vest percentage should be monotonic increasing");
-        if (vestingStepsArray[i].waitTime <= vestingStepsArray[i - 1].waitTime)
-          return (false, "Timestamps should be monotonic increasing");
+        if (vestingStepsArray[i].percentage <= vestingStepsArray[i - 1].percentage) {
+          errorCode[0] = 1;
+          return (errorCode, "Vest percentage should be monotonic increasing");
+        }
+        if (vestingStepsArray[i].waitTime <= vestingStepsArray[i - 1].waitTime) {
+          errorCode[0] = 2;
+          return (errorCode, "waitTime should be monotonic increasing");
+        }
+      }
+      steps[j] += ((vestingStepsArray[i].percentage - 1) + 100 * (vestingStepsArray[i].waitTime % (10**3))) * (10**(5 * k));
+      if (i % 15 == 14) {
+        j++;
+        k = 0;
+      } else {
+        k++;
       }
     }
-    if (vestingStepsArray[vestingStepsArray.length - 1].percentage != 100) return (false, "Vest percentage should end at 100");
-    return (true, "Vesting steps are valid");
+    if (vestingStepsArray[vestingStepsArray.length - 1].percentage != 100) {
+      errorCode[0] = 3;
+      return (errorCode, "Vest percentage should end at 100");
+    }
+    return (steps, "Success");
   }
 
   /**
- * @dev Packs a VestingStep[] of at most 15 elements in a single uint256. It must
-     be called by the dApp to avoid extra computation during the configuration of
-     the Sale setup.
- * @param vestingStepsArray The array of VestingStep
- */
-  function packVestingSteps(VestingStep[] memory vestingStepsArray) external view override returns (uint256) {
-    uint256 steps;
-    for (uint256 i = 0; i < vestingStepsArray.length; i++) {
-      steps += ((vestingStepsArray[i].percentage - 1) + 100 * (vestingStepsArray[i].waitTime % (10**3))) * (10**(5 * i));
-    }
-    return steps;
-  }
-
+   * @dev Calculate the vesting percentage, based on values in Setup.vestingSteps and extraVestingSteps[]
+   * @param vestingSteps The vales of Setup.VestingSteps, first 15 events
+   * @param extraVestingSteps The array of extra vesting steps
+   * @param tokenListTimestamp The timestamp when token has been listed
+   * @param currentTimestamp The current timestamp (it'd be, most likely, block.timestamp)
+   */
   function calculateVestedPercentage(
-    uint256 steps,
+    uint256 vestingSteps,
+    uint256[] memory extraVestingSteps,
     uint256 tokenListTimestamp,
     uint256 currentTimestamp
   ) public view override returns (uint8) {
-    for (uint256 k = 16; k >= 1; k--) {
-      uint256 step = steps / (10**(5 * (k - 1)));
-      if (step != 0) {
-        uint256 ts = step / 100;
-        uint256 percentage = step % 100;
-        if (ts == 99) {
-          ts = 100;
+    for (uint256 i = extraVestingSteps.length + 1; i >= 1; i--) {
+      uint256 steps = i > 1 ? extraVestingSteps[i - 2] : vestingSteps;
+      for (uint256 k = 16; k >= 1; k--) {
+        uint256 step = steps / (10**(5 * (k - 1)));
+        if (step != 0) {
+          uint256 ts = (step / 100);
+          uint256 percentage = (step % 100) + 1;
+          if ((ts * 24 * 3600) + tokenListTimestamp <= currentTimestamp) {
+            return uint8(percentage);
+          }
         }
-        if ((ts * 24 * 3600) + tokenListTimestamp <= currentTimestamp) {
-          return uint8(percentage);
-        }
+        steps %= (10**(5 * (k - 1)));
       }
-      steps %= (10**(5 * (k - 1)));
     }
-
     return 0;
-  }
-
-  function validateSetup(Setup memory setup) public view override returns (bool, string memory) {
-    // TODO see what is missed
-    if (setup.minAmount > setup.capAmount) return (false, "minAmount larger than capAmount");
-    if (setup.capAmount > setup.totalValue) return (false, "capAmount larger than totalValue");
-    if (!AddressMin.isContract(address(setup.sellingToken))) return (false, "sellingToken is not a contract");
-    return (true, "Setup is valid");
   }
 
   function setUpSale(
     uint16 saleId,
     address saleAddress,
     Setup memory setup,
+    uint256[] memory extraVestingSteps,
     address paymentToken
   ) external override onlyFrom("SaleFactory") {
-    require(_setups[saleId].owner == address(0), "SaleData: id has already been used");
+    uint256 sId = uint256(saleId);
+    require(_setups[sId].owner == address(0), "SaleData: id has already been used");
     require(saleId < _nextId, "SaleData: invalid id");
-    (bool isValid, string memory message) = validateSetup(setup);
-    require(isValid, string(abi.encodePacked("SaleData: ", message)));
     setup.saleAddress = saleAddress;
     ITokenRegistry registry = ITokenRegistry(_get("ITokenRegistry"));
     setup.paymentToken = registry.idByAddress(paymentToken);
     if (setup.paymentToken == 0) {
       setup.paymentToken = registry.addToken(paymentToken);
     }
-    _setups[saleId] = setup;
+    _setups[sId] = setup;
     _saleIdByAddress[saleAddress] = saleId;
+    _extraVestingSteps[uint256(saleId)] = extraVestingSteps;
   }
 
   function paymentTokenById(uint8 id) external view override returns (address) {
@@ -172,16 +171,18 @@ contract SaleData is ISaleData, RegistryUser {
 
   function makeTransferable(uint16 saleId) external override onlySaleOwner(saleId) {
     // cannot be changed back
-    if (!_setups[saleId].isTokenTransferable) {
-      _setups[saleId].isTokenTransferable = true;
+    uint256 sId = uint256(saleId);
+    if (!_setups[sId].isTokenTransferable) {
+      _setups[sId].isTokenTransferable = true;
     }
   }
 
   function fromTotalValueToTokensAmount(uint16 saleId) public view override returns (uint120) {
+    uint256 sId = uint256(saleId);
     return
       uint120(
-        uint256(_setups[saleId].totalValue).mul(_setups[saleId].sellingToken.decimals()).mul(_setups[saleId].pricingToken).div(
-          _setups[saleId].pricingPayment
+        uint256(_setups[sId].totalValue).mul(_setups[sId].sellingToken.decimals()).mul(_setups[sId].pricingToken).div(
+          _setups[sId].pricingPayment
         )
       );
   }
@@ -270,7 +271,12 @@ contract SaleData is ISaleData, RegistryUser {
   ) external virtual override returns (bool) {
     uint256 tokenListTimestamp = uint256(_setups[saleId].tokenListTimestamp);
     require(tokenListTimestamp != 0, "SaleData: token not listed yet");
-    uint256 vestedPercentage = calculateVestedPercentage(_setups[saleId].vestingSteps, tokenListTimestamp, block.timestamp);
+    uint256 vestedPercentage = calculateVestedPercentage(
+      _setups[saleId].vestingSteps,
+      _extraVestingSteps[uint256(saleId)],
+      tokenListTimestamp,
+      block.timestamp
+    );
     uint256 unvestedAmount = vestedPercentage == 100 ? 0 : uint256(fullAmount).mul(100 - vestedPercentage).div(100);
     return requestedAmount <= uint256(remainingAmount).sub(unvestedAmount);
   }

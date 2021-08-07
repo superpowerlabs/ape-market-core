@@ -4,9 +4,10 @@ pragma solidity ^0.8.0;
 import "./ISaleData.sol";
 
 interface ISaleSetupHasher {
-  function encodeForSignature(
+  function packAndHashSaleConfiguration(
     uint256 saleId,
     ISaleData.Setup memory setup,
+    uint256[] memory extraVestingSteps,
     address paymentToken
   ) external view returns (bytes32);
 }
