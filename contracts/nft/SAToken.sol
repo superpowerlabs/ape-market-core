@@ -10,12 +10,12 @@ import "../utils/AddressMin.sol";
 import "./ISAToken.sol";
 import "./ISATokenExtras.sol";
 import "../sale/ISale.sol";
-import "../registry/ApeRegistryAPI.sol";
+import "../registry/RegistryUser.sol";
 
 // for debugging only
 //import "hardhat/console.sol";
 
-contract SAToken is ISAToken, ApeRegistryAPI, ERC721, ERC721Enumerable {
+contract SAToken is ISAToken, RegistryUser, ERC721, ERC721Enumerable {
   using SafeMath for uint256;
 
   uint256 private _nextTokenId;
@@ -27,11 +27,7 @@ contract SAToken is ISAToken, ApeRegistryAPI, ERC721, ERC721Enumerable {
   mapping(uint256 => SA[]) internal _bundles;
   ISaleData internal _saleData;
 
-  constructor(
-    address apeRegistry_
-  )
-  ApeRegistryAPI(apeRegistry_)
-  ERC721("SA NFT Token", "SANFT") {}
+  constructor(address apeRegistry_) RegistryUser(apeRegistry_) ERC721("SA NFT Token", "SANFT") {}
 
   function setupUpPayments(
     address feeToken,
@@ -72,7 +68,7 @@ contract SAToken is ISAToken, ApeRegistryAPI, ERC721, ERC721Enumerable {
     //    console.log(saleAddress, 1);
     if (sale == address(0)) {
       require(
-        AddressMin.isContract(msg.sender) && ISaleData(_get("SaleData")).getSaleAddressById(msg.sender) > 0,
+        AddressMin.isContract(msg.sender) && ISaleData(_get("SaleData")).getSaleIdByAddress(msg.sender) > 0,
         "SAToken: Only legit sales can mint its own NFT!"
       );
       saleAddress = msg.sender;
@@ -111,7 +107,7 @@ contract SAToken is ISAToken, ApeRegistryAPI, ERC721, ERC721Enumerable {
     ISATokenExtras(_get("SATokenExtras")).withdraw(tokenId, saleId, amount);
   }
 
-    function burn(uint256 tokenId) external virtual override onlyFrom("SATokenExtras") {
+  function burn(uint256 tokenId) external virtual override onlyFrom("SATokenExtras") {
     //    console.log("Burning %s", tokenId);
     delete _bundles[tokenId];
     _burn(tokenId);
@@ -138,7 +134,7 @@ contract SAToken is ISAToken, ApeRegistryAPI, ERC721, ERC721Enumerable {
   }
 
   function areMergeable(uint256[] memory tokenIds) public view override returns (bool, string memory) {
-    (bool isMergeable, string memory message,) = ISATokenExtras(_get("SATokenExtras")).areMergeable(msg.sender, tokenIds);
+    (bool isMergeable, string memory message, ) = ISATokenExtras(_get("SATokenExtras")).areMergeable(msg.sender, tokenIds);
     return (isMergeable, message);
   }
 

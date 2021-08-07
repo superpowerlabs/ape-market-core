@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../utils/AddressMin.sol";
 import "./ISaleData.sol";
 import "./ITokenRegistry.sol";
-import "../registry/ApeRegistryAPI.sol";
+import "../registry/RegistryUser.sol";
 
 import "hardhat/console.sol";
 
-contract SaleData is ISaleData, ApeRegistryAPI {
+contract SaleData is ISaleData, RegistryUser {
   using SafeMath for uint256;
 
   uint256 private _nextId = 1;
@@ -24,8 +24,6 @@ contract SaleData is ISaleData, ApeRegistryAPI {
   mapping(uint16 => mapping(address => uint32)) private _approvedAmounts;
   mapping(uint16 => mapping(address => uint32)) private _valuesInEscrow;
 
-  ITokenRegistry private _registry;
-
   modifier onlySaleOwner(uint16 saleId) {
     require(msg.sender == _setups[saleId].owner, "Sale: caller is not the owner");
     _;
@@ -36,12 +34,7 @@ contract SaleData is ISaleData, ApeRegistryAPI {
     _;
   }
 
-  constructor(
-    address apeWallet_,
-    address registry
-  )
-  ApeRegistryAPI(registry)
-  {
+  constructor(address apeWallet_, address registry) RegistryUser(registry) {
     _apeWallet = apeWallet_;
   }
 
@@ -82,8 +75,8 @@ contract SaleData is ISaleData, ApeRegistryAPI {
     _nextId++;
   }
 
-  function isLegitSale(address sale) external view override returns (bool) {
-    return _saleIdByAddress[sale] > 0;
+  function getSaleIdByAddress(address sale) external view override returns (uint16) {
+    return _saleIdByAddress[sale];
   }
 
   function getSaleAddressById(uint16 saleId) external view override returns (address) {
@@ -126,7 +119,7 @@ contract SaleData is ISaleData, ApeRegistryAPI {
     uint256 steps,
     uint256 tokenListTimestamp,
     uint256 currentTimestamp
-  ) public view returns (uint8) {
+  ) public view override returns (uint8) {
     for (uint256 k = 16; k >= 1; k--) {
       uint256 step = steps / (10**(5 * (k - 1)));
       if (step != 0) {
@@ -164,16 +157,17 @@ contract SaleData is ISaleData, ApeRegistryAPI {
     (bool isValid, string memory message) = validateSetup(setup);
     require(isValid, string(abi.encodePacked("SaleData: ", message)));
     setup.saleAddress = saleAddress;
-    setup.paymentToken = _registry.idByAddress(paymentToken);
+    ITokenRegistry registry = ITokenRegistry(_get("ITokenRegistry"));
+    setup.paymentToken = registry.idByAddress(paymentToken);
     if (setup.paymentToken == 0) {
-      setup.paymentToken = _registry.addToken(paymentToken);
+      setup.paymentToken = registry.addToken(paymentToken);
     }
     _setups[saleId] = setup;
     _saleIdByAddress[saleAddress] = saleId;
   }
 
   function paymentTokenById(uint8 id) external view override returns (address) {
-    return _registry.addressById(id);
+    return ITokenRegistry(_get("ITokenRegistry")).addressById(id);
   }
 
   function makeTransferable(uint16 saleId) external override onlySaleOwner(saleId) {
@@ -228,7 +222,7 @@ contract SaleData is ISaleData, ApeRegistryAPI {
     external
     virtual
     override
-  onlySale(saleId)
+    onlySale(saleId)
     returns (
       uint256,
       uint256,
@@ -255,7 +249,7 @@ contract SaleData is ISaleData, ApeRegistryAPI {
     external
     virtual
     override
-  onlySale(saleId)
+    onlySale(saleId)
     returns (IERC20Min, uint256)
   {
     // TODO: this function looks wrong
@@ -277,8 +271,7 @@ contract SaleData is ISaleData, ApeRegistryAPI {
     uint256 tokenListTimestamp = uint256(_setups[saleId].tokenListTimestamp);
     require(tokenListTimestamp != 0, "SaleData: token not listed yet");
     uint256 vestedPercentage = calculateVestedPercentage(
-      _setups[saleId].firstTwoVestingSteps,
-      _extraVestingSteps[saleId],
+      _setups[saleId].vestingSteps,
       tokenListTimestamp,
       block.timestamp
     );

@@ -72,7 +72,7 @@ interface ISaleData {
 
   function increaseSaleId() external;
 
-  function isLegitSale(address sale) external view returns (bool);
+  function getSaleIdByAddress(address sale) external view returns (uint16);
 
   function getSaleAddressById(uint16 saleId) external view returns (address);
 
@@ -82,7 +82,7 @@ interface ISaleData {
     uint256 steps,
     uint256 tokenListTimestamp,
     uint256 currentTimestamp
-  ) public view returns (uint8);
+  ) external view returns (uint8);
 
   function validateSetup(Setup memory setup) external view returns (bool, string memory);
 
@@ -92,7 +92,6 @@ interface ISaleData {
     uint16 saleId,
     address saleAddress,
     Setup memory setup,
-    VestingStep[] memory schedule,
     address paymentToken
   ) external;
 

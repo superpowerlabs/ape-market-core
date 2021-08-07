@@ -17,9 +17,9 @@ contract ApeRegistry is IApeRegistry, Ownable {
   mapping(bytes32 => address) internal _registry;
 
   function set(string[] memory contractNames, address[] memory addrs) external override onlyOwner {
-    require(contractNames.length = addrs.length, "ApeRegistry: contractNames and addresses are inconsistent");
+    require(contractNames.length == addrs.length, "ApeRegistry: contractNames and addresses are inconsistent");
     for (uint256 i = 0; i < contractNames.length; i++) {
-      bytes32 contractName = keccak256(contractNames[i]);
+      bytes32 contractName = keccak256(abi.encodePacked(contractNames[i]));
       if (addrs[i] == address(0)) {
         delete _registry[contractName];
       } else {
@@ -29,8 +29,7 @@ contract ApeRegistry is IApeRegistry, Ownable {
     }
   }
 
-  function get(bytes32 memory contractName) external view override returns (address) {
+  function get(bytes32 contractName) external view override returns (address) {
     return _registry[contractName];
   }
-
 }

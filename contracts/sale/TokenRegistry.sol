@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../registry/ApeRegistryAPI.sol";
+import "../registry/RegistryUser.sol";
 import "./ITokenRegistry.sol";
 
-contract TokenRegistry is ITokenRegistry, ApeRegistryAPI {
-
+contract TokenRegistry is ITokenRegistry, RegistryUser {
   mapping(uint8 => address) private _addressesById;
   mapping(address => uint8) private _idByAddress;
 
   uint8 private _nextId = 1;
 
-  constructor(address registry_) ApeRegistryAPI(registry_){}
+  constructor(address registry) RegistryUser(registry) {}
 
   function nextIndex() public view virtual override returns (uint8) {
     return _nextId;

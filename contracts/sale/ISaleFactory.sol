@@ -14,6 +14,12 @@ interface ISaleFactory {
 
   function revokeValidator(address validator) external;
 
+  function addOperator(address newOperator) external;
+
+  function isOperator(address operator) external view returns (bool);
+
+  function revokeOperator(address operator) external;
+
   function approveSale(uint256 saleId) external;
 
   function revokeSale(uint256 saleId) external;
@@ -21,7 +27,6 @@ interface ISaleFactory {
   function newSale(
     uint8 saleId,
     ISaleData.Setup memory setup,
-    ISaleData.VestingStep[] memory schedule,
     bytes memory validatorSignature,
     address paymentToken
   ) external;

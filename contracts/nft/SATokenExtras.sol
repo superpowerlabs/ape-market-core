@@ -7,16 +7,16 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "./ISATokenExtras.sol";
 import "./ISAToken.sol";
 import "../sale/ISale.sol";
+import "../sale/ISaleData.sol";
 import "../user/IProfile.sol";
-import "../registry/ApeRegistryAPI.sol";
+import "../registry/RegistryUser.sol";
 
 import "hardhat/console.sol";
 
-contract SATokenExtras is ISATokenExtras, ApeRegistryAPI {
+contract SATokenExtras is ISATokenExtras, RegistryUser {
   using SafeMath for uint256;
 
-  constructor(address registry_)
-  ApeRegistryAPI(registry_){}
+  constructor(address registry) RegistryUser(registry) {}
 
   function withdraw(
     uint256 tokenId,
@@ -30,7 +30,7 @@ contract SATokenExtras is ISATokenExtras, ApeRegistryAPI {
       if (saleId != sas[i].saleId) {
         continue;
       }
-      ISale sale = ISale(token.saleData().getSaleAddressById(sas[i].saleId));
+      ISale sale = ISale(ISaleData(_get("SaleData")).getSaleAddressById(sas[i].saleId));
       done = sale.vest(token.getOwnerOf(tokenId), sas[i].fullAmount, sas[i].remainingAmount, amount);
       if (done) {
         sas[i].remainingAmount = uint120(uint256(sas[i].remainingAmount).sub(amount));
@@ -51,7 +51,7 @@ contract SATokenExtras is ISATokenExtras, ApeRegistryAPI {
     for (uint256 i = 0; i < sas.length; i++) {
       if (sas[i].remainingAmount > 0) {
         if (!minted) {
-          token.mint(owner, token.saleData().getSaleAddressById(sas[i].saleId), sas[i].fullAmount, sas[i].remainingAmount);
+          token.mint(owner, ISaleData(_get("SaleData")).getSaleAddressById(sas[i].saleId), sas[i].fullAmount, sas[i].remainingAmount);
           minted = true;
         } else {
           token.addSAToBundle(nextId, ISAToken.SA(sas[i].saleId, sas[i].fullAmount, sas[i].remainingAmount));
@@ -70,7 +70,7 @@ contract SATokenExtras is ISATokenExtras, ApeRegistryAPI {
       ISAToken token = ISAToken(_get("SAToken"));
       ISAToken.SA[] memory bundle = token.getBundle(tokenId);
       for (uint256 i = 0; i < bundle.length; i++) {
-        if (!token.saleData().getSetupById(bundle[i].saleId).isTokenTransferable) {
+        if (!ISaleData(_get("SaleData")).getSetupById(bundle[i].saleId).isTokenTransferable) {
           revert("SAToken: token not transferable");
         }
       }
@@ -160,7 +160,13 @@ contract SATokenExtras is ISATokenExtras, ApeRegistryAPI {
         tokenIdA = _mintToken(token, tokenIdA, sas[i].saleId, fullAmountKept, uint120(keptAmounts[i]));
       }
       if (keptAmounts[i] != uint256(sas[i].remainingAmount)) {
-        tokenIdB = _mintToken(token, tokenIdB, sas[i].saleId, otherFullAmount, sas[i].remainingAmount - uint120(keptAmounts[i]));
+        tokenIdB = _mintToken(
+          token,
+          tokenIdB,
+          sas[i].saleId,
+          otherFullAmount,
+          sas[i].remainingAmount - uint120(keptAmounts[i])
+        );
       }
     }
     token.burn(tokenId);
@@ -175,7 +181,7 @@ contract SATokenExtras is ISATokenExtras, ApeRegistryAPI {
   ) internal returns (uint256) {
     if (tokenId == 0) {
       tokenId = token.nextTokenId();
-      token.mint(token.getOwnerOf(tokenId), token.saleData().getSaleAddressById(saleId), fullAmount, amount);
+      token.mint(token.getOwnerOf(tokenId), ISaleData(_get("SaleData")).getSaleAddressById(saleId), fullAmount, amount);
     } else {
       ISAToken.SA memory newSA = ISAToken.SA(saleId, fullAmount, amount);
       token.addSAToBundle(tokenId, newSA);

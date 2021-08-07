@@ -7,9 +7,9 @@ import "hardhat/console.sol";
 
 import "../nft/ISAToken.sol";
 import "./ISaleData.sol";
-import "../registry/ApeRegistryAPI.sol";
+import "../registry/RegistryUser.sol";
 
-contract Sale is ApeRegistryAPI{
+contract Sale is RegistryUser {
   using SafeMath for uint256;
 
   uint16 private _saleId;
@@ -19,9 +19,7 @@ contract Sale is ApeRegistryAPI{
     _;
   }
 
-  constructor(uint16 saleId_, address registry)
-  ApeRegistryAPI(registry)
-  {
+  constructor(uint16 saleId_, address registry) RegistryUser(registry) {
     _saleId = saleId_;
   }
 
@@ -54,7 +52,7 @@ contract Sale is ApeRegistryAPI{
 
   function payFee(address payer, uint120 feeAmount) external {
     ISaleData saleData = ISaleData(_get("SaleData"));
-    require(msg.sender == saleData.getSAToken().getTokenExtras(), "Sale: only SATokenExtras can call this function");
+    require(msg.sender == _get("SATokenExtras"), "Sale: only SATokenExtras can call this function");
     if (feeAmount > 0) {
       IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(saleData.getSetupById(_saleId).paymentToken));
       paymentToken.transferFrom(payer, saleData.apeWallet(), feeAmount);
@@ -80,7 +78,7 @@ contract Sale is ApeRegistryAPI{
     uint256 requestedAmount
   ) external virtual returns (bool) {
     ISaleData saleData = ISaleData(_get("SaleData"));
-    require(msg.sender == saleData.getSAToken().getTokenExtras(), "Sale: only SATokenExtras can call vest");
+    require(msg.sender == _get("SATokenExtras"), "Sale: only SATokenExtras can call vest");
     if (saleData.isVested(_saleId, fullAmount, remainingAmount, requestedAmount)) {
       saleData.getSetupById(_saleId).sellingToken.transfer(saOwner, requestedAmount);
       return true;

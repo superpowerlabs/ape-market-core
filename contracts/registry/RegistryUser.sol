@@ -11,13 +11,12 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IApeRegistry.sol";
 
-contract ApeRegistryAPI is Ownable {
-
+contract RegistryUser is Ownable {
   IApeRegistry internal _registry;
   address internal _owner;
 
   modifier onlyFrom(string memory contractName) {
-    require(msg.sender == _registry.get(keccak256(contractName)), "IApeRegistry: forbidden");
+    require(msg.sender == _get(contractName), "IApeRegistry: forbidden");
     _;
   }
 
@@ -25,8 +24,8 @@ contract ApeRegistryAPI is Ownable {
     _registry = IApeRegistry(addr);
   }
 
-  function _get(string memory contractName) internal view returns (address){
-    return _registry.get(keccak256(contractName));
+  function _get(string memory contractName) internal view returns (address) {
+    return _registry.get(keccak256(abi.encodePacked(contractName)));
   }
 
   function _update(address addr) external onlyOwner {
