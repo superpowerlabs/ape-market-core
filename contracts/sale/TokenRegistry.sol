@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../utils/LevelAccess.sol";
+import "../registry/ApeRegistryAPI.sol";
 import "./ITokenRegistry.sol";
 
-contract TokenRegistry is ITokenRegistry, LevelAccess {
-  uint256 public constant MANAGER_LEVEL = 1;
+contract TokenRegistry is ITokenRegistry, ApeRegistryAPI {
 
   mapping(uint8 => address) private _addressesById;
   mapping(address => uint8) private _idByAddress;
 
   uint8 private _nextId = 1;
+
+  constructor(address registry_) ApeRegistryAPI(registry_){}
 
   function nextIndex() public view virtual override returns (uint8) {
     return _nextId;
@@ -24,7 +25,7 @@ contract TokenRegistry is ITokenRegistry, LevelAccess {
     return _idByAddress[addr];
   }
 
-  function addToken(address addr) public override onlyLevel(MANAGER_LEVEL) returns (uint8) {
+  function addToken(address addr) public override onlyFrom("SaleData") returns (uint8) {
     _addressesById[_nextId] = addr;
     _idByAddress[addr] = _nextId;
     emit TokenAdded(_nextId, addr);

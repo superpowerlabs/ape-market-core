@@ -3,23 +3,22 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-import "../utils/LevelAccess.sol";
 import "../utils/AddressMin.sol";
 import "./ISaleData.sol";
 import "./ITokenRegistry.sol";
+import "../registry/ApeRegistryAPI.sol";
 
 import "hardhat/console.sol";
 
-contract SaleData is ISaleData, LevelAccess {
+contract SaleData is ISaleData, ApeRegistryAPI {
   using SafeMath for uint256;
-  uint256 public constant SALE_LEVEL = 1;
-  uint256 public constant ADMIN_LEVEL = 2;
 
-  uint256 private _nextId;
+  uint256 private _nextId = 1;
   address private _apeWallet;
   ISAToken private _saToken;
 
   mapping(uint16 => Setup) private _setups;
+  mapping(address => uint16) private _saleIdByAddress;
 
   // both the following in USD
   mapping(uint16 => mapping(address => uint32)) private _approvedAmounts;
@@ -32,14 +31,18 @@ contract SaleData is ISaleData, LevelAccess {
     _;
   }
 
+  modifier onlySale(uint16 saleId) {
+    require(msg.sender == _setups[saleId].saleAddress, "Sale: caller is not a sale");
+    _;
+  }
+
   constructor(
     address apeWallet_,
-    address registry,
-    address saToken
-  ) {
+    address registry
+  )
+  ApeRegistryAPI(registry)
+  {
     _apeWallet = apeWallet_;
-    _registry = ITokenRegistry(registry);
-    _saToken = ISAToken(saToken);
   }
 
   function getSAToken() external view override returns (ISAToken) {
@@ -50,7 +53,7 @@ contract SaleData is ISaleData, LevelAccess {
     return _apeWallet;
   }
 
-  function updateApeWallet(address apeWallet_) external override onlyLevel(OWNER_LEVEL) {
+  function updateApeWallet(address apeWallet_) external override onlyOwner {
     _apeWallet = apeWallet_;
   }
 
@@ -60,7 +63,7 @@ contract SaleData is ISaleData, LevelAccess {
     uint8 extraFeePercentage,
     uint8 paymentFeePercentage,
     uint8 changeFeePercentage
-  ) external override onlyLevel(OWNER_LEVEL) {
+  ) external override onlyOwner {
     require(_setups[saleId].saleAddress != address(0), "SaleData: sale does not exist");
     // Values can be at most 100 (the full percentage)
     // and any value > 100 is skipped.
@@ -75,12 +78,12 @@ contract SaleData is ISaleData, LevelAccess {
     return _nextId;
   }
 
-  function increaseSaleId() external override onlyLevel(ADMIN_LEVEL) {
+  function increaseSaleId() external override onlyFrom("SaleFactory") {
     _nextId++;
   }
 
   function isLegitSale(address sale) external view override returns (bool) {
-    return levels[sale] == SALE_LEVEL;
+    return _saleIdByAddress[sale] > 0;
   }
 
   function getSaleAddressById(uint16 saleId) external view override returns (address) {
@@ -155,7 +158,7 @@ contract SaleData is ISaleData, LevelAccess {
     address saleAddress,
     Setup memory setup,
     address paymentToken
-  ) external override onlyLevel(ADMIN_LEVEL) {
+  ) external override onlyFrom("SaleFactory") {
     require(_setups[saleId].owner == address(0), "SaleData: id has already been used");
     require(saleId < _nextId, "SaleData: invalid id");
     (bool isValid, string memory message) = validateSetup(setup);
@@ -166,7 +169,7 @@ contract SaleData is ISaleData, LevelAccess {
       setup.paymentToken = _registry.addToken(paymentToken);
     }
     _setups[saleId] = setup;
-    levels[saleAddress] = SALE_LEVEL;
+    _saleIdByAddress[saleAddress] = saleId;
   }
 
   function paymentTokenById(uint8 id) external view override returns (address) {
@@ -193,7 +196,7 @@ contract SaleData is ISaleData, LevelAccess {
     external
     virtual
     override
-    onlyLevel(SALE_LEVEL)
+    onlySale(saleId)
     returns (
       IERC20Min,
       address,
@@ -225,7 +228,7 @@ contract SaleData is ISaleData, LevelAccess {
     external
     virtual
     override
-    onlyLevel(SALE_LEVEL)
+  onlySale(saleId)
     returns (
       uint256,
       uint256,
@@ -252,7 +255,7 @@ contract SaleData is ISaleData, LevelAccess {
     external
     virtual
     override
-    onlyLevel(SALE_LEVEL)
+  onlySale(saleId)
     returns (IERC20Min, uint256)
   {
     // TODO: this function looks wrong

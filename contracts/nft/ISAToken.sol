@@ -10,8 +10,6 @@ interface ISAToken {
     uint120 remainingAmount;
   }
 
-  function saleData() external view returns (ISaleData);
-
   function mint(
     address to,
     address sale,
@@ -34,8 +32,6 @@ interface ISAToken {
   function merge(uint256[] memory tokenIds) external;
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) external;
-
-  function getTokenExtras() external view returns (address);
 
   function addSAToBundle(uint256 bundleId, SA memory newSA) external;
 
