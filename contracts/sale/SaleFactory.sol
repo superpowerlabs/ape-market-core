@@ -79,7 +79,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     }
   }
 
-  function approveSale(uint256 saleId) external override  {
+  function approveSale(uint256 saleId) external override {
     require(isOperator(msg.sender), "SaleFactory: only operators can call this function");
     ISaleData saleData = ISaleData(_get("SaleData"));
     require(saleId == saleData.nextSaleId(), "SaleFactory: invalid sale id");
@@ -88,7 +88,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     emit SaleApproved(saleId);
   }
 
-  function revokeSale(uint256 saleId) external override  {
+  function revokeSale(uint256 saleId) external override {
     require(isOperator(msg.sender), "SaleFactory: only operators can call this function");
     delete _approvals[saleId];
     emit SaleRevoked(saleId);

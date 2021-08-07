@@ -51,7 +51,12 @@ contract SATokenExtras is ISATokenExtras, RegistryUser {
     for (uint256 i = 0; i < sas.length; i++) {
       if (sas[i].remainingAmount > 0) {
         if (!minted) {
-          token.mint(owner, ISaleData(_get("SaleData")).getSaleAddressById(sas[i].saleId), sas[i].fullAmount, sas[i].remainingAmount);
+          token.mint(
+            owner,
+            ISaleData(_get("SaleData")).getSaleAddressById(sas[i].saleId),
+            sas[i].fullAmount,
+            sas[i].remainingAmount
+          );
           minted = true;
         } else {
           token.addSAToBundle(nextId, ISAToken.SA(sas[i].saleId, sas[i].fullAmount, sas[i].remainingAmount));

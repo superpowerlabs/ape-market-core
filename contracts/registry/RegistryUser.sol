@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-/**
- * @title ApeRegistry
- * @version 1.0.0
- * @author Francesco Sullo <francesco@sullo.co>
- * @dev A registry for all Ape contracts
- */
-
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IApeRegistry.sol";
 
@@ -28,7 +21,9 @@ contract RegistryUser is Ownable {
     return _registry.get(keccak256(abi.encodePacked(contractName)));
   }
 
-  function _update(address addr) external onlyOwner {
+  function updateRegistry(address addr) external onlyOwner {
+    // This is an emergency function.
+    // There should not be any reason to update the registry
     _registry = IApeRegistry(addr);
   }
 }

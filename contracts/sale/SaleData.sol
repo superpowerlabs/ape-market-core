@@ -270,11 +270,7 @@ contract SaleData is ISaleData, RegistryUser {
   ) external virtual override returns (bool) {
     uint256 tokenListTimestamp = uint256(_setups[saleId].tokenListTimestamp);
     require(tokenListTimestamp != 0, "SaleData: token not listed yet");
-    uint256 vestedPercentage = calculateVestedPercentage(
-      _setups[saleId].vestingSteps,
-      tokenListTimestamp,
-      block.timestamp
-    );
+    uint256 vestedPercentage = calculateVestedPercentage(_setups[saleId].vestingSteps, tokenListTimestamp, block.timestamp);
     uint256 unvestedAmount = vestedPercentage == 100 ? 0 : uint256(fullAmount).mul(100 - vestedPercentage).div(100);
     return requestedAmount <= uint256(remainingAmount).sub(unvestedAmount);
   }
