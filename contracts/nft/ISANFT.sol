@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../sale/ISaleData.sol";
 
-interface ISAToken {
+interface ISANFT {
   struct SA {
     uint16 saleId;
     uint120 fullAmount;
@@ -12,7 +12,7 @@ interface ISAToken {
 
   function mint(
     address to,
-    address sale,
+    address saleAddress,
     uint120 fullAmount,
     uint120 remainingAmount
   ) external;
@@ -21,17 +21,7 @@ interface ISAToken {
 
   function burn(uint256 tokenId) external;
 
-  function withdraw(
-    uint256 tokenId,
-    uint16 saleId,
-    uint256 amount
-  ) external;
-
-  function areMergeable(uint256[] memory tokenIds) external view returns (bool, string memory);
-
-  function merge(uint256[] memory tokenIds) external;
-
-  function split(uint256 tokenId, uint256[] memory keptAmounts) external;
+  function withdraw(uint256 tokenId, uint256[] memory amounts) external;
 
   function addSAToBundle(uint256 bundleId, SA memory newSA) external;
 

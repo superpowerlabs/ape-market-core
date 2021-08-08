@@ -14,11 +14,11 @@ describe.skip("Integration Test", function () {
   let xyz
   let Tether
   let tether
-  let SAToken
+  let SANFT
   let satoken
   let SaleFactory
   let factory
-  let SATokenExtras
+  let SANFTManager
   let tokenExtras
   let SaleData
   let saleData
@@ -74,12 +74,12 @@ describe.skip("Integration Test", function () {
     await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdmin.address)
 
-    SATokenExtras = await ethers.getContractFactory("SATokenExtras")
-    tokenExtras = await SATokenExtras.deploy(profile.address)
+    SANFTManager = await ethers.getContractFactory("SANFTManager")
+    tokenExtras = await SANFTManager.deploy(profile.address)
     await tokenExtras.deployed()
 
-    SAToken = await ethers.getContractFactory("SAToken")
-    satoken = await SAToken.deploy(factory.address, tokenExtras.address)
+    SANFT = await ethers.getContractFactory("SANFT")
+    satoken = await SANFT.deploy(factory.address, tokenExtras.address)
     await satoken.deployed()
     await tokenExtras.setToken(satoken.address)
 

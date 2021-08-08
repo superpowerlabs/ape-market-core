@@ -11,13 +11,13 @@ describe("SaleFactory", async function () {
   let sellingToken
   let Tether
   let tether
-  let SAToken
+  let SANFT
   let satoken
   let SaleFactory
   let factory
   let SaleData
   let saleData
-  let SATokenExtras
+  let SANFTManager
   let tokenExtras
 
   let saleSetup
@@ -49,12 +49,12 @@ describe("SaleFactory", async function () {
     await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdmin.address)
 
-    SATokenExtras = await ethers.getContractFactory("SATokenExtras")
-    tokenExtras = await SATokenExtras.deploy(profile.address)
+    SANFTManager = await ethers.getContractFactory("SANFTManager")
+    tokenExtras = await SANFTManager.deploy(profile.address)
     await tokenExtras.deployed()
 
-    SAToken = await ethers.getContractFactory("SAToken")
-    satoken = await SAToken.deploy(saleData.address, factory.address, tokenExtras.address)
+    SANFT = await ethers.getContractFactory("SANFT")
+    satoken = await SANFT.deploy(saleData.address, factory.address, tokenExtras.address)
     await satoken.deployed()
 
     ERC20Token = await ethers.getContractFactory("ERC20Token")

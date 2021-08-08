@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 //import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "../nft/ISAToken.sol";
+import "../nft/ISANFT.sol";
 
 interface IERC20Min {
   function transfer(address recipient, uint256 amount) external returns (bool);
@@ -50,11 +50,8 @@ interface ISaleData {
     uint8 extraFeePercentage; // << the optional fee in USD paid by seller at launch
     uint8 paymentFeePercentage; // << the fee in USD paid by buyers when investing
     uint8 softCapPercentage; // << if 0, no soft cap - not sure we will implement it
-    uint8 changeFeePercentage; // << some extra data
-    // 24 more bits available:
+    // 32 more bits available:
   }
-
-  function getSAToken() external view returns (ISAToken);
 
   function apeWallet() external view returns (address);
 
@@ -73,11 +70,11 @@ interface ISaleData {
     uint256[] memory extraVestingSteps,
     uint256 tokenListTimestamp,
     uint256 currentTimestamp
-  ) external view returns (uint8);
+  ) external pure returns (uint8);
 
   function validateAndPackVestingSteps(VestingStep[] memory vestingStepsArray)
     external
-    view
+    pure
     returns (uint256[] memory, string memory);
 
   function setUpSale(
@@ -114,13 +111,7 @@ interface ISaleData {
     uint16 saleId,
     address investor,
     uint256 amount
-  )
-    external
-    returns (
-      uint256,
-      uint256,
-      uint256
-    );
+  ) external returns (uint256, uint256);
 
   function setWithdrawToken(uint16 saleId, uint256 amount) external returns (IERC20Min, uint256);
 

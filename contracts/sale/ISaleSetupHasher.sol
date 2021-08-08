@@ -9,5 +9,5 @@ interface ISaleSetupHasher {
     ISaleData.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken
-  ) external view returns (bytes32);
+  ) external pure returns (bytes32);
 }

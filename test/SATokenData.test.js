@@ -1,8 +1,8 @@
 const {expect, assert} = require("chai")
 
-describe("SATokenData", function () {
+describe("SANFTData", function () {
 
-  let SATokenData
+  let SANFTData
   let tokenData
   let SaleData
   let saleData
@@ -37,8 +37,8 @@ describe("SATokenData", function () {
     sale2 = await Sale.deploy(saleId2, saleData.address)
     await sale2.deployed()
 
-    SATokenData = await ethers.getContractFactory("SATokenDataMock")
-    tokenData = await SATokenData.deploy(saleData.address)
+    SANFTData = await ethers.getContractFactory("SANFTDataMock")
+    tokenData = await SANFTData.deploy(saleData.address)
     await tokenData.deployed()
 
   }

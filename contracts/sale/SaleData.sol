@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-import "../utils/AddressMin.sol";
 import "./ISaleData.sol";
+import "../nft/ISANFTManager.sol";
 import "./ITokenRegistry.sol";
 import "../registry/RegistryUser.sol";
 
@@ -15,7 +15,6 @@ contract SaleData is ISaleData, RegistryUser {
 
   uint256 private _nextId = 1;
   address private _apeWallet;
-  ISAToken private _saToken;
 
   mapping(uint256 => Setup) private _setups;
   mapping(address => uint256) private _saleIdByAddress;
@@ -26,21 +25,17 @@ contract SaleData is ISaleData, RegistryUser {
   mapping(uint16 => mapping(address => uint32)) private _valuesInEscrow;
 
   modifier onlySaleOwner(uint16 saleId) {
-    require(msg.sender == _setups[uint256(saleId)].owner, "Sale: caller is not the owner");
+    require(_msgSender() == _setups[uint256(saleId)].owner, "Sale: caller is not the owner");
     _;
   }
 
   modifier onlySale(uint16 saleId) {
-    require(msg.sender == _setups[uint256(saleId)].saleAddress, "Sale: caller is not a sale");
+    require(_msgSender() == _setups[uint256(saleId)].saleAddress, "Sale: caller is not a sale");
     _;
   }
 
   constructor(address apeWallet_, address registry) RegistryUser(registry) {
     _apeWallet = apeWallet_;
-  }
-
-  function getSAToken() external view override returns (ISAToken) {
-    return _saToken;
   }
 
   function apeWallet() external view override returns (address) {
@@ -68,13 +63,12 @@ contract SaleData is ISaleData, RegistryUser {
   }
 
   /**
-* @dev Validate and pack a VestingStep[].
-       It should be called by the dApp during the configuration of the Sale setup.
-* @param vestingStepsArray The array of VestingStep
-*/
+   * @dev Validate and pack a VestingStep[]. It must be called by the dApp during the configuration of the Sale setup. The same code can be executed in Javascript, but running a function on a smart contract guarantees future compatibility.
+   * @param vestingStepsArray The array of VestingStep
+   */
   function validateAndPackVestingSteps(VestingStep[] memory vestingStepsArray)
     external
-    view
+    pure
     override
     returns (uint256[] memory, string memory)
   {
@@ -126,7 +120,7 @@ contract SaleData is ISaleData, RegistryUser {
     uint256[] memory extraVestingSteps,
     uint256 tokenListTimestamp,
     uint256 currentTimestamp
-  ) public view override returns (uint8) {
+  ) public pure override returns (uint8) {
     for (uint256 i = extraVestingSteps.length + 1; i >= 1; i--) {
       uint256 steps = i > 1 ? extraVestingSteps[i - 2] : vestingSteps;
       for (uint256 k = 16; k >= 1; k--) {
@@ -219,21 +213,11 @@ contract SaleData is ISaleData, RegistryUser {
     uint16 saleId,
     address investor,
     uint256 amount
-  )
-    external
-    virtual
-    override
-    onlySale(saleId)
-    returns (
-      uint256,
-      uint256,
-      uint256
-    )
-  {
+  ) external virtual override onlySale(saleId) returns (uint256, uint256) {
     require(amount <= _approvedAmounts[saleId][investor], "SaleData: Amount is above approved amount");
     require(amount >= _setups[saleId].minAmount, "SaleData: Amount is too low");
     // TODO convert
-    require(uint120(amount) <= _setups[saleId].remainingAmount, "SaleData: Not enough tokens available");
+    require(amount <= _setups[saleId].remainingAmount, "SaleData: Not enough tokens available");
     if (amount == _approvedAmounts[saleId][investor]) {
       delete _approvedAmounts[saleId][investor];
     } else {
@@ -243,7 +227,8 @@ contract SaleData is ISaleData, RegistryUser {
     uint256 buyerFee = payment.mul(_setups[saleId].paymentFeePercentage).div(100);
     uint256 sellerFee = amount.mul(_setups[saleId].tokenFeePercentage).div(100);
     _setups[saleId].remainingAmount = uint120(uint256(_setups[saleId].remainingAmount).sub(amount));
-    return (payment, buyerFee, sellerFee);
+    ISANFTManager(_get("SANFTManager")).mintInitialTokens(investor, _setups[saleId].saleAddress, amount, sellerFee);
+    return (payment, buyerFee);
   }
 
   function setWithdrawToken(uint16 saleId, uint256 amount)

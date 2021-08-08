@@ -58,12 +58,12 @@ class DeployUtils {
     await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdminAddress)
 
-    const SATokenExtras = await ethers.getContractFactory('SATokenExtras')
-    const extras = await SATokenExtras.deploy(profile.address)
+    const SANFTManager = await ethers.getContractFactory('SANFTManager')
+    const extras = await SANFTManager.deploy(profile.address)
     await extras.deployed()
 
-    const SAToken = await ethers.getContractFactory('SAToken')
-    const satoken = await SAToken.deploy(factory.address, extras.address)
+    const SANFT = await ethers.getContractFactory('SANFT')
+    const satoken = await SANFT.deploy(factory.address, extras.address)
     await satoken.deployed()
     await extras.setToken(satoken.address)
 
@@ -74,8 +74,8 @@ class DeployUtils {
       SAStorage: storage.address,
       SaleData: saleData.address,
       SaleFactory: factory.address,
-      SAToken: satoken.address,
-      SATokenExtras: extras.address,
+      SANFT: satoken.address,
+      SANFTManager: extras.address,
       tether: tetherAddress,
       tetherOwner: tetherOwner ? tetherOwner.address : addr0,
       factoryAdmin: factoryAdminAddress,

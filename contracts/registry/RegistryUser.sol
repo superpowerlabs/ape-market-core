@@ -9,7 +9,10 @@ contract RegistryUser is Ownable {
   address internal _owner;
 
   modifier onlyFrom(string memory contractName) {
-    require(msg.sender == _get(contractName), "IApeRegistry: forbidden");
+    require(
+      _msgSender() == _get(contractName),
+      string(abi.encodePacked("RegistryUser: only ", contractName, " can call this function"))
+    );
     _;
   }
 
@@ -22,8 +25,8 @@ contract RegistryUser is Ownable {
   }
 
   function updateRegistry(address addr) external onlyOwner {
-    // This is an emergency function.
-    // There should not be any reason to update the registry
+    // This is an emergency function. In theory,
+    // there should not be any reason to update the registry
     _registry = IApeRegistry(addr);
   }
 }

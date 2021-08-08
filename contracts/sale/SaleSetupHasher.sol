@@ -21,23 +21,8 @@ contract SaleSetupHasher is ISaleSetupHasher {
     ISaleData.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken
-  ) public view override returns (bytes32) {
+  ) public pure override returns (bytes32) {
     require(setup.remainingAmount == 0 && setup.tokenListTimestamp == 0, "SaleFactory: invalid setup");
-    uint256[13] memory data = [
-      uint256(setup.pricingToken),
-      uint256(setup.tokenListTimestamp),
-      uint256(setup.remainingAmount),
-      uint256(setup.minAmount),
-      uint256(setup.capAmount),
-      uint256(setup.pricingPayment),
-      uint256(setup.tokenFeePercentage),
-      uint256(setup.totalValue),
-      uint256(setup.paymentToken),
-      uint256(setup.paymentFeePercentage),
-      uint256(setup.changeFeePercentage),
-      uint256(setup.softCapPercentage),
-      uint256(setup.extraFeePercentage)
-    ];
     return
       keccak256(
         abi.encodePacked(
@@ -45,11 +30,24 @@ contract SaleSetupHasher is ISaleSetupHasher {
           saleId,
           setup.sellingToken,
           setup.owner,
-          data,
           setup.isTokenTransferable,
           paymentToken,
           setup.vestingSteps,
-          extraVestingSteps
+          extraVestingSteps,
+          [
+            uint256(setup.pricingToken),
+            uint256(setup.tokenListTimestamp),
+            uint256(setup.remainingAmount),
+            uint256(setup.minAmount),
+            uint256(setup.capAmount),
+            uint256(setup.pricingPayment),
+            uint256(setup.tokenFeePercentage),
+            uint256(setup.totalValue),
+            uint256(setup.paymentToken),
+            uint256(setup.paymentFeePercentage),
+            uint256(setup.softCapPercentage),
+            uint256(setup.extraFeePercentage)
+          ]
         )
       );
   }

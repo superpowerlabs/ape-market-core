@@ -26,20 +26,20 @@ contract Profile is IProfile, Ownable {
     uint256 timestamp,
     bytes memory signature
   ) external override {
-    require(msg.sender != address(0) && account != address(0), "Profile: no invalid accounts");
+    require(_msgSender() != address(0) && account != address(0), "Profile: no invalid accounts");
     require(timestamp + _validity > block.timestamp, "Profile: request is expired");
     require(
-      ECDSA.recover(hashAndPackAssociatedAccounts(account, msg.sender, timestamp), signature) == account,
+      ECDSA.recover(hashAndPackAssociatedAccounts(account, _msgSender(), timestamp), signature) == account,
       "Profile: invalid signature"
     );
-    _associatedAccounts[_getPseudoAddress(msg.sender, account)] = true;
-    emit AccountsAssociated(msg.sender, account);
+    _associatedAccounts[_getPseudoAddress(_msgSender(), account)] = true;
+    emit AccountsAssociated(_msgSender(), account);
   }
 
   function dissociateAccount(address account) external override {
-    require(areAccountsAssociated(msg.sender, account), "Profile: association not found");
-    delete _associatedAccounts[_getPseudoAddress(msg.sender, account)];
-    emit AccountsDissociated(msg.sender, account);
+    require(areAccountsAssociated(_msgSender(), account), "Profile: association not found");
+    delete _associatedAccounts[_getPseudoAddress(_msgSender(), account)];
+    emit AccountsDissociated(_msgSender(), account);
   }
 
   function areAccountsAssociated(address addr1, address addr2) public view override returns (bool) {
@@ -47,7 +47,7 @@ contract Profile is IProfile, Ownable {
   }
 
   function isMyAssociated(address addr) external view override returns (bool) {
-    return areAccountsAssociated(msg.sender, addr);
+    return areAccountsAssociated(_msgSender(), addr);
   }
 
   function hashAndPackAssociatedAccounts(

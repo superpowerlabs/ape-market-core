@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 //import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "../nft/ISAToken.sol";
+import "../nft/ISANFT.sol";
 
 interface ISale {
   function getPaymentToken() external view returns (address);
@@ -25,8 +25,6 @@ interface ISale {
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint256 amount) external;
-
-  function payFee(address payer, uint256 feeAmount) external;
 
   function withdrawPayment(uint256 amount) external;
 
