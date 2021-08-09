@@ -1,6 +1,10 @@
 const {expect, assert} = require("chai")
+const DeployUtils = require('../scripts/lib/DeployUtils')
+const {signPackedData} = require('../scripts/lib/TestHelpers')
 
 describe("Profile", function () {
+
+  const deployUtils = new DeployUtils(ethers)
 
   let Profile
   let profile
@@ -13,11 +17,9 @@ describe("Profile", function () {
   let addr0 = '0x0000000000000000000000000000000000000000'
 
 
+
   async function getSignatureByAccount1(addr1, addr2, ts) {
-    const hash = await profile.encodeForSignature(addr1, addr2, ts)
-    const signingKey = new ethers.utils.SigningKey('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d')
-    const signedDigest = signingKey.signDigest(hash)
-    return ethers.utils.joinSignature(signedDigest)
+    return signPackedData(ethers, profile, 'hashAndPackAssociatedAccounts', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', addr1, addr2, ts)
   }
 
   before(async function () {
@@ -25,11 +27,7 @@ describe("Profile", function () {
   })
 
   async function initNetworkAndDeploy() {
-
-    Profile = await ethers.getContractFactory("Profile")
-    profile = await Profile.deploy()
-    await profile.deployed()
-
+    profile = await deployUtils.deployContract('Profile')
     now = Math.round(Date.now() / 1000)
   }
 

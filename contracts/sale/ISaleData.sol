@@ -36,7 +36,7 @@ interface ISaleData {
     // pricingPayments and pricingToken builds a fraction to define the price of the token
     uint64 pricingToken;
     uint64 pricingPayment;
-    uint8 paymentToken; // << TokenRegistry Id of the token used for the payments (USDT, USDC...)
+    uint8 paymentTokenId; // << TokenRegistry Id of the token used for the payments (USDT, USDC...)
     //
     uint256 vestingSteps; // < at most 15 vesting events
     //

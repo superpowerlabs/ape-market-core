@@ -6,12 +6,6 @@ import "./ISaleSetupHasher.sol";
 // we deploy this standalone to reduce the size of SaleFactory
 
 contract SaleSetupHasher is ISaleSetupHasher {
-  ISaleData private _saleData;
-
-  constructor(address saleData) {
-    _saleData = ISaleData(saleData);
-  }
-
   /*
   abi.encodePacked is unable to pack structs. To get a signable hash, we need to
   put the data contained in the struct in types that are packable.
@@ -43,7 +37,6 @@ contract SaleSetupHasher is ISaleSetupHasher {
             uint256(setup.pricingPayment),
             uint256(setup.tokenFeePercentage),
             uint256(setup.totalValue),
-            uint256(setup.paymentToken),
             uint256(setup.paymentFeePercentage),
             uint256(setup.softCapPercentage),
             uint256(setup.extraFeePercentage)

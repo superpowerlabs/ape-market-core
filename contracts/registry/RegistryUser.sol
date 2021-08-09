@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IApeRegistry.sol";
 
+// for debugging only
+import "hardhat/console.sol";
+
 contract RegistryUser is Ownable {
   IApeRegistry internal _registry;
   address internal _owner;

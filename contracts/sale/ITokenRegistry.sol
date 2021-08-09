@@ -10,5 +10,5 @@ interface ITokenRegistry {
 
   function nextIndex() external view returns (uint8);
 
-  function addToken(address addr) external returns (uint8);
+  function register(address addr) external returns (uint8);
 }

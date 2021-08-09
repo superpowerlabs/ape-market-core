@@ -1,115 +1,73 @@
 const {expect, assert} = require("chai")
-const {assertThrowsMessage, signNewSale, getTimestamp} = require('./helpers')
+const DeployUtils = require('../scripts/lib/DeployUtils')
+const {signPackedData, assertThrowsMessage, addr0} = require('../scripts/lib/TestHelpers')
+
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe("SANFT", async function () {
+describe.skip("SANFT", async function () {
 
-  let Profile
-  let profile
-  let ERC20Token
-  let sellingToken
-  let Tether
-  let tether
-  let SANFT
-  let satoken
-  let SaleFactory
-  let factory
-  let SaleData
-  let saleData
-  let SANFTManager
-  let tokenExtras
-  let sale
-  let saleId
-  let saleAddress
-  let sale2
-  let sale2Id
-  let sale2Address
-  let saleSetup
-  let saleVestingSchedule
+  const deployUtils = new DeployUtils(ethers)
 
-  let owner, validator, factoryAdmin, apeWallet, seller, buyer, buyer2
-  let addr0 = '0x0000000000000000000000000000000000000000'
+  let apeRegistry
+      , profile
+      , saleSetupHasher
+      , saleData
+      , saleFactory
+      , sANFT
+      , sANFTManager
+      , tokenRegistry
+      , sellingToken
+      , tether
+      , saleSetup
+      , owner
+      , validator
+      , operator
+      , apeWallet
+      , seller
+      , buyer
+      , buyer2
 
-
-  async function getSignatureByValidator(saleId, setup, schedule) {
-    const hash = await factory.encodeForSignature(saleId, setup, schedule)
-    const signingKey = new ethers.utils.SigningKey('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d')
-    const signedDigest = signingKey.signDigest(hash)
-    return ethers.utils.joinSignature(signedDigest)
+  async function getSignatureByValidator(saleId, setup, schedule = []) {
+    return signPackedData(ethers, saleSetupHasher, 'packAndHashSaleConfiguration', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', saleId.toNumber(), setup, schedule, tether.address)
   }
 
   before(async function () {
-    [owner, validator, factoryAdmin, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
+    [owner, validator, operator, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
   })
 
   async function getTimestamp() {
     return (await ethers.provider.getBlock()).timestamp
   }
 
-  function normalize(amount) {
-    return '' + parseInt(amount) + '0'.repeat(18);
-  }
-
-  function normalizeMinMaxAmount(amount) {
-    return '' + parseInt(amount) + '0'.repeat(15);
+  function normalize(val, n = 6 /* tether */) {
+    return '' + val + '0'.repeat(n)
   }
 
   async function initNetworkAndDeploy() {
 
-    Profile = await ethers.getContractFactory("Profile")
-    profile = await Profile.deploy()
-    await profile.deployed()
 
-    SaleData = await ethers.getContractFactory("SaleData")
-    saleData = await SaleData.deploy(apeWallet.address)
-    await saleData.deployed()
+    const results = await deployUtils.initAndDeploy({
+      apeWallet: apeWallet.address,
+      validators: [validator.address],
+      operators: [operator.address]
+    })
 
-    SaleFactory = await ethers.getContractFactory("SaleFactory")
-    factory = await SaleFactory.deploy(saleData.address, validator.address)
-    await factory.deployed()
+    apeRegistry = results.apeRegistry
+    profile = results.profile
+    saleSetupHasher = results.saleSetupHasher
+    saleData = results.saleData
+    saleFactory = results.saleFactory
+    sANFT = results.sANFT
+    sANFTManager = results.sANFTManager
+    tokenRegistry = results.tokenRegistry
 
-    await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdmin.address)
+    sellingToken = await deployUtils.deployContract("ERC20Token", "Abc Token", "ABC")
+    tether = await deployUtils.deployContract("TetherMock")
 
-    SANFTManager = await ethers.getContractFactory("SANFTManager")
-    tokenExtras = await SANFTManager.deploy(profile.address)
-    await tokenExtras.deployed()
-
-    SANFT = await ethers.getContractFactory("SANFT")
-    satoken = await SANFT.deploy(saleData.address, factory.address, tokenExtras.address)
-    await satoken.deployed()
-
-    await tokenExtras.setToken(satoken.address)
-
-
-    ERC20Token = await ethers.getContractFactory("ERC20Token")
-    sellingToken = await ERC20Token.connect(seller).deploy("Abc Token", "ABC")
-    await sellingToken.deployed()
-
-    Tether = await ethers.getContractFactory("TetherMock")
-    tether = await Tether.deploy()
-    await tether.deployed()
     await (await tether.transfer(buyer.address, normalize(40000))).wait()
     await (await tether.transfer(buyer2.address, normalize(50000))).wait()
 
-    await satoken.setupUpPayments(tether.address, 1, apeWallet.address)
-
-    saleSetup = {
-      satoken: satoken.address,
-      minAmount: 100000,
-      capAmount: 20000000,
-      remainingAmount: 0,
-      pricingToken: 1,
-      pricingPayment: 2,
-      sellingToken: sellingToken.address,
-      paymentToken: tether.address,
-      owner: seller.address,
-      tokenListTimestamp: 0,
-      tokenFeePercentage: 5,
-      paymentFeePercentage: 10,
-      tokenIsTransferable: true
-    };
-    saleVestingSchedule = [
+    const [saleVestingSchedule, msg] = await saleData.validateAndPackVestingSteps([
       {
         waitTime: 10,
         percentage: 50
@@ -117,20 +75,44 @@ describe("SANFT", async function () {
       {
         waitTime: 1000,
         percentage: 100
-      }]
+      }
+    ])
 
-    // create sale1
+    saleSetup = {
+      owner: seller.address,
+      minAmount: 100,
+      capAmount: 20000,
+      tokenListTimestamp: 0,
+      remainingAmount: 0,
+      pricingToken: 1,
+      pricingPayment: 2,
+      paymentTokenId: 0,
+      vestingSteps: saleVestingSchedule[0],
+      sellingToken: sellingToken.address,
+      totalValue: 50000,
+      tokenIsTransferable: true,
+      tokenFeePercentage: 5,
+      extraFeePercentage: 0,
+      paymentFeePercentage: 3,
+      softCapPercentage: 0,
+      saleAddress: addr0
+    };
 
-    saleId = await saleData.nextSaleId()
-    await factory.connect(factoryAdmin).approveSale(saleId)
-    let signature = signNewSale(ethers, factory, saleId, saleSetup, saleVestingSchedule)
-    await factory.connect(seller).newSale(saleId, saleSetup, saleVestingSchedule, signature)
+    let saleId = await saleData.nextSaleId()
 
-    sale = new ethers.Contract(saleData.getSaleAddressById(saleId), saleJson.abi, ethers.provider)
-    saleAddress = await sale.address
+    await saleFactory.connect(operator).approveSale(saleId)
+
+    let signature = await getSignatureByValidator(saleId, saleSetup)
+
+    await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
+        .emit(saleFactory, "NewSale")
+    const saleAddress = await saleData.getSaleAddressById(saleId)
+    const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
+    assert.isTrue(await saleData.getSaleIdByAddress(saleAddress) > 0)
+
 
     // seller approves
-    await sellingToken.connect(seller).approve(saleAddress, normalizeMinMaxAmount(saleSetup.capAmount * 1.05))
+    await sellingToken.connect(seller).approve(saleAddress, saleSetup.capAmount * 1.05)
 
     // launch
     await sale.connect(seller).launch()
@@ -270,13 +252,13 @@ describe("SANFT", async function () {
       saleSetup.minAmount = 1000
 
       sale2Id = await saleData.nextSaleId()
-      await factory.connect(factoryAdmin).approveSale(sale2Id)
+      await factory.connect(operator).approveSale(sale2Id)
       let signature = signNewSale(ethers, factory, sale2Id, saleSetup, saleVestingSchedule)
       await factory.connect(seller).newSale(sale2Id, saleSetup, saleVestingSchedule, signature)
       sale2 = new ethers.Contract(saleData.getSaleAddressById(sale2Id), saleJson.abi, ethers.provider)
       sale2Address = await sale2.address
 
-      await sellingToken.connect(seller).approve(sale2Address, normalizeMinMaxAmount(saleSetup.capAmount * 1.05))
+      await sellingToken.connect(seller).approve(sale2Address, saleSetup.capAmount * 1.05)
 
       await sale2.connect(seller).launch()
 
@@ -360,7 +342,6 @@ describe("SANFT", async function () {
       )
 
     })
-
 
 
   })

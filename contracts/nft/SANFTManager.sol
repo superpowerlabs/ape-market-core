@@ -11,8 +11,6 @@ import "../user/IProfile.sol";
 
 import "../registry/RegistryUser.sol";
 
-import "hardhat/console.sol";
-
 interface IERC20 {
   function transfer(address recipient, uint256 amount) external returns (bool);
 
@@ -39,13 +37,12 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     address apeWallet_,
     uint256 feePermillage_
   ) RegistryUser(registry) {
-    apeWallet = apeWallet_;
-    feePermillage = feePermillage_;
+    updatePayments(apeWallet_, feePermillage_);
   }
 
-  function setupUpPayments(uint256 feePermillage_, address apeWallet_) external virtual onlyOwner {
-    feePermillage = feePermillage_;
+  function updatePayments(address apeWallet_, uint256 feePermillage_) public virtual override onlyOwner {
     apeWallet = apeWallet_;
+    feePermillage = feePermillage_;
   }
 
   function _getSANFTIfEqualToMsgSender() internal view returns (ISANFT) {

@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-import "hardhat/console.sol";
-
 import "../nft/ISANFT.sol";
 import "./ISaleData.sol";
 import "../registry/RegistryUser.sol";
@@ -40,14 +38,14 @@ contract Sale is RegistryUser {
     ISaleData saleData = ISaleData(_get("SaleData"));
     ISaleData.Setup memory setup = saleData.getSetupById(_saleId);
     (uint256 tokenPayment, uint256 buyerFee) = saleData.setInvest(_saleId, _msgSender(), amount);
-    IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(setup.paymentToken));
+    IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(setup.paymentTokenId));
     paymentToken.transferFrom(_msgSender(), saleData.apeWallet(), buyerFee);
     paymentToken.transferFrom(_msgSender(), address(this), tokenPayment);
   }
 
   function withdrawPayment(uint256 amount) external virtual onlySaleOwner {
     ISaleData saleData = ISaleData(_get("SaleData"));
-    IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(saleData.getSetupById(_saleId).paymentToken));
+    IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(saleData.getSetupById(_saleId).paymentTokenId));
     paymentToken.transfer(_msgSender(), amount);
   }
 

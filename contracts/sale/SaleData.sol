@@ -8,8 +8,6 @@ import "../nft/ISANFTManager.sol";
 import "./ITokenRegistry.sol";
 import "../registry/RegistryUser.sol";
 
-import "hardhat/console.sol";
-
 contract SaleData is ISaleData, RegistryUser {
   using SafeMath for uint256;
 
@@ -34,7 +32,7 @@ contract SaleData is ISaleData, RegistryUser {
     _;
   }
 
-  constructor(address apeWallet_, address registry) RegistryUser(registry) {
+  constructor(address registry, address apeWallet_) RegistryUser(registry) {
     _apeWallet = apeWallet_;
   }
 
@@ -149,10 +147,10 @@ contract SaleData is ISaleData, RegistryUser {
     require(_setups[sId].owner == address(0), "SaleData: id has already been used");
     require(saleId < _nextId, "SaleData: invalid id");
     setup.saleAddress = saleAddress;
-    ITokenRegistry registry = ITokenRegistry(_get("ITokenRegistry"));
-    setup.paymentToken = registry.idByAddress(paymentToken);
-    if (setup.paymentToken == 0) {
-      setup.paymentToken = registry.addToken(paymentToken);
+    ITokenRegistry registry = ITokenRegistry(_get("TokenRegistry"));
+    setup.paymentTokenId = registry.idByAddress(paymentToken);
+    if (setup.paymentTokenId == 0) {
+      setup.paymentTokenId = registry.register(paymentToken);
     }
     _setups[sId] = setup;
     _saleIdByAddress[saleAddress] = saleId;

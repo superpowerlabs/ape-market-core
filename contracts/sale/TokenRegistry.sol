@@ -24,10 +24,11 @@ contract TokenRegistry is ITokenRegistry, RegistryUser {
     return _idByAddress[addr];
   }
 
-  function addToken(address addr) public override onlyFrom("SaleData") returns (uint8) {
+  function register(address addr) public override onlyFrom("SaleData") returns (uint8) {
     _addressesById[_nextId] = addr;
     _idByAddress[addr] = _nextId;
     emit TokenAdded(_nextId, addr);
+    // if called
     return _nextId++;
   }
 }

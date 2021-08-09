@@ -10,9 +10,6 @@ import "./ISANFTManager.sol";
 import "../sale/ISale.sol";
 import "../registry/RegistryUser.sol";
 
-// for debugging only
-//import "hardhat/console.sol";
-
 contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   using SafeMath for uint256;
 

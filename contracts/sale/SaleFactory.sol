@@ -8,9 +8,6 @@ import "./ISaleFactory.sol";
 import "./Sale.sol";
 import "../registry/RegistryUser.sol";
 
-// for debugging only
-import "hardhat/console.sol";
-
 contract SaleFactory is ISaleFactory, RegistryUser {
   uint256 public constant OPERATOR_LEVEL = 3;
 
@@ -27,14 +24,14 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     address[] memory operators,
     address[] memory validators
   ) RegistryUser(registry) {
-    for (uint256 i = 0; i < validators.length; i++) {
-      _validators[i] = validators[i];
-    }
-    _nextValidatorId = validators.length;
     for (uint256 i = 0; i < operators.length; i++) {
       _operators[i] = operators[i];
     }
     _nextOperatorId = operators.length;
+    for (uint256 i = 0; i < validators.length; i++) {
+      _validators[i] = validators[i];
+    }
+    _nextValidatorId = validators.length;
   }
 
   function addValidator(address newValidator) external override onlyOwner {
@@ -44,7 +41,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
 
   function isValidator(address validator) public view override returns (bool) {
     for (uint256 i = 0; i < _nextValidatorId; i++) {
-      if (_validators[i] != validator) return true;
+      if (_validators[i] == validator) return true;
     }
     return false;
   }
@@ -65,7 +62,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
 
   function isOperator(address operator) public view override returns (bool) {
     for (uint256 i = 0; i < _nextOperatorId; i++) {
-      if (_operators[i] != operator) return true;
+      if (_operators[i] == operator) return true;
     }
     return false;
   }
@@ -98,8 +95,8 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     uint8 saleId,
     ISaleData.Setup memory setup,
     uint256[] memory extraVestingSteps,
-    bytes memory validatorSignature,
-    address paymentToken
+    address paymentToken,
+    bytes memory validatorSignature
   ) external override {
     address validator = ECDSA.recover(
       ISaleSetupHasher(_get("SaleSetupHasher")).packAndHashSaleConfiguration(saleId, setup, extraVestingSteps, paymentToken),

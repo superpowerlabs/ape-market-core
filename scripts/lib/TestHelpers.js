@@ -17,27 +17,21 @@ module.exports = {
     }
   },
 
-  formatBundle(bundle) {
-    const result = {}
-    result.creationTime = bundle.creationTime.toNumber()
-    result.acquisitionTime = bundle.acquisitionTime.toNumber()
-    result.sas = []
-    for (let sa of bundle.sas) {
-      result.sas.push({
-        sale: sa.sale,
-        remainingAmount: sa.remainingAmount.toNumber(),
-        vestedPercentage: sa.vestedPercentage.toNumber()
-      })
+  formatBigNumbers(ethers, obj) {
+    for (let key in obj) {
+      if (obj[key] instanceof ethers.BigNumber) {
+        try {
+          obj[key] = obj[key].toNumber()
+        } catch(e) {
+          obj[key] = obj[key].toString()
+        }
+      }
     }
-    return result
+    return obj
   },
 
-  async signNewSale(
-      ethers, factory, saleId, setup, schedule,
-      // The private key here is the signers[1] account on hardhat default testing chain
-      privateKey = '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'
-  ) {
-    const hash = await factory.encodeForSignature(saleId, setup, schedule)
+  async signPackedData(ethers, hasher, func, privateKey, ...params) {
+    const hash = await hasher[func](...params)
     const signingKey = new ethers.utils.SigningKey(privateKey)
     const signedDigest = signingKey.signDigest(hash)
     return ethers.utils.joinSignature(signedDigest)

@@ -1,71 +1,71 @@
 const {expect, assert} = require("chai")
-const {assertThrowsMessage, signNewSale} = require('./helpers')
+const DeployUtils = require('../scripts/lib/DeployUtils')
+const {signPackedData, assertThrowsMessage, addr0} = require('../scripts/lib/TestHelpers')
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
 describe("SaleFactory", async function () {
 
-  let Profile
-  let profile
-  let ERC20Token
-  let sellingToken
-  let Tether
-  let tether
-  let SANFT
-  let satoken
-  let SaleFactory
-  let factory
-  let SaleData
-  let saleData
-  let SANFTManager
-  let tokenExtras
+  const deployUtils = new DeployUtils(ethers)
 
-  let saleSetup
-  let saleVestingSchedule
+  let apeRegistry
+      , profile
+      , saleSetupHasher
+      , saleData
+      , saleFactory
+      , sANFT
+      , sANFTManager
+      , tokenRegistry
+      , sellingToken
+      , tether
+      , saleSetup
+      , owner
+      , validator
+      , operator
+      , apeWallet
+      , seller
+      , buyer
+      , buyer2
 
-  let owner, validator, factoryAdmin, apeWallet, seller, buyer, buyer2
+  async function getSignatureByValidator(saleId, setup, schedule = []) {
+    return signPackedData(ethers, saleSetupHasher, 'packAndHashSaleConfiguration', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', saleId.toNumber(), setup, schedule, tether.address)
+  }
 
   before(async function () {
-    [owner, validator, factoryAdmin, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
+    [owner, validator, operator, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
   })
 
   async function getTimestamp() {
     return (await ethers.provider.getBlock()).timestamp
   }
 
+  function normalize(val, n = 6 /* tether */) {
+    return '' + val + '0'.repeat(n)
+  }
+
   async function initNetworkAndDeploy() {
 
-    Profile = await ethers.getContractFactory("Profile")
-    profile = await Profile.deploy()
-    await profile.deployed()
 
-    SaleData = await ethers.getContractFactory("SaleData")
-    saleData = await SaleData.deploy(apeWallet.address)
-    await saleData.deployed()
+    const results = await deployUtils.initAndDeploy({
+      apeWallet: apeWallet.address,
+      validators: [validator.address],
+      operators: [operator.address]
+    })
 
-    SaleFactory = await ethers.getContractFactory("SaleFactory")
-    factory = await SaleFactory.deploy(saleData.address, validator.address)
-    await factory.deployed()
-    await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdmin.address)
+    apeRegistry = results.apeRegistry
+    profile = results.profile
+    saleSetupHasher = results.saleSetupHasher
+    saleData = results.saleData
+    saleFactory = results.saleFactory
+    sANFT = results.sANFT
+    sANFTManager = results.sANFTManager
+    tokenRegistry = results.tokenRegistry
 
-    SANFTManager = await ethers.getContractFactory("SANFTManager")
-    tokenExtras = await SANFTManager.deploy(profile.address)
-    await tokenExtras.deployed()
+    sellingToken = await deployUtils.deployContract("ERC20Token", "Abc Token", "ABC")
+    tether = await deployUtils.deployContract("TetherMock")
 
-    SANFT = await ethers.getContractFactory("SANFT")
-    satoken = await SANFT.deploy(saleData.address, factory.address, tokenExtras.address)
-    await satoken.deployed()
-
-    ERC20Token = await ethers.getContractFactory("ERC20Token")
-    sellingToken = await ERC20Token.connect(seller).deploy("Abc Token", "ABC")
-    await sellingToken.deployed()
-
-    Tether = await ethers.getContractFactory("TetherMock")
-    tether = await Tether.deploy()
-    await tether.deployed()
-    await (await tether.transfer(buyer.address, 40000)).wait()
-    await (await tether.transfer(buyer2.address, 50000)).wait()
+    await (await tether.transfer(buyer.address, normalize(40000))).wait()
+    await (await tether.transfer(buyer2.address, normalize(50000))).wait()
 
   }
 
@@ -76,7 +76,8 @@ describe("SaleFactory", async function () {
     })
 
     it("should verify that the apeFactory is correctly set", async function () {
-      assert.equal((await factory.levels(factoryAdmin.address)).toNumber(), (await factory.OPERATOR_LEVEL()).toNumber())
+      assert.isTrue(await saleFactory.isOperator(operator.address))
+      assert.isTrue(await saleFactory.isValidator(validator.address))
     })
 
   })
@@ -86,22 +87,7 @@ describe("SaleFactory", async function () {
     beforeEach(async function () {
       await initNetworkAndDeploy()
 
-      saleSetup = {
-        satoken: satoken.address,
-        minAmount: 100,
-        capAmount: 20000,
-        remainingAmount: 0,
-        pricingToken: 1,
-        pricingPayment: 2,
-        sellingToken: sellingToken.address,
-        paymentToken: tether.address,
-        owner: seller.address,
-        tokenListTimestamp: 0,
-        tokenFeePercentage: 5,
-        paymentFeePercentage: 10,
-        tokenIsTransferable: true
-      };
-      saleVestingSchedule = [
+      const [saleVestingSchedule, msg] = await saleData.validateAndPackVestingSteps([
         {
           waitTime: 10,
           percentage: 50
@@ -109,7 +95,28 @@ describe("SaleFactory", async function () {
         {
           waitTime: 1000,
           percentage: 100
-        }]
+        }
+      ])
+
+      saleSetup = {
+        owner: seller.address,
+        minAmount: 100,
+        capAmount: 20000,
+        tokenListTimestamp: 0,
+        remainingAmount: 0,
+        pricingToken: 1,
+        pricingPayment: 2,
+        paymentTokenId: 0,
+        vestingSteps: saleVestingSchedule[0],
+        sellingToken: sellingToken.address,
+        totalValue: 50000,
+        tokenIsTransferable: true,
+        tokenFeePercentage: 5,
+        extraFeePercentage: 0,
+        paymentFeePercentage: 3,
+        softCapPercentage: 0,
+        saleAddress: addr0
+      };
 
     })
 
@@ -117,25 +124,25 @@ describe("SaleFactory", async function () {
 
       let saleId = await saleData.nextSaleId()
 
-      await factory.connect(factoryAdmin).approveSale(saleId)
+      await saleFactory.connect(operator).approveSale(saleId)
 
-      let signature = signNewSale(ethers, factory, saleId, saleSetup, saleVestingSchedule)
+      let signature = await getSignatureByValidator(saleId, saleSetup)
 
-      await expect(factory.connect(seller).newSale(saleId, saleSetup, saleVestingSchedule, signature))
-          .emit(factory, "NewSale")
+      await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
+          .emit(saleFactory, "NewSale")
       const saleAddress = await saleData.getSaleAddressById(saleId)
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-      assert.isTrue(await saleData.isLegitSale(saleAddress))
+      assert.isTrue(await saleData.getSaleIdByAddress(saleAddress) > 0)
 
     })
 
     it("should throw if trying to create a sale without a pre-approval", async function () {
 
       let saleId = await saleData.nextSaleId()
-      let signature = signNewSale(ethers, factory, saleId, saleSetup, saleVestingSchedule)
+      let signature = await getSignatureByValidator(saleId, saleSetup)
 
       await assertThrowsMessage(
-          factory.newSale(saleId, saleSetup, saleVestingSchedule, signature),
+          saleFactory.newSale(saleId, saleSetup, [], tether.address, signature),
           'SaleData: invalid id')
 
     })
@@ -144,14 +151,14 @@ describe("SaleFactory", async function () {
 
       let saleId = await saleData.nextSaleId()
 
-      let signature = signNewSale(ethers, factory, saleId, saleSetup, saleVestingSchedule)
+      let signature = await getSignatureByValidator(saleId, saleSetup)
 
-      await factory.connect(factoryAdmin).approveSale(saleId)
+      await saleFactory.connect(operator).approveSale(saleId)
 
-      saleSetup.capAmount = 3450000
+      saleSetup.capAmount = 34500
 
       await assertThrowsMessage(
-          factory.newSale(saleId, saleSetup, saleVestingSchedule, signature),
+          saleFactory.newSale(saleId, saleSetup, [], tether.address, signature),
           'SaleFactory: invalid signature or modified params')
 
     })
