@@ -19,6 +19,13 @@ class DeployUtils {
     return contract
   }
 
+  async deployContractBy(contractName, owner, ...args) {
+    const Contract = await this.ethers.getContractFactory(contractName)
+    const contract = await Contract.connect(owner).deploy(...args)
+    await contract.deployed()
+    return contract
+  }
+
   async initAndDeploy(conf = {}) {
     // Hardhat always runs the compile task when running scripts with its command
     // line interface.

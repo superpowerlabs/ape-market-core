@@ -13,9 +13,14 @@ import "../registry/RegistryUser.sol";
 contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   using SafeMath for uint256;
 
-  uint256 private _nextTokenId;
+  uint256 private _nextTokenId = 1;
 
   mapping(uint256 => SA[]) internal _bundles;
+
+  modifier onlyTokenOwner(uint256 tokenId) {
+    require(ownerOf(tokenId) == _msgSender(), "SANFT: only token owner can call this");
+    _;
+  }
 
   constructor(address apeRegistry_) RegistryUser(apeRegistry_) ERC721("SA NFT Token", "SANFT") {}
 
@@ -57,8 +62,12 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
     return _nextTokenId;
   }
 
-  function withdraw(uint256 tokenId, uint256[] memory amounts) public virtual override {
+  function withdraw(uint256 tokenId, uint256[] memory amounts) external virtual override onlyTokenOwner(tokenId) {
     ISANFTManager(_get("SANFTManager")).withdraw(tokenId, amounts);
+  }
+
+  function withdrawables(uint256 tokenId) external view virtual override returns (uint16[] memory, uint256[] memory) {
+    return ISANFTManager(_get("SANFTManager")).withdrawables(tokenId);
   }
 
   function burn(uint256 tokenId) external virtual override onlyFrom("SANFTManager") {

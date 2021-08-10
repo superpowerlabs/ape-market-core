@@ -64,41 +64,58 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     ISANFT token = _getSANFTIfEqualToMsgSender();
     address tokenOwner = token.getOwnerOf(tokenId);
     ISaleData saleData = ISaleData(_get("SaleData"));
-    ISANFT.SA[] memory sas = token.getBundle(tokenId);
-    require(amounts.length == sas.length, "SANFTManager: amounts inconsistent with SAs");
+    ISANFT.SA[] memory bundle = token.getBundle(tokenId);
+    require(amounts.length == bundle.length, "SANFTManager: amounts inconsistent with SAs");
     bool done;
-    for (uint256 i = 0; i < sas.length; i++) {
+    for (uint256 i = 0; i < bundle.length; i++) {
       if (amounts[i] > 0) {
-        ISale sale = ISale(saleData.getSaleAddressById(sas[i].saleId));
-        if (sale.vest(tokenOwner, sas[i].fullAmount, sas[i].remainingAmount, amounts[i])) {
-          sas[i].remainingAmount = uint120(uint256(sas[i].remainingAmount).sub(amounts[i]));
+        ISale sale = ISale(saleData.getSaleAddressById(bundle[i].saleId));
+        if (sale.vest(tokenOwner, bundle[i].fullAmount, bundle[i].remainingAmount, amounts[i])) {
+          bundle[i].remainingAmount = uint120(uint256(bundle[i].remainingAmount).sub(amounts[i]));
           done = true;
         }
       }
     }
     if (done) {
       // puts the modified SA in a new NFT and burns the existing one
-      _createNewToken(token.getOwnerOf(tokenId), sas);
+      _createNewToken(token.getOwnerOf(tokenId), bundle);
       token.burn(tokenId);
     }
   }
 
-  function _createNewToken(address owner, ISANFT.SA[] memory sas) internal {
+  /**
+   * @dev Get the withdrawable amounts for fully or partially vested tokens
+   * @param tokenId The id of the SANFT
+   */
+  function withdrawables(uint256 tokenId) external view virtual override returns (uint16[] memory, uint256[] memory) {
+    ISANFT token = _getSANFTIfEqualToMsgSender();
+    ISANFT.SA[] memory bundle = token.getBundle(tokenId);
+    uint16[] memory saleIds = new uint16[](bundle.length);
+    uint256[] memory amounts = new uint256[](bundle.length);
+    ISaleData saleData = ISaleData(_get("SaleData"));
+    for (uint256 i = 0; i < bundle.length; i++) {
+      saleIds[i] = bundle[i].saleId;
+      amounts[i] = saleData.vestedAmount(bundle[i].saleId, bundle[i].fullAmount, bundle[i].remainingAmount);
+    }
+    return (saleIds, amounts);
+  }
+
+  function _createNewToken(address owner, ISANFT.SA[] memory bundle) internal {
     ISANFT token = ISANFT(_get("SANFT"));
     uint256 nextId = token.nextTokenId();
     bool minted;
-    for (uint256 i = 0; i < sas.length; i++) {
-      if (sas[i].remainingAmount > 0) {
+    for (uint256 i = 0; i < bundle.length; i++) {
+      if (bundle[i].remainingAmount > 0) {
         if (!minted) {
           token.mint(
             owner,
-            ISaleData(_get("SaleData")).getSaleAddressById(sas[i].saleId),
-            sas[i].fullAmount,
-            sas[i].remainingAmount
+            ISaleData(_get("SaleData")).getSaleAddressById(bundle[i].saleId),
+            bundle[i].fullAmount,
+            bundle[i].remainingAmount
           );
           minted = true;
         } else {
-          token.addSAToBundle(nextId, ISANFT.SA(sas[i].saleId, sas[i].fullAmount, sas[i].remainingAmount));
+          token.addSAToBundle(nextId, ISANFT.SA(bundle[i].saleId, bundle[i].fullAmount, bundle[i].remainingAmount));
         }
       }
     }
@@ -133,15 +150,15 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   }
 
   function areMergeable(uint256[] memory tokenIds)
-    public
-    view
-    virtual
-    override
-    returns (
-      bool,
-      string memory,
-      uint256
-    )
+  public
+  view
+  virtual
+  override
+  returns (
+    bool,
+    string memory,
+    uint256
+  )
   {
     if (tokenIds.length < 2) return (false, "Cannot merge a single NFT", 0);
     ISANFT token = ISANFT(_get("SANFT"));

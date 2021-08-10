@@ -34,7 +34,7 @@ contract Sale is RegistryUser {
 
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
-  function invest(uint256 amount) external virtual {
+  function invest(uint32 amount) external virtual {
     ISaleData saleData = ISaleData(_get("SaleData"));
     ISaleData.Setup memory setup = saleData.getSetupById(_saleId);
     (uint256 tokenPayment, uint256 buyerFee) = saleData.setInvest(_saleId, _msgSender(), amount);

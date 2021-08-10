@@ -72,6 +72,8 @@ interface ISaleData {
     uint256 currentTimestamp
   ) external pure returns (uint8);
 
+  function vestedPercentage(uint16 saleId) external view returns (uint8);
+
   function validateAndPackVestingSteps(VestingStep[] memory vestingStepsArray)
     external
     pure
@@ -89,7 +91,9 @@ interface ISaleData {
 
   function makeTransferable(uint16 saleId) external;
 
-  function fromTotalValueToTokensAmount(uint16 saleId) external view returns (uint120);
+  function fromValueToTokensAmount(uint16 saleId, uint32 value) external view returns (uint120);
+
+  function fromTokensAmountToValue(uint16 saleId, uint120 amount) external view returns (uint32);
 
   function setLaunch(uint16 saleId)
     external
@@ -120,7 +124,13 @@ interface ISaleData {
     uint120 fullAmount,
     uint120 remainingAmount,
     uint256 requestedAmount
-  ) external returns (bool);
+  ) external view returns (bool);
+
+  function vestedAmount(
+    uint16 saleId,
+    uint120 fullAmount,
+    uint120 remainingAmount
+  ) external view returns (uint256);
 
   function triggerTokenListing(uint16 saleId) external;
 }

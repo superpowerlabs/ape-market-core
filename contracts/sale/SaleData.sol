@@ -136,6 +136,16 @@ contract SaleData is ISaleData, RegistryUser {
     return 0;
   }
 
+  function vestedPercentage(uint16 saleId) public view override returns (uint8) {
+    return
+      calculateVestedPercentage(
+        _setups[saleId].vestingSteps,
+        _extraVestingSteps[saleId],
+        _setups[saleId].tokenListTimestamp,
+        block.timestamp
+      );
+  }
+
   function setUpSale(
     uint16 saleId,
     address saleAddress,
@@ -157,8 +167,8 @@ contract SaleData is ISaleData, RegistryUser {
     _extraVestingSteps[uint256(saleId)] = extraVestingSteps;
   }
 
-  function paymentTokenById(uint8 id) external view override returns (address) {
-    return ITokenRegistry(_get("ITokenRegistry")).addressById(id);
+  function paymentTokenById(uint8 id) public view override returns (address) {
+    return ITokenRegistry(_get("TokenRegistry")).addressById(id);
   }
 
   function makeTransferable(uint16 saleId) external override onlySaleOwner(saleId) {
@@ -169,14 +179,14 @@ contract SaleData is ISaleData, RegistryUser {
     }
   }
 
-  function fromTotalValueToTokensAmount(uint16 saleId) public view override returns (uint120) {
-    uint256 sId = uint256(saleId);
-    return
-      uint120(
-        uint256(_setups[sId].totalValue).mul(_setups[sId].sellingToken.decimals()).mul(_setups[sId].pricingToken).div(
-          _setups[sId].pricingPayment
-        )
-      );
+  function fromValueToTokensAmount(uint16 saleId, uint32 value) public view override returns (uint120) {
+    Setup memory setup = _setups[saleId];
+    return uint120(uint256(value).mul(10**setup.sellingToken.decimals()).mul(setup.pricingToken).div(setup.pricingPayment));
+  }
+
+  function fromTokensAmountToValue(uint16 saleId, uint120 amount) public view override returns (uint32) {
+    Setup memory setup = _setups[saleId];
+    return uint32(uint256(amount).mul(setup.pricingPayment).div(setup.pricingToken).div(10**setup.sellingToken.decimals()));
   }
 
   function setLaunch(uint16 saleId)
@@ -190,7 +200,7 @@ contract SaleData is ISaleData, RegistryUser {
       uint256
     )
   {
-    _setups[saleId].remainingAmount = fromTotalValueToTokensAmount(saleId);
+    _setups[saleId].remainingAmount = fromValueToTokensAmount(saleId, _setups[saleId].totalValue);
     uint256 fee = uint256(_setups[saleId].remainingAmount).mul(_setups[saleId].tokenFeePercentage).div(100);
     return (_setups[saleId].sellingToken, _setups[saleId].owner, uint256(_setups[saleId].remainingAmount).add(fee));
   }
@@ -213,19 +223,21 @@ contract SaleData is ISaleData, RegistryUser {
     uint256 amount
   ) external virtual override onlySale(saleId) returns (uint256, uint256) {
     require(amount <= _approvedAmounts[saleId][investor], "SaleData: Amount is above approved amount");
-    require(amount >= _setups[saleId].minAmount, "SaleData: Amount is too low");
-    // TODO convert
-    require(amount <= _setups[saleId].remainingAmount, "SaleData: Not enough tokens available");
+    Setup memory setup = _setups[saleId];
+    require(amount >= setup.minAmount, "SaleData: Amount is too low");
+    uint tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
+    require(tokensAmount <= setup.remainingAmount, "SaleData: Not enough tokens available");
     if (amount == _approvedAmounts[saleId][investor]) {
       delete _approvedAmounts[saleId][investor];
     } else {
       _approvedAmounts[saleId][investor] = uint32(uint256(_approvedAmounts[saleId][investor]).sub(amount));
     }
-    uint256 payment = amount.mul(_setups[saleId].pricingPayment).div(_setups[saleId].pricingToken);
-    uint256 buyerFee = payment.mul(_setups[saleId].paymentFeePercentage).div(100);
-    uint256 sellerFee = amount.mul(_setups[saleId].tokenFeePercentage).div(100);
-    _setups[saleId].remainingAmount = uint120(uint256(_setups[saleId].remainingAmount).sub(amount));
-    ISANFTManager(_get("SANFTManager")).mintInitialTokens(investor, _setups[saleId].saleAddress, amount, sellerFee);
+    uint decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
+    uint256 payment = amount.mul(decimals).mul(setup.pricingPayment).div(setup.pricingToken);
+    uint256 buyerFee = payment.mul(setup.paymentFeePercentage).div(100);
+    uint256 sellerFee = tokensAmount.mul(setup.tokenFeePercentage).div(100);
+    setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
+    ISANFTManager(_get("SANFTManager")).mintInitialTokens(investor, setup.saleAddress, tokensAmount, sellerFee);
     return (payment, buyerFee);
   }
 
@@ -240,10 +252,11 @@ contract SaleData is ISaleData, RegistryUser {
 
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
-    require(amount <= _setups[saleId].remainingAmount, "Sale: Cannot withdraw more than remaining");
-    uint256 fee = uint256(_setups[saleId].capAmount).mul(_setups[saleId].tokenFeePercentage).div(100);
-    _setups[saleId].remainingAmount = uint120(uint256(_setups[saleId].remainingAmount).sub(amount));
-    return (_setups[saleId].sellingToken, fee);
+    Setup memory setup = _setups[saleId];
+    require(amount <= setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
+    uint256 fee = uint256(setup.capAmount).mul(setup.tokenFeePercentage).div(100);
+    setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(amount));
+    return (setup.sellingToken, fee);
   }
 
   function isVested(
@@ -251,17 +264,18 @@ contract SaleData is ISaleData, RegistryUser {
     uint120 fullAmount,
     uint120 remainingAmount,
     uint256 requestedAmount
-  ) external virtual override returns (bool) {
-    uint256 tokenListTimestamp = uint256(_setups[saleId].tokenListTimestamp);
-    require(tokenListTimestamp != 0, "SaleData: token not listed yet");
-    uint256 vestedPercentage = calculateVestedPercentage(
-      _setups[saleId].vestingSteps,
-      _extraVestingSteps[uint256(saleId)],
-      tokenListTimestamp,
-      block.timestamp
-    );
-    uint256 unvestedAmount = vestedPercentage == 100 ? 0 : uint256(fullAmount).mul(100 - vestedPercentage).div(100);
-    return requestedAmount <= uint256(remainingAmount).sub(unvestedAmount);
+  ) external view virtual override returns (bool) {
+    return requestedAmount <= vestedAmount(saleId, fullAmount, remainingAmount);
+  }
+
+  function vestedAmount(
+    uint16 saleId,
+    uint120 fullAmount,
+    uint120 remainingAmount
+  ) public view virtual override returns (uint256) {
+    if (_setups[saleId].tokenListTimestamp == 0) return 0;
+    uint256 vested = vestedPercentage(saleId);
+    return uint256(remainingAmount).sub(vested == 100 ? 0 : uint256(fullAmount).mul(100 - vested).div(100));
   }
 
   function triggerTokenListing(uint16 saleId) external virtual override onlySaleOwner(saleId) {

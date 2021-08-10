@@ -31,4 +31,6 @@ interface ISANFTManager {
   ) external;
 
   function withdraw(uint256 tokenId, uint256[] memory amounts) external;
+
+  function withdrawables(uint256 tokenId) external view returns (uint16[] memory, uint256[] memory);
 }
