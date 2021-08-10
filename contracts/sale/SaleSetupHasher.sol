@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import "./ISaleSetupHasher.sol";
-
+import "../registry/FakeRegistryUser.sol";
 // we deploy this standalone to reduce the size of SaleFactory
 
-contract SaleSetupHasher is ISaleSetupHasher {
+contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
   /*
   abi.encodePacked is unable to pack structs. To get a signable hash, we need to
   put the data contained in the struct in types that are packable.

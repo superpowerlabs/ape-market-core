@@ -34,6 +34,20 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     _nextValidatorId = validators.length;
   }
 
+  ISaleData private _saleData;
+  ISaleSetupHasher private _saleSetupHasher;
+
+  function updateRegisteredContracts() external virtual override onlyRegistry {
+    address addr = _get("SaleData");
+    if (addr != address(_saleData)) {
+      _saleData = ISaleData(addr);
+    }
+    addr = _get("SaleSetupHasher");
+    if (addr != address(_saleSetupHasher)) {
+      _saleSetupHasher = ISaleSetupHasher(addr);
+    }
+  }
+
   function addValidator(address newValidator) external override onlyOwner {
     require(!isValidator(newValidator), "SaleFactory: validator already set");
     _validators[_nextValidatorId++] = newValidator;
@@ -78,9 +92,8 @@ contract SaleFactory is ISaleFactory, RegistryUser {
 
   function approveSale(uint256 saleId) external override {
     require(isOperator(_msgSender()), "SaleFactory: only operators can call this function");
-    ISaleData saleData = ISaleData(_get("SaleData"));
-    require(saleId == saleData.nextSaleId(), "SaleFactory: invalid sale id");
-    saleData.increaseSaleId();
+    require(saleId == _saleData.nextSaleId(), "SaleFactory: invalid sale id");
+    _saleData.increaseSaleId();
     _approvals[saleId] = true;
     emit SaleApproved(saleId);
   }
@@ -99,13 +112,13 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     bytes memory validatorSignature
   ) external override {
     address validator = ECDSA.recover(
-      ISaleSetupHasher(_get("SaleSetupHasher")).packAndHashSaleConfiguration(saleId, setup, extraVestingSteps, paymentToken),
+      _saleSetupHasher.packAndHashSaleConfiguration(saleId, setup, extraVestingSteps, paymentToken),
       validatorSignature
     );
     require(isValidator(validator), "SaleFactory: invalid signature or modified params");
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
-    ISaleData(_get("SaleData")).setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
+    _saleData.setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
     emit NewSale(saleId, addr);
   }
 }

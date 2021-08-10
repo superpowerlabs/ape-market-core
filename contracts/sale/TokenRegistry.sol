@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../registry/RegistryUser.sol";
+import "../sale/ISaleData.sol";
 import "./ITokenRegistry.sol";
 
 contract TokenRegistry is ITokenRegistry, RegistryUser {
@@ -11,6 +12,15 @@ contract TokenRegistry is ITokenRegistry, RegistryUser {
   uint8 private _nextId = 1;
 
   constructor(address registry) RegistryUser(registry) {}
+
+  ISaleData private _saleData;
+
+  function updateRegisteredContracts() external virtual override onlyRegistry {
+    address addr = _get("SaleData");
+    if (addr != address(_saleData)) {
+      _saleData = ISaleData(addr);
+    }
+  }
 
   function nextIndex() public view virtual override returns (uint8) {
     return _nextId;
@@ -24,7 +34,8 @@ contract TokenRegistry is ITokenRegistry, RegistryUser {
     return _idByAddress[addr];
   }
 
-  function register(address addr) public override onlyFrom("SaleData") returns (uint8) {
+  function register(address addr) public override returns (uint8) {
+    require(address(_saleData) == _msgSender(), "TokenRegistry: only SaleData can call this");
     _addressesById[_nextId] = addr;
     _idByAddress[addr] = _nextId;
     emit TokenAdded(_nextId, addr);

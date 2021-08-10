@@ -22,7 +22,21 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
     _;
   }
 
+  modifier onlySANFTManager() {
+    require(address(_sanftmanager) == _msgSender(), "SANFT: only SANFTManager can call this");
+    _;
+  }
+
   constructor(address apeRegistry_) RegistryUser(apeRegistry_) ERC721("SA NFT Token", "SANFT") {}
+
+  ISANFTManager private _sanftmanager;
+
+  function updateRegisteredContracts() external virtual override onlyRegistry {
+    address addr = _get("SANFTManager");
+    if (addr != address(_sanftmanager)) {
+      _sanftmanager = ISANFTManager(addr);
+    }
+  }
 
   function _baseURI() internal view virtual override returns (string memory) {
     return "https://metadata.ape.market/sanft/";
@@ -35,7 +49,7 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   ) internal override(ERC721, ERC721Enumerable) {
     super._beforeTokenTransfer(from, to, tokenId);
     if (from != address(0) && to != address(0)) {
-      ISANFTManager(_get("SANFTManager")).beforeTokenTransfer(from, to, tokenId);
+      _sanftmanager.beforeTokenTransfer(from, to, tokenId);
     }
   }
 
@@ -48,7 +62,7 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
     address saleAddress,
     uint120 fullAmount,
     uint120 remainingAmount
-  ) external virtual override onlyFrom("SANFTManager") {
+  ) external virtual override onlySANFTManager {
     ISale _sale = ISale(saleAddress);
     uint16 saleId = _sale.saleId();
     require(_bundles[_nextTokenId].length == 0, "SANFT: Bundle already exists");
@@ -57,13 +71,10 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
     _nextTokenId++;
   }
 
-  function mint(
-    address to,
-    SA[] memory bundle
-  ) public virtual override onlyFrom("SANFTManager") {
+  function mint(address to, SA[] memory bundle) public virtual override onlySANFTManager {
     require(_bundles[_nextTokenId].length == 0, "SANFT: Bundle already exists");
     _safeMint(to, _nextTokenId);
-    for (uint i = 0; i < bundle.length; i++) {
+    for (uint256 i = 0; i < bundle.length; i++) {
       _bundles[_nextTokenId].push(bundle[i]);
     }
     _nextTokenId++;
@@ -74,20 +85,20 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   }
 
   function withdraw(uint256 tokenId, uint256[] memory amounts) external virtual override onlyTokenOwner(tokenId) {
-    ISANFTManager(_get("SANFTManager")).withdraw(tokenId, amounts);
+    _sanftmanager.withdraw(tokenId, amounts);
   }
 
   function withdrawables(uint256 tokenId) external view override returns (uint16[] memory, uint256[] memory) {
-    return ISANFTManager(_get("SANFTManager")).withdrawables(tokenId);
+    return _sanftmanager.withdrawables(tokenId);
   }
 
-  function burn(uint256 tokenId) external virtual override onlyFrom("SANFTManager") {
+  function burn(uint256 tokenId) external virtual override onlySANFTManager {
     //    console.log("Burning %s", tokenId);
     delete _bundles[tokenId];
     _burn(tokenId);
   }
 
-  function addSAToBundle(uint256 tokenId, SA memory newSA) external override onlyFrom("SANFTManager") {
+  function addSAToBundle(uint256 tokenId, SA memory newSA) external override onlySANFTManager {
     _bundles[tokenId].push(newSA);
   }
 

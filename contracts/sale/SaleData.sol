@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "./ISaleData.sol";
+import "./ISaleFactory.sol";
 import "../nft/ISANFTManager.sol";
 import "./ITokenRegistry.sol";
 import "../registry/RegistryUser.sol";
@@ -23,17 +24,41 @@ contract SaleData is ISaleData, RegistryUser {
   mapping(uint16 => mapping(address => uint32)) private _valuesInEscrow;
 
   modifier onlySaleOwner(uint16 saleId) {
-    require(_msgSender() == _setups[uint256(saleId)].owner, "Sale: caller is not the owner");
+    require(_msgSender() == _setups[uint256(saleId)].owner, "SaleData: caller is not the owner");
     _;
   }
 
   modifier onlySale(uint16 saleId) {
-    require(_msgSender() == _setups[uint256(saleId)].saleAddress, "Sale: caller is not a sale");
+    require(_msgSender() == _setups[uint256(saleId)].saleAddress, "SaleData: caller is not a sale");
+    _;
+  }
+
+  modifier onlySaleFactory() {
+    require(_msgSender() == address(_saleFactory), "SaleData: only SaleFactory can call this function");
     _;
   }
 
   constructor(address registry, address apeWallet_) RegistryUser(registry) {
     _apeWallet = apeWallet_;
+  }
+
+  ISANFTManager private _sanftmanager;
+  ITokenRegistry private _tokenRegistry;
+  ISaleFactory private _saleFactory;
+
+  function updateRegisteredContracts() external virtual override onlyRegistry {
+    address addr = _get("SANFTManager");
+    if (addr != address(_sanftmanager)) {
+      _sanftmanager = ISANFTManager(addr);
+    }
+    addr = _get("TokenRegistry");
+    if (addr != address(_tokenRegistry)) {
+      _tokenRegistry = ITokenRegistry(addr);
+    }
+    addr = _get("SaleFactory");
+    if (addr != address(_saleFactory)) {
+      _saleFactory = ISaleFactory(addr);
+    }
   }
 
   function apeWallet() external view override returns (address) {
@@ -48,7 +73,7 @@ contract SaleData is ISaleData, RegistryUser {
     return _nextId;
   }
 
-  function increaseSaleId() external override onlyFrom("SaleFactory") {
+  function increaseSaleId() external override onlySaleFactory {
     _nextId++;
   }
 
@@ -152,15 +177,14 @@ contract SaleData is ISaleData, RegistryUser {
     Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken
-  ) external override onlyFrom("SaleFactory") {
+  ) external override onlySaleFactory {
     uint256 sId = uint256(saleId);
     require(_setups[sId].owner == address(0), "SaleData: id has already been used");
     require(saleId < _nextId, "SaleData: invalid id");
     setup.saleAddress = saleAddress;
-    ITokenRegistry registry = ITokenRegistry(_get("TokenRegistry"));
-    setup.paymentTokenId = registry.idByAddress(paymentToken);
+    setup.paymentTokenId = _tokenRegistry.idByAddress(paymentToken);
     if (setup.paymentTokenId == 0) {
-      setup.paymentTokenId = registry.register(paymentToken);
+      setup.paymentTokenId = _tokenRegistry.register(paymentToken);
     }
     _setups[sId] = setup;
     _saleIdByAddress[saleAddress] = saleId;
@@ -168,7 +192,7 @@ contract SaleData is ISaleData, RegistryUser {
   }
 
   function paymentTokenById(uint8 id) public view override returns (address) {
-    return ITokenRegistry(_get("TokenRegistry")).addressById(id);
+    return _tokenRegistry.addressById(id);
   }
 
   function makeTransferable(uint16 saleId) external override onlySaleOwner(saleId) {
@@ -237,7 +261,7 @@ contract SaleData is ISaleData, RegistryUser {
     uint256 buyerFee = payment.mul(setup.paymentFeePercentage).div(100);
     uint256 sellerFee = tokensAmount.mul(setup.tokenFeePercentage).div(100);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
-    ISANFTManager(_get("SANFTManager")).mintInitialTokens(investor, setup.saleAddress, tokensAmount, sellerFee);
+    _sanftmanager.mintInitialTokens(investor, setup.saleAddress, tokensAmount, sellerFee);
     return (payment, buyerFee);
   }
 
@@ -253,7 +277,7 @@ contract SaleData is ISaleData, RegistryUser {
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
     Setup memory setup = _setups[saleId];
-    require(amount <= setup.remainingAmount, "Sale: Cannot withdraw more than remaining");
+    require(amount <= setup.remainingAmount, "SaleData: Cannot withdraw more than remaining");
     uint256 fee = uint256(setup.capAmount).mul(setup.tokenFeePercentage).div(100);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(amount));
     return (setup.sellingToken, fee);
@@ -279,7 +303,7 @@ contract SaleData is ISaleData, RegistryUser {
   }
 
   function triggerTokenListing(uint16 saleId) external virtual override onlySaleOwner(saleId) {
-    require(_setups[saleId].tokenListTimestamp == 0, "Sale: Token already listed");
+    require(_setups[saleId].tokenListTimestamp == 0, "SaleData: Token already listed");
     _setups[saleId].tokenListTimestamp = uint32(block.timestamp);
   }
 }

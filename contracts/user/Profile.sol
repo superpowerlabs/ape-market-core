@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
 import "./IProfile.sol";
+import "../registry/FakeRegistryUser.sol";
 
-contract Profile is IProfile, Ownable {
+contract Profile is IProfile, Ownable, FakeRegistryUser {
   mapping(address => bool) private _associatedAccounts;
   uint256 private _validity = 1 days;
 
@@ -65,4 +66,5 @@ contract Profile is IProfile, Ownable {
         )
       );
   }
+
 }

@@ -3,11 +3,12 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IApeRegistry.sol";
+import "./IRegistryUser.sol";
 
 // for debugging only
 import "hardhat/console.sol";
 
-contract RegistryUser is Ownable {
+contract RegistryUser is IRegistryUser, Ownable {
   IApeRegistry internal _registry;
   address internal _owner;
 
@@ -15,6 +16,14 @@ contract RegistryUser is Ownable {
     require(
       _msgSender() == _get(contractName),
       string(abi.encodePacked("RegistryUser: only ", contractName, " can call this function"))
+    );
+    _;
+  }
+
+  modifier onlyRegistry() {
+    require(
+      _msgSender() == address(_registry),
+      string(abi.encodePacked("RegistryUser: only ApeRegistry can call this function"))
     );
     _;
   }
@@ -27,9 +36,12 @@ contract RegistryUser is Ownable {
     return _registry.get(keccak256(abi.encodePacked(contractName)));
   }
 
-  function updateRegistry(address addr) external onlyOwner {
+  function updateRegistry(address addr) external override onlyOwner {
     // This is an emergency function. In theory,
     // there should not be any reason to update the registry
     _registry = IApeRegistry(addr);
   }
+
+  // this must be overwritten
+  function updateRegisteredContracts() external virtual override onlyRegistry {}
 }

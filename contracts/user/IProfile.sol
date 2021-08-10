@@ -25,4 +25,5 @@ interface IProfile {
     address addr2,
     uint256 timestamp
   ) external view returns (bytes32);
+
 }
