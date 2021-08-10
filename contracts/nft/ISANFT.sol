@@ -17,6 +17,11 @@ interface ISANFT {
     uint120 remainingAmount
   ) external;
 
+  function mint(
+    address to,
+    SA[] memory bundle
+  ) external;
+
   function nextTokenId() external view returns (uint256);
 
   function burn(uint256 tokenId) external;

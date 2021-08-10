@@ -1,8 +1,8 @@
 const {assert} = require("chai");
 
-module.exports = {
+const TestHelpers = {
 
-  init(ethers) {
+  initEthers(ethers) {
     this.ethers = ethers
   },
 
@@ -22,9 +22,11 @@ module.exports = {
   },
 
   formatBundle(sAArray) {
-    for (let i = 0;i<sAArray.length;i++) {
-      sAArray[i] = formatSA(sAArray[i])
+    const res = []
+    for (let i = 0; i < sAArray.length; i++) {
+      res[i] = TestHelpers.formatSA(sAArray[i])
     }
+    return res
   },
 
   formatSA(sA) {
@@ -54,3 +56,5 @@ module.exports = {
   }
 
 }
+
+module.exports = TestHelpers

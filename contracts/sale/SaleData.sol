@@ -225,14 +225,14 @@ contract SaleData is ISaleData, RegistryUser {
     require(amount <= _approvedAmounts[saleId][investor], "SaleData: Amount is above approved amount");
     Setup memory setup = _setups[saleId];
     require(amount >= setup.minAmount, "SaleData: Amount is too low");
-    uint tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
+    uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
     require(tokensAmount <= setup.remainingAmount, "SaleData: Not enough tokens available");
     if (amount == _approvedAmounts[saleId][investor]) {
       delete _approvedAmounts[saleId][investor];
     } else {
       _approvedAmounts[saleId][investor] = uint32(uint256(_approvedAmounts[saleId][investor]).sub(amount));
     }
-    uint decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
+    uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
     uint256 payment = amount.mul(decimals).mul(setup.pricingPayment).div(setup.pricingToken);
     uint256 buyerFee = payment.mul(setup.paymentFeePercentage).div(100);
     uint256 sellerFee = tokensAmount.mul(setup.tokenFeePercentage).div(100);

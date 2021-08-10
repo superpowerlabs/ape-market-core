@@ -37,7 +37,7 @@ module.exports = {
   settings: {
     optimizer: {
       enabled: true,
-      runs: 200
+      runs: 800 // << trying to reduce gas consumption for users
     }
   },
   paths: {

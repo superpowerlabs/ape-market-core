@@ -1,10 +1,11 @@
 const {expect, assert} = require("chai")
 const DeployUtils = require('../scripts/lib/DeployUtils')
-const {signPackedData} = require('../scripts/lib/TestHelpers')
+const {initEthers, signPackedData} = require('../scripts/lib/TestHelpers')
 
 describe("Profile", function () {
 
   const deployUtils = new DeployUtils(ethers)
+  initEthers(ethers)
 
   let Profile
   let profile
@@ -17,9 +18,8 @@ describe("Profile", function () {
   let addr0 = '0x0000000000000000000000000000000000000000'
 
 
-
   async function getSignatureByAccount1(addr1, addr2, ts) {
-    return signPackedData(ethers, profile, 'hashAndPackAssociatedAccounts', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', addr1, addr2, ts)
+    return signPackedData(profile, 'hashAndPackAssociatedAccounts', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', addr1, addr2, ts)
   }
 
   before(async function () {
@@ -57,7 +57,7 @@ describe("Profile", function () {
 
     it("should throw if the transaction is executed after validity late", async function () {
 
-      let signature = await getSignatureByAccount1(account1.address, account2.address, now - (2 * day) )
+      let signature = await getSignatureByAccount1(account1.address, account2.address, now - (2 * day))
 
       await expect(profile.connect(account2).associateAccount(account1.address, now - (2 * day), signature))
           .revertedWith('Profile: request is expired')
@@ -65,7 +65,7 @@ describe("Profile", function () {
 
     it("should throw if invalid address", async function () {
 
-      let signature = await getSignatureByAccount1(addr0, account2.address, now - (2 * day) )
+      let signature = await getSignatureByAccount1(addr0, account2.address, now - (2 * day))
 
       await expect(profile.connect(account2).associateAccount(addr0, now - (2 * day), signature))
           .revertedWith('Profile: no invalid accounts')

@@ -69,10 +69,13 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     bool done;
     for (uint256 i = 0; i < bundle.length; i++) {
       if (amounts[i] > 0) {
-        ISale sale = ISale(saleData.getSaleAddressById(bundle[i].saleId));
-        if (sale.vest(tokenOwner, bundle[i].fullAmount, bundle[i].remainingAmount, amounts[i])) {
-          bundle[i].remainingAmount = uint120(uint256(bundle[i].remainingAmount).sub(amounts[i]));
-          done = true;
+        ISaleData.Setup memory setup = saleData.getSetupById(bundle[i].saleId);
+        if (setup.tokenListTimestamp != 0) {
+          ISale sale = ISale(saleData.getSaleAddressById(bundle[i].saleId));
+          if (sale.vest(tokenOwner, bundle[i].fullAmount, bundle[i].remainingAmount, amounts[i])) {
+            bundle[i].remainingAmount = uint120(uint256(bundle[i].remainingAmount).sub(amounts[i]));
+            done = true;
+          }
         }
       }
     }
@@ -80,6 +83,8 @@ contract SANFTManager is ISANFTManager, RegistryUser {
       // puts the modified SA in a new NFT and burns the existing one
       _createNewToken(token.getOwnerOf(tokenId), bundle);
       token.burn(tokenId);
+    } else {
+      revert("SANFTManager: Cannot withdraw not available tokens");
     }
   }
 
@@ -237,7 +242,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     return (bundle, apeBundle);
   }
 
-  function split(uint256 tokenId, uint256[] memory keptAmounts) external virtual override onlyFrom("SANFT") {
+  function split(uint256 tokenId, uint256[] memory keptAmounts) external virtual override {
     ISANFT token = ISANFT(_get("SANFT"));
     require(token.getOwnerOf(tokenId) == _msgSender(), "SANFTManager: only the owner can split an NFT");
     ISANFT.SA[] memory bundle = token.getBundle(tokenId);
@@ -245,47 +250,34 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     (bundle, feeBundle) = _applyFeesToBundle(bundle);
     _createNewToken(apeWallet, feeBundle);
     require(keptAmounts.length == bundle.length, "SANFTManager: length of SAs does not match split");
-    uint256 tokenIdA;
-    uint256 tokenIdB;
+    ISANFT.SA[] memory newBundleA = new ISANFT.SA[](keptAmounts.length);
+    ISANFT.SA[] memory newBundleB = new ISANFT.SA[](keptAmounts.length);
+    uint a;
+    uint b;
     for (uint256 i = 0; i < keptAmounts.length; i++) {
       require(
         bundle[i].remainingAmount >= keptAmounts[i],
         "SANFTManager: kept amounts cannot be larger that remaining amounts"
       );
       uint120 fullAmountKept = uint120(
-        uint256(bundle[i].fullAmount).mul(keptAmounts[i]).div(bundle[i].fullAmount - bundle[i].remainingAmount)
+        uint256(bundle[i].fullAmount).mul(keptAmounts[i]).div(bundle[i].remainingAmount)
       );
       uint120 otherFullAmount = bundle[i].fullAmount - fullAmountKept;
       if (keptAmounts[i] != 0) {
-        tokenIdA = _mintToken(token, tokenIdA, bundle[i].saleId, fullAmountKept, uint120(keptAmounts[i]));
+        newBundleA[a++] = ISANFT.SA(bundle[i].saleId, fullAmountKept, uint120(keptAmounts[i]));
       }
-      if (keptAmounts[i] != uint256(bundle[i].remainingAmount)) {
-        tokenIdB = _mintToken(
-          token,
-          tokenIdB,
-          bundle[i].saleId,
-          otherFullAmount,
-          bundle[i].remainingAmount - uint120(keptAmounts[i])
-        );
+      if (bundle[i].remainingAmount != uint120(keptAmounts[i])) {
+        newBundleB[b++] = ISANFT.SA(bundle[i].saleId, otherFullAmount, bundle[i].remainingAmount - uint120(keptAmounts[i]));
       }
     }
-    token.burn(tokenId);
+    if (a > 0 || b > 0) {
+      if (a > 0) _createNewToken(_msgSender(), newBundleA);
+      if (b > 0) _createNewToken(_msgSender(), newBundleB);
+      token.burn(tokenId);
+    } else {
+      revert("SANFTManager; split failed");
+    }
+
   }
 
-  function _mintToken(
-    ISANFT token,
-    uint256 tokenId,
-    uint16 saleId,
-    uint120 fullAmount,
-    uint120 amount
-  ) internal returns (uint256) {
-    if (tokenId == 0) {
-      tokenId = token.nextTokenId();
-      token.mint(token.getOwnerOf(tokenId), ISaleData(_get("SaleData")).getSaleAddressById(saleId), fullAmount, amount);
-    } else {
-      ISANFT.SA memory newSA = ISANFT.SA(saleId, fullAmount, amount);
-      token.addSAToBundle(tokenId, newSA);
-    }
-    return tokenId;
-  }
 }
