@@ -167,7 +167,7 @@ contract SaleData is ISaleData, RegistryUser {
     if (setup.paymentTokenId == 0) {
       setup.paymentTokenId = _tokenRegistry.register(paymentToken);
     }
-    _saleDB.initSale(saleId, setup,extraVestingSteps);
+    _saleDB.initSale(saleId, setup, extraVestingSteps);
   }
 
   function paymentTokenById(uint8 id) public view override returns (address) {
@@ -223,7 +223,7 @@ contract SaleData is ISaleData, RegistryUser {
     address investor,
     uint256 amount
   ) external virtual override onlySale(saleId) returns (uint256, uint256) {
-    uint approved = _saleDB.getApproval(saleId, investor);
+    uint256 approved = _saleDB.getApproval(saleId, investor);
     require(amount <= approved, "SaleData: Amount is above approved amount");
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount >= setup.minAmount, "SaleData: Amount is too low");

@@ -45,7 +45,7 @@ contract ApeRegistry is IApeRegistry, Ownable {
     }
   }
 
-  function updateContracts(uint initialIndex, uint limit) public override onlyOwner {
+  function updateContracts(uint256 initialIndex, uint256 limit) public override onlyOwner {
     IRegistryUser registryUser;
     for (uint256 j = initialIndex; j < limit; j++) {
       if (_index[j] != 0) {

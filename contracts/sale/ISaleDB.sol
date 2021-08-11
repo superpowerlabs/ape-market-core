@@ -79,12 +79,7 @@ interface ISaleDB {
     uint32 amount
   ) external;
 
-  function deleteApproval(
-    uint16 saleId,
-    address investor
-  ) external;
+  function deleteApproval(uint16 saleId, address investor) external;
 
-  function getApproval(uint16 saleId,
-    address investor) external  returns(uint);
-
+  function getApproval(uint16 saleId, address investor) external returns (uint256);
 }

@@ -5,7 +5,6 @@ import "../nft/ISANFT.sol";
 import "./ISaleDB.sol";
 
 interface ISaleData {
-
   function apeWallet() external view returns (address);
 
   function updateApeWallet(address apeWallet_) external;

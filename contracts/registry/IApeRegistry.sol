@@ -6,7 +6,7 @@ interface IApeRegistry {
 
   function get(bytes32 contractName) external view returns (address);
 
-  function updateContracts(uint initialIndex, uint limit) external;
+  function updateContracts(uint256 initialIndex, uint256 limit) external;
 
   function updateAllContracts() external;
 }
