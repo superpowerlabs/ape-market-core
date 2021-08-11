@@ -43,19 +43,21 @@ contract ApeRegistry is IApeRegistry, Ownable {
       }
       emit RegistryUpdated(contractNames[i], addrs[i]);
     }
-    if (changesDone) {
-      _updateContracts();
-    }
   }
 
-  function _updateContracts() internal {
+  function updateContracts(uint initialIndex, uint limit) public override onlyOwner {
     IRegistryUser registryUser;
-    for (uint256 j = 0; j < _index.length; j++) {
+    for (uint256 j = initialIndex; j < limit; j++) {
       if (_index[j] != 0) {
         registryUser = IRegistryUser(_registry[_index[j]]);
         registryUser.updateRegisteredContracts();
       }
     }
+  }
+
+  function updateAllContracts() external override onlyOwner {
+    // this could go out of gas
+    updateContracts(0, _index.length);
   }
 
   function get(bytes32 contractName) external view override returns (address) {

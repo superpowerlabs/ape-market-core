@@ -124,7 +124,7 @@ describe("SANFTManager", async function () {
 
     await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
         .emit(saleFactory, "NewSale")
-    saleAddress = await _saleData.getSaleAddressById(saleId)
+    saleAddress = await saleDB.getSaleAddressById(saleId)
     sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
     assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 
@@ -209,7 +209,7 @@ describe("SANFTManager", async function () {
       await saleFactory.connect(operator).approveSale(saleId2)
       let signature = await getSignatureByValidator(saleId2, saleSetup)
       await saleFactory.connect(seller).newSale(saleId2, saleSetup, [], tether.address, signature)
-      saleAddress2 = await _saleData.getSaleAddressById(saleId2)
+      saleAddress2 = await saleDB.getSaleAddressById(saleId2)
       sale2 = new ethers.Contract(saleAddress2, saleJson.abi, ethers.provider)
 
       const allTokensAmount = await saleData.fromValueToTokensAmount(saleId2, saleSetup.totalValue * 1.05)

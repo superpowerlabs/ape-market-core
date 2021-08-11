@@ -132,7 +132,7 @@ describe("SaleFactory", async function () {
 
       await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
           .emit(saleFactory, "NewSale")
-      const saleAddress = await _saleData.getSaleAddressById(saleId)
+      const saleAddress = await saleDB.getSaleAddressById(saleId)
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
       assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 

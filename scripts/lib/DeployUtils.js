@@ -72,6 +72,8 @@ class DeployUtils {
       tokenRegistry.address
     ])
 
+    await apeRegistry.updateAllContracts()
+
     return {
       apeRegistry,
       profile,

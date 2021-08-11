@@ -5,4 +5,8 @@ interface IApeRegistry {
   function register(string[] memory contractNames, address[] memory addrs) external;
 
   function get(bytes32 contractName) external view returns (address);
+
+  function updateContracts(uint initialIndex, uint limit) external;
+
+  function updateAllContracts() external;
 }

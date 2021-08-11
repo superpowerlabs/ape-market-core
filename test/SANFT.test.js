@@ -122,7 +122,7 @@ describe("SANFT", async function () {
 
     await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
         .emit(saleFactory, "NewSale")
-    saleAddress = await _saleData.getSaleAddressById(saleId)
+    saleAddress = await saleDB.getSaleAddressById(saleId)
     const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
     assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 
