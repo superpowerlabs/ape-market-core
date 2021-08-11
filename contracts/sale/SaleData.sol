@@ -12,24 +12,15 @@ import "../registry/RegistryUser.sol";
 contract SaleData is ISaleData, RegistryUser {
   using SafeMath for uint256;
 
-  uint256 private _nextId = 1;
   address private _apeWallet;
 
-  mapping(uint256 => Setup) private _setups;
-  mapping(address => uint256) private _saleIdByAddress;
-  mapping(uint256 => uint256[]) private _extraVestingSteps;
-
-  // both the following in USD
-  mapping(uint16 => mapping(address => uint32)) private _approvedAmounts;
-  mapping(uint16 => mapping(address => uint32)) private _valuesInEscrow;
-
   modifier onlySaleOwner(uint16 saleId) {
-    require(_msgSender() == _setups[uint256(saleId)].owner, "SaleData: caller is not the owner");
+    require(_msgSender() == _saleDB.getSetupById(saleId).owner, "SaleData: caller is not the owner");
     _;
   }
 
   modifier onlySale(uint16 saleId) {
-    require(_msgSender() == _setups[uint256(saleId)].saleAddress, "SaleData: caller is not a sale");
+    require(_msgSender() == _saleDB.getSetupById(saleId).saleAddress, "SaleData: caller is not a sale");
     _;
   }
 
@@ -45,6 +36,7 @@ contract SaleData is ISaleData, RegistryUser {
   ISANFTManager private _sanftmanager;
   ITokenRegistry private _tokenRegistry;
   ISaleFactory private _saleFactory;
+  ISaleDB private _saleDB;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
     address addr = _get("SANFTManager");
@@ -59,6 +51,10 @@ contract SaleData is ISaleData, RegistryUser {
     if (addr != address(_saleFactory)) {
       _saleFactory = ISaleFactory(addr);
     }
+    addr = _get("SaleDB");
+    if (addr != address(_saleDB)) {
+      _saleDB = ISaleDB(addr);
+    }
   }
 
   function apeWallet() external view override returns (address) {
@@ -69,27 +65,15 @@ contract SaleData is ISaleData, RegistryUser {
     _apeWallet = apeWallet_;
   }
 
-  function nextSaleId() external view override returns (uint256) {
-    return _nextId;
-  }
-
   function increaseSaleId() external override onlySaleFactory {
-    _nextId++;
-  }
-
-  function getSaleIdByAddress(address sale) external view override returns (uint16) {
-    return uint16(_saleIdByAddress[sale]);
-  }
-
-  function getSaleAddressById(uint16 saleId) external view override returns (address) {
-    return _setups[uint256(saleId)].saleAddress;
+    _saleDB.increaseSaleId();
   }
 
   /**
    * @dev Validate and pack a VestingStep[]. It must be called by the dApp during the configuration of the Sale setup. The same code can be executed in Javascript, but running a function on a smart contract guarantees future compatibility.
    * @param vestingStepsArray The array of VestingStep
    */
-  function validateAndPackVestingSteps(VestingStep[] memory vestingStepsArray)
+  function validateAndPackVestingSteps(ISaleDB.VestingStep[] memory vestingStepsArray)
     external
     pure
     override
@@ -164,9 +148,9 @@ contract SaleData is ISaleData, RegistryUser {
   function vestedPercentage(uint16 saleId) public view override returns (uint8) {
     return
       calculateVestedPercentage(
-        _setups[saleId].vestingSteps,
-        _extraVestingSteps[saleId],
-        _setups[saleId].tokenListTimestamp,
+        _saleDB.getSetupById(saleId).vestingSteps,
+        _saleDB.getExtraVestingStepsById(saleId),
+        _saleDB.getSetupById(saleId).tokenListTimestamp,
         block.timestamp
       );
   }
@@ -174,21 +158,16 @@ contract SaleData is ISaleData, RegistryUser {
   function setUpSale(
     uint16 saleId,
     address saleAddress,
-    Setup memory setup,
+    ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken
   ) external override onlySaleFactory {
-    uint256 sId = uint256(saleId);
-    require(_setups[sId].owner == address(0), "SaleData: id has already been used");
-    require(saleId < _nextId, "SaleData: invalid id");
     setup.saleAddress = saleAddress;
     setup.paymentTokenId = _tokenRegistry.idByAddress(paymentToken);
     if (setup.paymentTokenId == 0) {
       setup.paymentTokenId = _tokenRegistry.register(paymentToken);
     }
-    _setups[sId] = setup;
-    _saleIdByAddress[saleAddress] = saleId;
-    _extraVestingSteps[uint256(saleId)] = extraVestingSteps;
+    _saleDB.initSale(saleId, setup,extraVestingSteps);
   }
 
   function paymentTokenById(uint8 id) public view override returns (address) {
@@ -196,20 +175,16 @@ contract SaleData is ISaleData, RegistryUser {
   }
 
   function makeTransferable(uint16 saleId) external override onlySaleOwner(saleId) {
-    // cannot be changed back
-    uint256 sId = uint256(saleId);
-    if (!_setups[sId].isTokenTransferable) {
-      _setups[sId].isTokenTransferable = true;
-    }
+    _saleDB.makeTransferable(saleId);
   }
 
   function fromValueToTokensAmount(uint16 saleId, uint32 value) public view override returns (uint120) {
-    Setup memory setup = _setups[saleId];
+    ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     return uint120(uint256(value).mul(10**setup.sellingToken.decimals()).mul(setup.pricingToken).div(setup.pricingPayment));
   }
 
   function fromTokensAmountToValue(uint16 saleId, uint120 amount) public view override returns (uint32) {
-    Setup memory setup = _setups[saleId];
+    ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     return uint32(uint256(amount).mul(setup.pricingPayment).div(setup.pricingToken).div(10**setup.sellingToken.decimals()));
   }
 
@@ -224,13 +199,15 @@ contract SaleData is ISaleData, RegistryUser {
       uint256
     )
   {
-    _setups[saleId].remainingAmount = fromValueToTokensAmount(saleId, _setups[saleId].totalValue);
-    uint256 fee = uint256(_setups[saleId].remainingAmount).mul(_setups[saleId].tokenFeePercentage).div(100);
-    return (_setups[saleId].sellingToken, _setups[saleId].owner, uint256(_setups[saleId].remainingAmount).add(fee));
+    uint120 remainingAmount = fromValueToTokensAmount(saleId, _saleDB.getSetupById(saleId).totalValue);
+    _saleDB.updateRemainingAmount(saleId, remainingAmount);
+    uint256 fee = uint256(remainingAmount).mul(_saleDB.getSetupById(saleId).tokenFeePercentage).div(100);
+    return (_saleDB.getSetupById(saleId).sellingToken, _saleDB.getSetupById(saleId).owner, uint256(remainingAmount).add(fee));
   }
 
-  function getSetupById(uint16 saleId) external view override returns (Setup memory) {
-    return _setups[saleId];
+  // we need the bridge to keep Sale.sol small
+  function getSetupById(uint16 saleId) external view override returns (ISaleDB.Setup memory) {
+    return _saleDB.getSetupById(saleId);
   }
 
   function approveInvestor(
@@ -238,7 +215,7 @@ contract SaleData is ISaleData, RegistryUser {
     address investor,
     uint32 amount
   ) external virtual override onlySaleOwner(saleId) {
-    _approvedAmounts[saleId][investor] = amount;
+    _saleDB.setApproval(saleId, investor, amount);
   }
 
   function setInvest(
@@ -246,15 +223,16 @@ contract SaleData is ISaleData, RegistryUser {
     address investor,
     uint256 amount
   ) external virtual override onlySale(saleId) returns (uint256, uint256) {
-    require(amount <= _approvedAmounts[saleId][investor], "SaleData: Amount is above approved amount");
-    Setup memory setup = _setups[saleId];
+    uint approved = _saleDB.getApproval(saleId, investor);
+    require(amount <= approved, "SaleData: Amount is above approved amount");
+    ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount >= setup.minAmount, "SaleData: Amount is too low");
     uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
     require(tokensAmount <= setup.remainingAmount, "SaleData: Not enough tokens available");
-    if (amount == _approvedAmounts[saleId][investor]) {
-      delete _approvedAmounts[saleId][investor];
+    if (amount == approved) {
+      _saleDB.deleteApproval(saleId, investor);
     } else {
-      _approvedAmounts[saleId][investor] = uint32(uint256(_approvedAmounts[saleId][investor]).sub(amount));
+      _saleDB.setApproval(saleId, investor, uint32(uint256(approved).sub(amount)));
     }
     uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
     uint256 payment = amount.mul(decimals).mul(setup.pricingPayment).div(setup.pricingToken);
@@ -276,7 +254,7 @@ contract SaleData is ISaleData, RegistryUser {
 
     // we cannot simply relying on the transfer to do the check, since some of the
     // token are sold to investors.
-    Setup memory setup = _setups[saleId];
+    ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount <= setup.remainingAmount, "SaleData: Cannot withdraw more than remaining");
     uint256 fee = uint256(setup.capAmount).mul(setup.tokenFeePercentage).div(100);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(amount));
@@ -297,13 +275,12 @@ contract SaleData is ISaleData, RegistryUser {
     uint120 fullAmount,
     uint120 remainingAmount
   ) public view virtual override returns (uint256) {
-    if (_setups[saleId].tokenListTimestamp == 0) return 0;
+    if (_saleDB.getSetupById(saleId).tokenListTimestamp == 0) return 0;
     uint256 vested = vestedPercentage(saleId);
     return uint256(remainingAmount).sub(vested == 100 ? 0 : uint256(fullAmount).mul(100 - vested).div(100));
   }
 
   function triggerTokenListing(uint16 saleId) external virtual override onlySaleOwner(saleId) {
-    require(_setups[saleId].tokenListTimestamp == 0, "SaleData: Token already listed");
-    _setups[saleId].tokenListTimestamp = uint32(block.timestamp);
+    _saleDB.triggerTokenListing(saleId);
   }
 }

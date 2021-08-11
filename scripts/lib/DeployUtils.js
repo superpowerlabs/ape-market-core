@@ -45,6 +45,7 @@ class DeployUtils {
 
     const profile = await this.deployContract('Profile')
     const saleSetupHasher = await this.deployContract('SaleSetupHasher')
+    const saleDB = await this.deployContract('SaleDB', registryAddress)
     const saleData = await this.deployContract('SaleData', registryAddress, apeWallet)
     const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators, validators)
     const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
@@ -54,6 +55,7 @@ class DeployUtils {
     await apeRegistry.register([
       'Profile',
       'SaleSetupHasher',
+      'SaleDB',
       'SaleData',
       'SaleFactory',
       'SANFT',
@@ -62,6 +64,7 @@ class DeployUtils {
     ], [
       profile.address,
       saleSetupHasher.address,
+      saleDB.address,
       saleData.address,
       saleFactory.address,
       sANFT.address,
@@ -74,6 +77,7 @@ class DeployUtils {
       profile,
       saleSetupHasher,
       saleData,
+      saleDB,
       saleFactory,
       sANFT,
       sANFTManager,

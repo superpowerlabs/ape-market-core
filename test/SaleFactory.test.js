@@ -12,6 +12,7 @@ describe("SaleFactory", async function () {
       , profile
       , saleSetupHasher
       , saleData
+      , saleDB
       , saleFactory
       , sANFT
       , sANFTManager
@@ -56,6 +57,7 @@ describe("SaleFactory", async function () {
     profile = results.profile
     saleSetupHasher = results.saleSetupHasher
     saleData = results.saleData
+    saleDB = results.saleDB
     saleFactory = results.saleFactory
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager
@@ -122,7 +124,7 @@ describe("SaleFactory", async function () {
 
     it("should create a new sale", async function () {
 
-      let saleId = await saleData.nextSaleId()
+      let saleId = await saleDB.nextSaleId()
 
       await saleFactory.connect(operator).approveSale(saleId)
 
@@ -130,26 +132,26 @@ describe("SaleFactory", async function () {
 
       await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
           .emit(saleFactory, "NewSale")
-      const saleAddress = await saleData.getSaleAddressById(saleId)
+      const saleAddress = await _saleData.getSaleAddressById(saleId)
       const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-      assert.isTrue(await saleData.getSaleIdByAddress(saleAddress) > 0)
+      assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 
     })
 
     it("should throw if trying to create a sale without a pre-approval", async function () {
 
-      let saleId = await saleData.nextSaleId()
+      let saleId = await saleDB.nextSaleId()
       let signature = await getSignatureByValidator(saleId, saleSetup)
 
       await assertThrowsMessage(
           saleFactory.newSale(saleId, saleSetup, [], tether.address, signature),
-          'SaleData: invalid id')
+          'SaleDB: invalid saleId')
 
     })
 
     it("should throw if trying to create a sale with a modified setup", async function () {
 
-      let saleId = await saleData.nextSaleId()
+      let saleId = await saleDB.nextSaleId()
 
       let signature = await getSignatureByValidator(saleId, saleSetup)
 

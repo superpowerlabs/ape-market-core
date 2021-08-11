@@ -9,6 +9,7 @@ describe("SaleData", async function () {
       , profile
       , saleSetupHasher
       , saleData
+      , saleDB
       , saleFactory
       , sANFT
       , sANFTManager
@@ -34,6 +35,7 @@ describe("SaleData", async function () {
     profile = results.profile
     saleSetupHasher = results.saleSetupHasher
     saleData = results.saleData
+    saleDB = results.saleDB
     saleFactory = results.saleFactory
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager

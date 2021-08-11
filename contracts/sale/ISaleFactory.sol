@@ -26,7 +26,7 @@ interface ISaleFactory {
 
   function newSale(
     uint8 saleId,
-    ISaleData.Setup memory setup,
+    ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken,
     bytes memory validatorSignature

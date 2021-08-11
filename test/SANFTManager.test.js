@@ -18,6 +18,7 @@ describe("SANFTManager", async function () {
       , profile
       , saleSetupHasher
       , saleData
+      , saleDB
       , saleFactory
       , sANFT
       , sANFTManager
@@ -66,6 +67,7 @@ describe("SANFTManager", async function () {
     profile = results.profile
     saleSetupHasher = results.saleSetupHasher
     saleData = results.saleData
+    saleDB = results.saleDB
     saleFactory = results.saleFactory
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager
@@ -114,7 +116,7 @@ describe("SANFTManager", async function () {
       saleAddress: addr0
     };
 
-    saleId = await saleData.nextSaleId()
+    saleId = await saleDB.nextSaleId()
 
     await saleFactory.connect(operator).approveSale(saleId)
 
@@ -122,9 +124,9 @@ describe("SANFTManager", async function () {
 
     await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
         .emit(saleFactory, "NewSale")
-    saleAddress = await saleData.getSaleAddressById(saleId)
+    saleAddress = await _saleData.getSaleAddressById(saleId)
     sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-    assert.isTrue(await saleData.getSaleIdByAddress(saleAddress) > 0)
+    assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 
     await sellingToken.connect(seller).approve(saleAddress, await saleData.fromValueToTokensAmount(saleId, saleSetup.totalValue * 1.05))
     await sale.connect(seller).launch()
@@ -203,11 +205,11 @@ describe("SANFTManager", async function () {
       saleSetup.pricingPayment = 1
 
       // setup the second sale
-      saleId2 = await saleData.nextSaleId()
+      saleId2 = await saleDB.nextSaleId()
       await saleFactory.connect(operator).approveSale(saleId2)
       let signature = await getSignatureByValidator(saleId2, saleSetup)
       await saleFactory.connect(seller).newSale(saleId2, saleSetup, [], tether.address, signature)
-      saleAddress2 = await saleData.getSaleAddressById(saleId2)
+      saleAddress2 = await _saleData.getSaleAddressById(saleId2)
       sale2 = new ethers.Contract(saleAddress2, saleJson.abi, ethers.provider)
 
       const allTokensAmount = await saleData.fromValueToTokensAmount(saleId2, saleSetup.totalValue * 1.05)

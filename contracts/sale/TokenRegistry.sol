@@ -13,12 +13,12 @@ contract TokenRegistry is ITokenRegistry, RegistryUser {
 
   constructor(address registry) RegistryUser(registry) {}
 
-  ISaleData private _saleData;
+  address private _saleDataAddress;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
     address addr = _get("SaleData");
-    if (addr != address(_saleData)) {
-      _saleData = ISaleData(addr);
+    if (addr != _saleDataAddress) {
+      _saleDataAddress = addr;
     }
   }
 
@@ -35,7 +35,7 @@ contract TokenRegistry is ITokenRegistry, RegistryUser {
   }
 
   function register(address addr) public override returns (uint8) {
-    require(address(_saleData) == _msgSender(), "TokenRegistry: only SaleData can call this");
+    require(_saleDataAddress == _msgSender(), "TokenRegistry: only SaleData can call this");
     _addressesById[_nextId] = addr;
     _idByAddress[addr] = _nextId;
     emit TokenAdded(_nextId, addr);
