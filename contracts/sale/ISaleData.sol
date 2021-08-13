@@ -1,92 +1,47 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-//import "../nft/ISAStorage.sol";
-import "../nft/ISAToken.sol";
-
-interface IERC20Min {
-  function transfer(address recipient, uint256 amount) external returns (bool);
-
-  function transferFrom(
-    address sender,
-    address recipient,
-    uint256 amount
-  ) external returns (bool);
-
-  function decimals() external view returns (uint8);
-}
+import "../nft/ISANFT.sol";
+import "./ISaleDB.sol";
 
 interface ISaleData {
-  struct VestingStep {
-    uint128 timestamp;
-    uint128 percentage;
-  }
-
-  struct Setup {
-    ISAToken satoken;
-    IERC20Min sellingToken;
-    IERC20Min paymentToken;
-    address owner;
-    uint256 remainingAmount;
-    uint64 minAmount;
-    uint64 capAmount;
-    uint64 pricingToken;
-    uint64 pricingPayment;
-    uint64 tokenListTimestamp;
-    uint64 tokenFeePercentage;
-    uint64 paymentFeePercentage;
-    bool isTokenTransferable;
-  }
-
   function apeWallet() external view returns (address);
 
   function updateApeWallet(address apeWallet_) external;
 
-  function nextSaleId() external view returns (uint256);
-
   function increaseSaleId() external;
 
-  function isLegitSale(address sale) external view returns (bool);
+  function calculateVestedPercentage(
+    uint256 vestingSteps,
+    uint256[] memory extraVestingSteps,
+    uint256 tokenListTimestamp,
+    uint256 currentTimestamp
+  ) external pure returns (uint8);
 
-  function grantManagerLevel(address saleAddress) external;
+  function vestedPercentage(uint16 saleId) external view returns (uint8);
 
-  function getSaleAddressById(uint256 saleId) external view returns (address);
+  function validateAndPackVestingSteps(ISaleDB.VestingStep[] memory vestingStepsArray)
+    external
+    pure
+    returns (uint256[] memory, string memory);
 
-  function normalize(uint256 saleId, uint64 amount) external view returns (uint256);
-
-  function denormalize(address sellingToken, uint64 amount) external view returns (uint256);
-
-  function setVest(
-    uint256 saleId,
-    uint128 lastVestedPercentage,
-    uint256 lockedAmount
-  ) external returns (uint128, uint256);
-
-  function triggerTokenListing(uint256 saleId) external;
-
-  function approveInvestor(
-    uint256 saleId,
-    address investor,
-    uint256 amount
+  function setUpSale(
+    uint16 saleId,
+    address saleAddress,
+    ISaleDB.Setup memory setup,
+    uint256[] memory extraVestingSteps,
+    address paymentToken
   ) external;
 
-  function setWithdrawToken(uint256 saleId, uint256 amount) external returns (IERC20Min, uint256);
+  function paymentTokenById(uint8 id) external view returns (address);
 
-  function setInvest(
-    uint256 saleId,
-    address investor,
-    uint256 amount
-  )
-    external
-    returns (
-      uint256,
-      uint256,
-      uint256
-    );
+  function makeTransferable(uint16 saleId) external;
 
-  function setLaunch(uint256 saleId)
+  function fromValueToTokensAmount(uint16 saleId, uint32 value) external view returns (uint120);
+
+  function fromTokensAmountToValue(uint16 saleId, uint120 amount) external view returns (uint32);
+
+  function setLaunch(uint16 saleId)
     external
     returns (
       IERC20Min,
@@ -94,22 +49,34 @@ interface ISaleData {
       uint256
     );
 
-  function makeTransferable(uint256 saleId) external;
+  function getSetupById(uint16 saleId) external view returns (ISaleDB.Setup memory);
 
-  function getSetupById(uint256 saleId) external view returns (Setup memory);
-
-  function setUpSale(
-    uint256 saleId,
-    address saleAddress,
-    Setup memory setup,
-    VestingStep[] memory schedule
+  function approveInvestor(
+    uint16 saleId,
+    address investor,
+    uint32 amount
   ) external;
 
-  function getVestedPercentage(uint256 saleId) external view returns (uint128);
+  function setInvest(
+    uint16 saleId,
+    address investor,
+    uint256 amount
+  ) external returns (uint256, uint256);
 
-  function getVestedAmount(
-    uint256 vestedPercentage,
-    uint256 lastVestedPercentage,
-    uint256 lockedAmount
+  function setWithdrawToken(uint16 saleId, uint256 amount) external returns (IERC20Min, uint256);
+
+  function isVested(
+    uint16 saleId,
+    uint120 fullAmount,
+    uint120 remainingAmount,
+    uint256 requestedAmount
+  ) external view returns (bool);
+
+  function vestedAmount(
+    uint16 saleId,
+    uint120 fullAmount,
+    uint120 remainingAmount
   ) external view returns (uint256);
+
+  function triggerTokenListing(uint16 saleId) external;
 }

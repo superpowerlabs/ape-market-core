@@ -1,11 +1,11 @@
 const {expect, assert} = require("chai")
-const {assertThrowsMessage, formatBundle} = require('./helpers')
+const {assertThrowsMessage, formatBundle, getTimestamp} = require('./helpers')
 
 // const delay = ms => new Promise(res => setTimeout(res, ms));
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe("Integration Test", function () {
+describe.skip("Integration Test", function () {
 
   let Profile
   let profile
@@ -14,11 +14,11 @@ describe("Integration Test", function () {
   let xyz
   let Tether
   let tether
-  let SAToken
+  let SANFT
   let satoken
   let SaleFactory
   let factory
-  let SATokenExtras
+  let SANFTManager
   let tokenExtras
   let SaleData
   let saleData
@@ -49,16 +49,12 @@ describe("Integration Test", function () {
     [owner, validator, factoryAdmin, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet] = await ethers.getSigners()
   })
 
-  async function getTimestamp() {
-    return (await ethers.provider.getBlock()).timestamp
-  }
-
   async function getSale(saleSetup, saleVestingSchedule) {
-    let saleId = await saleData.nextSaleId()
+    let saleId = await saleDB.nextSaleId()
     let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
     await factory.connect(factoryAdmin).approveSale(saleId)
     await factory.connect(factoryAdmin).newSale(saleId, saleSetup, saleVestingSchedule, signature)
-    let saleAddress = await saleData.getSaleAddressById(saleId)
+    let saleAddress = await saleDB.getSaleAddressById(saleId)
     return [new ethers.Contract(saleAddress, saleJson.abi, ethers.provider), saleId.toNumber()]
   }
 
@@ -78,12 +74,12 @@ describe("Integration Test", function () {
     await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
     await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdmin.address)
 
-    SATokenExtras = await ethers.getContractFactory("SATokenExtras")
-    tokenExtras = await SATokenExtras.deploy(profile.address)
+    SANFTManager = await ethers.getContractFactory("SANFTManager")
+    tokenExtras = await SANFTManager.deploy(profile.address)
     await tokenExtras.deployed()
 
-    SAToken = await ethers.getContractFactory("SAToken")
-    satoken = await SAToken.deploy(factory.address, tokenExtras.address)
+    SANFT = await ethers.getContractFactory("SANFT")
+    satoken = await SANFT.deploy(factory.address, tokenExtras.address)
     await satoken.deployed()
     await tokenExtras.setToken(satoken.address)
 
@@ -141,11 +137,11 @@ describe("Integration Test", function () {
       };
       saleVestingSchedule = [
         {
-          timestamp: 10,
+          waitTime: 10,
           percentage: 50
         },
         {
-          timestamp: 1000,
+          waitTime: 1000,
           percentage: 100
         }]
 
@@ -301,7 +297,7 @@ describe("Integration Test", function () {
       expect(bundle.sas[0].remainingAmount).equal(normalize(10000));
 
       // move forward in time
-      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp() + 20]);
+      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp(ethers) + 20]);
 
       await satoken.connect(investor1).vest(nft);
       nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
@@ -316,7 +312,7 @@ describe("Integration Test", function () {
       nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
       network = await ethers.provider.getNetwork();
 
-      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp() + 1020]);
+      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp(ethers) + 1020]);
 
       await satoken.connect(investor1).vest(nft);
       expect(await abc.balanceOf(investor1.address)).equal(normalize(10000));

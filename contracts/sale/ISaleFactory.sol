@@ -6,28 +6,29 @@ import "./ISaleData.sol";
 interface ISaleFactory {
   event SaleApproved(uint256 saleId);
   event SaleRevoked(uint256 saleId);
-  event NewSale(uint saleId, address saleAddress);
+  event NewSale(uint256 saleId, address saleAddress);
 
-  function updateValidator(address validator) external;
+  function addValidator(address newValidator) external;
 
-  function isLegitSale(address sale) external view returns (bool);
+  function isValidator(address validator) external returns (bool);
 
-  function approveSale(
-    uint256 saleId
-  ) external;
+  function revokeValidator(address validator) external;
 
-  function revokeApproval(uint256 saleId) external;
+  function addOperator(address newOperator) external;
+
+  function isOperator(address operator) external view returns (bool);
+
+  function revokeOperator(address operator) external;
+
+  function approveSale(uint256 saleId) external;
+
+  function revokeSale(uint256 saleId) external;
 
   function newSale(
-    uint256 saleId,
-    ISaleData.Setup memory setup,
-    ISaleData.VestingStep[] memory schedule,
+    uint8 saleId,
+    ISaleDB.Setup memory setup,
+    uint256[] memory extraVestingSteps,
+    address paymentToken,
     bytes memory validatorSignature
   ) external;
-
-  function encodeForSignature(
-    uint256 saleId,
-    ISaleData.Setup memory setup,
-    ISaleData.VestingStep[] memory schedule
-  ) external pure returns (bytes32);
 }

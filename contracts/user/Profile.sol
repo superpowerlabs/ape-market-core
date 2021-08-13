@@ -7,14 +7,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
 import "./IProfile.sol";
+import "../registry/FakeRegistryUser.sol";
 
-contract Profile is IProfile, Ownable {
+contract Profile is IProfile, Ownable, FakeRegistryUser {
   mapping(address => bool) private _associatedAccounts;
   uint256 private _validity = 1 days;
 
   function changeValidity(uint256 validity) external override onlyOwner {
     _validity = validity;
-    ValidityChanged(validity);
+    emit ValidityChanged(validity);
   }
 
   function _getPseudoAddress(address addr1, address addr2) private pure returns (address) {
@@ -26,20 +27,20 @@ contract Profile is IProfile, Ownable {
     uint256 timestamp,
     bytes memory signature
   ) external override {
-    require(msg.sender != address(0) && account != address(0), "Profile: no invalid accounts");
+    require(_msgSender() != address(0) && account != address(0), "Profile: no invalid accounts");
     require(timestamp + _validity > block.timestamp, "Profile: request is expired");
     require(
-      ECDSA.recover(encodeForSignature(account, msg.sender, timestamp), signature) == account,
+      ECDSA.recover(hashAndPackAssociatedAccounts(account, _msgSender(), timestamp), signature) == account,
       "Profile: invalid signature"
     );
-    _associatedAccounts[_getPseudoAddress(msg.sender, account)] = true;
-    emit AccountsAssociated(msg.sender, account);
+    _associatedAccounts[_getPseudoAddress(_msgSender(), account)] = true;
+    emit AccountsAssociated(_msgSender(), account);
   }
 
   function dissociateAccount(address account) external override {
-    require(areAccountsAssociated(msg.sender, account), "Profile: association not found");
-    delete _associatedAccounts[_getPseudoAddress(msg.sender, account)];
-    emit AccountsDissociated(msg.sender, account);
+    require(areAccountsAssociated(_msgSender(), account), "Profile: association not found");
+    delete _associatedAccounts[_getPseudoAddress(_msgSender(), account)];
+    emit AccountsDissociated(_msgSender(), account);
   }
 
   function areAccountsAssociated(address addr1, address addr2) public view override returns (bool) {
@@ -47,10 +48,10 @@ contract Profile is IProfile, Ownable {
   }
 
   function isMyAssociated(address addr) external view override returns (bool) {
-    return areAccountsAssociated(msg.sender, addr);
+    return areAccountsAssociated(_msgSender(), addr);
   }
 
-  function encodeForSignature(
+  function hashAndPackAssociatedAccounts(
     address addr1,
     address addr2,
     uint256 timestamp

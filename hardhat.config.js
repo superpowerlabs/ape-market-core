@@ -33,11 +33,11 @@ task("accounts", "Prints the list of accounts", async () => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.3",
+  solidity: "0.8.6",
   settings: {
     optimizer: {
       enabled: true,
-      runs: 200
+      runs: 800 // << trying to reduce gas consumption for users
     }
   },
   paths: {

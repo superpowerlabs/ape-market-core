@@ -25,10 +25,9 @@
     "eject": "react-scripts eject",
     "test": "npx hardhat test",
     "test:gas": "GAS_REPORT=yes npx hardhat test",
-    "clear": "rm -rf cache && rm -rf src/artifacts",
+    "clean": "rm -rf cache && rm -rf src/artifacts",
     "compile": "npx hardhat compile",
     "size": "npx hardhat size-contracts",
-    "lint": "solhint 'contracts/**/*.sol' && prettier -c 'contracts/**/*.sol'",
-    "lint:fix": "prettier --write \"contracts/**/*.sol\""
+    "lint": "prettier --write 'contracts/**/*.sol' && solhint 'contracts/**/*.sol'"
   }
 }

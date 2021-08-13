@@ -12,76 +12,82 @@ class DeployUtils {
     this.ethers = ethers
   }
 
-  async initAndDeploy() {
+  async deployContract(contractName, ...args) {
+    const Contract = await this.ethers.getContractFactory(contractName)
+    const contract = await Contract.deploy(...args)
+    await contract.deployed()
+    return contract
+  }
+
+  async deployContractBy(contractName, owner, ...args) {
+    const Contract = await this.ethers.getContractFactory(contractName)
+    const contract = await Contract.connect(owner).deploy(...args)
+    await contract.deployed()
+    return contract
+  }
+
+  async initAndDeploy(conf = {}) {
     // Hardhat always runs the compile task when running scripts with its command
     // line interface.
 
     const ethers = this.ethers
-
     const chainId = (await ethers.provider.getNetwork()).chainId
-    const signers = await ethers.getSigners();
+    conf = Object.assign(config[chainId], conf)
+    let {
+      apeWallet,
+      operators,
+      validators,
+      feePermillage
+    } = conf
 
-    let tetherAddress
+    const apeRegistry = await this.deployContract('ApeRegistry')
+    const registryAddress = apeRegistry.address
 
-    let tetherOwner = config.tether[chainId]
-    let apeWalletAddress = config.apeWallet
-    let factoryAdminAddress = config.factoryAdmin
-    let validatorAddress = config.validator
+    const profile = await this.deployContract('Profile')
+    const saleSetupHasher = await this.deployContract('SaleSetupHasher')
+    const saleDB = await this.deployContract('SaleDB', registryAddress)
+    const saleData = await this.deployContract('SaleData', registryAddress, apeWallet)
+    const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators, validators)
+    const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
+    const sANFT = await this.deployContract('SANFT', registryAddress)
+    const sANFTManager = await this.deployContract('SANFTManager', registryAddress, apeWallet, feePermillage)
 
-    if (chainId === 1337) {
-      tetherOwner = signers[1]
-      const Tether = await ethers.getContractFactory('TetherMock');
-      const tether = await Tether.connect(tetherOwner).deploy();
-      await tether.deployed();
-      tetherAddress = tether.address;
-      apeWalletAddress = signers[6].address
-      factoryAdminAddress = signers[7].address
-      validatorAddress = signers[1].address
-    }
+    await apeRegistry.register([
+      'Profile',
+      'SaleSetupHasher',
+      'SaleDB',
+      'SaleData',
+      'SaleFactory',
+      'SANFT',
+      'SANFTManager',
+      'TokenRegistry'
+    ], [
+      profile.address,
+      saleSetupHasher.address,
+      saleDB.address,
+      saleData.address,
+      saleFactory.address,
+      sANFT.address,
+      sANFTManager.address,
+      tokenRegistry.address
+    ])
 
-    const Profile = await ethers.getContractFactory('Profile')
-    const profile = await Profile.deploy()
-    await profile.deployed()
-
-    const SAStorage = await ethers.getContractFactory('SAStorage')
-    const storage = await SAStorage.deploy()
-    await storage.deployed()
-
-    const SaleData = await ethers.getContractFactory('SaleData')
-    const saleData = await SaleData.deploy(apeWalletAddress)
-    await saleData.deployed()
-
-    const SaleFactory = await ethers.getContractFactory('SaleFactory')
-    const factory = await SaleFactory.deploy(saleData.address, validatorAddress)
-    await factory.deployed()
-
-    await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdminAddress)
-
-    const SATokenExtras = await ethers.getContractFactory('SATokenExtras')
-    const extras = await SATokenExtras.deploy(profile.address)
-    await extras.deployed()
-
-    const SAToken = await ethers.getContractFactory('SAToken')
-    const satoken = await SAToken.deploy(factory.address, extras.address)
-    await satoken.deployed()
-    await extras.setToken(satoken.address)
-
-    await satoken.setupUpPayments(tetherAddress, 100, apeWalletAddress)
+    await apeRegistry.updateAllContracts()
 
     return {
-      Profile: profile.address,
-      SAStorage: storage.address,
-      SaleData: saleData.address,
-      SaleFactory: factory.address,
-      SAToken: satoken.address,
-      SATokenExtras: extras.address,
-      tether: tetherAddress,
-      tetherOwner: tetherOwner ? tetherOwner.address : addr0,
-      factoryAdmin: factoryAdminAddress,
-      apeWallet: apeWalletAddress
+      apeRegistry,
+      profile,
+      saleSetupHasher,
+      saleData,
+      saleDB,
+      saleFactory,
+      sANFT,
+      sANFTManager,
+      tokenRegistry,
+      apeWallet,
+      operators,
+      validators
     }
-
   }
 
   async currentChainId() {
