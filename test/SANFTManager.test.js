@@ -109,9 +109,9 @@ describe("SANFTManager", async function () {
       sellingToken: sellingToken.address,
       totalValue: 50000,
       tokenIsTransferable: true,
-      tokenFeePercentage: 5,
-      extraFeePercentage: 0,
-      paymentFeePercentage: 3,
+      tokenFeePermillage: 50,
+      extraFeePermillage: 0,
+      paymentFeePermillage: 30,
       softCapPercentage: 0,
       saleAddress: addr0
     };

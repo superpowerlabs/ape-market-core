@@ -42,9 +42,9 @@ interface ISaleDB {
     address saleAddress;
     uint32 totalValue; // << USD
     bool isTokenTransferable;
-    uint8 tokenFeePercentage; // << the fee in sellingToken due by sellers at launch
-    uint8 extraFeePercentage; // << the optional fee in USD paid by seller at launch
-    uint8 paymentFeePercentage; // << the fee in USD paid by buyers when investing
+    uint8 tokenFeePermillage; // << the fee in sellingToken due by sellers at launch
+    uint8 extraFeePermillage; // << the optional fee in USD paid by seller at launch
+    uint8 paymentFeePermillage; // << the fee in USD paid by buyers when investing
     uint8 softCapPercentage; // << if 0, no soft cap - not sure we will implement it
     // 32 more bits available:
   }
@@ -65,7 +65,8 @@ interface ISaleDB {
 
   function triggerTokenListing(uint16 saleId) external;
 
-  function updateRemainingAmount(uint16 saleId, uint120 remainingAmount) external;
+  function addToRemainingAmount(uint16 saleId, uint120 remainingAmount) external;
+  function increaseRemainingAmount(uint16 saleId, uint120 extraAmount) external;
 
   function makeTransferable(uint16 saleId) external;
 

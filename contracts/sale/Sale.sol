@@ -12,11 +12,6 @@ contract Sale is RegistryUser {
 
   uint16 private _saleId;
 
-  modifier onlySaleOwner() {
-    require(_msgSender() == ISaleData(_get("SaleData")).getSetupById(_saleId).owner, "Sale: caller is not the owner");
-    _;
-  }
-
   constructor(uint16 saleId_, address registry) RegistryUser(registry) {
     _saleId = saleId_;
   }
@@ -25,11 +20,27 @@ contract Sale is RegistryUser {
     return _saleId;
   }
 
+  function _isSaleOwner(ISaleData saleData) internal {
+    require(_msgSender() == saleData.getSetupById(_saleId).owner, "Sale: caller is not the owner");
+  }
+
+
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
-  function launch() external virtual onlySaleOwner {
-    (IERC20Min sellingToken, address owner, uint256 amount) = ISaleData(_get("SaleData")).setLaunch(_saleId);
-    sellingToken.transferFrom(owner, address(this), amount);
+  function launch() external virtual {
+    ISaleData saleData = ISaleData(_get("SaleData"));
+    _isSaleOwner(saleData);
+    (IERC20Min sellingToken, uint256 amount) = ISaleData(_get("SaleData")).setLaunchOrExtension(_saleId, 0);
+    sellingToken.transferFrom(_msgSender(), address(this), amount);
+  }
+
+  // Sale creator calls this function to extend a sale.
+  // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
+  function extend(uint extraValue) external virtual {
+    ISaleData saleData = ISaleData(_get("SaleData"));
+    _isSaleOwner(saleData);
+  (IERC20Min sellingToken, uint256 extraAmount) = ISaleData(_get("SaleData")).setLaunchOrExtension(_saleId, extraValue);
+    sellingToken.transferFrom(_msgSender(), address(this), extraAmount);
   }
 
   // Invest amount into the sale.
@@ -43,15 +54,17 @@ contract Sale is RegistryUser {
     paymentToken.transferFrom(_msgSender(), address(this), tokenPayment);
   }
 
-  function withdrawPayment(uint256 amount) external virtual onlySaleOwner {
+  function withdrawPayment(uint256 amount) external virtual  {
     ISaleData saleData = ISaleData(_get("SaleData"));
+    _isSaleOwner(saleData);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(saleData.getSetupById(_saleId).paymentTokenId));
     paymentToken.transfer(_msgSender(), amount);
   }
 
-  function withdrawToken(uint256 amount) external virtual onlySaleOwner {
+  function withdrawToken(uint256 amount) external virtual  {
     ISaleData saleData = ISaleData(_get("SaleData"));
-    (IERC20Min sellingToken, uint256 fee) = saleData.setWithdrawToken(_saleId, amount);
+    _isSaleOwner(saleData);
+  (IERC20Min sellingToken, uint256 fee) = saleData.setWithdrawToken(_saleId, amount);
     sellingToken.transfer(_msgSender(), amount + fee);
   }
 

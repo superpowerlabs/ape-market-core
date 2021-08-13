@@ -30,7 +30,7 @@ contract SaleData is ISaleData, RegistryUser {
   }
 
   constructor(address registry, address apeWallet_) RegistryUser(registry) {
-    _apeWallet = apeWallet_;
+    updateApeWallet(apeWallet_);
   }
 
   ISANFTManager private _sanftmanager;
@@ -61,8 +61,9 @@ contract SaleData is ISaleData, RegistryUser {
     return _apeWallet;
   }
 
-  function updateApeWallet(address apeWallet_) external override onlyOwner {
+  function updateApeWallet(address apeWallet_) public override onlyOwner {
     _apeWallet = apeWallet_;
+    emit ApeWalletUpdated(apeWallet_);
   }
 
   function increaseSaleId() external override onlySaleFactory {
@@ -74,10 +75,10 @@ contract SaleData is ISaleData, RegistryUser {
    * @param vestingStepsArray The array of VestingStep
    */
   function validateAndPackVestingSteps(ISaleDB.VestingStep[] memory vestingStepsArray)
-    external
-    pure
-    override
-    returns (uint256[] memory, string memory)
+  external
+  pure
+  override
+  returns (uint256[] memory, string memory)
   {
     uint256 len = vestingStepsArray.length / 15;
     uint256[] memory errorCode = new uint256[](1);
@@ -100,7 +101,7 @@ contract SaleData is ISaleData, RegistryUser {
           return (errorCode, "waitTime should be monotonic increasing");
         }
       }
-      steps[j] += ((vestingStepsArray[i].percentage - 1) + 100 * (vestingStepsArray[i].waitTime % (10**3))) * (10**(5 * k));
+      steps[j] += ((vestingStepsArray[i].percentage - 1) + 100 * (vestingStepsArray[i].waitTime % (10 ** 3))) * (10 ** (5 * k));
       if (i % 15 == 14) {
         j++;
         k = 0;
@@ -131,7 +132,7 @@ contract SaleData is ISaleData, RegistryUser {
     for (uint256 i = extraVestingSteps.length + 1; i >= 1; i--) {
       uint256 steps = i > 1 ? extraVestingSteps[i - 2] : vestingSteps;
       for (uint256 k = 16; k >= 1; k--) {
-        uint256 step = steps / (10**(5 * (k - 1)));
+        uint256 step = steps / (10 ** (5 * (k - 1)));
         if (step != 0) {
           uint256 ts = (step / 100);
           uint256 percentage = (step % 100) + 1;
@@ -139,7 +140,7 @@ contract SaleData is ISaleData, RegistryUser {
             return uint8(percentage);
           }
         }
-        steps %= (10**(5 * (k - 1)));
+        steps %= (10 ** (5 * (k - 1)));
       }
     }
     return 0;
@@ -147,12 +148,12 @@ contract SaleData is ISaleData, RegistryUser {
 
   function vestedPercentage(uint16 saleId) public view override returns (uint8) {
     return
-      calculateVestedPercentage(
-        _saleDB.getSetupById(saleId).vestingSteps,
-        _saleDB.getExtraVestingStepsById(saleId),
-        _saleDB.getSetupById(saleId).tokenListTimestamp,
-        block.timestamp
-      );
+    calculateVestedPercentage(
+      _saleDB.getSetupById(saleId).vestingSteps,
+      _saleDB.getExtraVestingStepsById(saleId),
+      _saleDB.getSetupById(saleId).tokenListTimestamp,
+      block.timestamp
+    );
   }
 
   function setUpSale(
@@ -168,6 +169,7 @@ contract SaleData is ISaleData, RegistryUser {
       setup.paymentTokenId = _tokenRegistry.register(paymentToken);
     }
     _saleDB.initSale(saleId, setup, extraVestingSteps);
+    emit SaleSetup(saleId, saleAddress);
   }
 
   function paymentTokenById(uint8 id) public view override returns (address) {
@@ -178,31 +180,41 @@ contract SaleData is ISaleData, RegistryUser {
     _saleDB.makeTransferable(saleId);
   }
 
-  function fromValueToTokensAmount(uint16 saleId, uint32 value) public view override returns (uint120) {
+  function fromValueToTokensAmount(uint16 saleId, uint32 value) public view override returns (uint) {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
-    return uint120(uint256(value).mul(10**setup.sellingToken.decimals()).mul(setup.pricingToken).div(setup.pricingPayment));
+    return uint256(value).mul(10 ** setup.sellingToken.decimals()).mul(setup.pricingToken).div(setup.pricingPayment);
   }
 
   function fromTokensAmountToValue(uint16 saleId, uint120 amount) public view override returns (uint32) {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
-    return uint32(uint256(amount).mul(setup.pricingPayment).div(setup.pricingToken).div(10**setup.sellingToken.decimals()));
+    return uint32(uint256(amount).mul(setup.pricingPayment).div(setup.pricingToken).div(10 ** setup.sellingToken.decimals()));
   }
 
-  function setLaunch(uint16 saleId)
-    external
-    virtual
-    override
-    onlySale(saleId)
-    returns (
-      IERC20Min,
-      address,
-      uint256
-    )
+  function getTokensAmountAndFeeByValue(uint16 saleId, uint32 value) public view override returns (uint, uint) {
+    uint amount = fromValueToTokensAmount(saleId, value);
+    uint256 fee = amount.mul(_saleDB.getSetupById(saleId).tokenFeePermillage).div(1000);
+    return (amount, fee);
+  }
+
+  function setLaunchOrExtension(uint16 saleId, uint value)
+  external
+  virtual
+  override
+  onlySale(saleId)
+  returns (
+    IERC20Min,
+    uint256
+  )
   {
-    uint120 remainingAmount = fromValueToTokensAmount(saleId, _saleDB.getSetupById(saleId).totalValue);
-    _saleDB.updateRemainingAmount(saleId, remainingAmount);
-    uint256 fee = uint256(remainingAmount).mul(_saleDB.getSetupById(saleId).tokenFeePercentage).div(100);
-    return (_saleDB.getSetupById(saleId).sellingToken, _saleDB.getSetupById(saleId).owner, uint256(remainingAmount).add(fee));
+    ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
+    (uint amount, uint fee) = getTokensAmountAndFeeByValue(saleId, value != 0 ? uint32(value) : setup.totalValue);
+    _saleDB.addToRemainingAmount(saleId, uint120(amount));
+    if (value == 0) {
+      emit SaleLaunched(saleId, setup.totalValue, uint120(amount));
+    } else {
+      emit SaleExtended(saleId, uint32(value), uint120(amount));
+    }
+    return (setup.sellingToken, amount.add(fee));
   }
 
   // we need the bridge to keep Sale.sol small
@@ -236,19 +248,19 @@ contract SaleData is ISaleData, RegistryUser {
     }
     uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
     uint256 payment = amount.mul(decimals).mul(setup.pricingPayment).div(setup.pricingToken);
-    uint256 buyerFee = payment.mul(setup.paymentFeePercentage).div(100);
-    uint256 sellerFee = tokensAmount.mul(setup.tokenFeePercentage).div(100);
+    uint256 buyerFee = payment.mul(setup.paymentFeePermillage).div(100);
+    uint256 sellerFee = tokensAmount.mul(setup.tokenFeePermillage).div(1000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
     _sanftmanager.mintInitialTokens(investor, setup.saleAddress, tokensAmount, sellerFee);
     return (payment, buyerFee);
   }
 
   function setWithdrawToken(uint16 saleId, uint256 amount)
-    external
-    virtual
-    override
-    onlySale(saleId)
-    returns (IERC20Min, uint256)
+  external
+  virtual
+  override
+  onlySale(saleId)
+  returns (IERC20Min, uint256)
   {
     // TODO: this function looks wrong
 
@@ -256,7 +268,7 @@ contract SaleData is ISaleData, RegistryUser {
     // token are sold to investors.
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount <= setup.remainingAmount, "SaleData: Cannot withdraw more than remaining");
-    uint256 fee = uint256(setup.capAmount).mul(setup.tokenFeePercentage).div(100);
+    uint256 fee = uint256(setup.capAmount).mul(setup.tokenFeePermillage).div(1000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(amount));
     return (setup.sellingToken, fee);
   }
@@ -282,5 +294,6 @@ contract SaleData is ISaleData, RegistryUser {
 
   function triggerTokenListing(uint16 saleId) external virtual override onlySaleOwner(saleId) {
     _saleDB.triggerTokenListing(saleId);
+    emit TokenListed(saleId);
   }
 }

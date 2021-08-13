@@ -107,9 +107,9 @@ describe("SANFT", async function () {
       sellingToken: sellingToken.address,
       totalValue: 50000,
       tokenIsTransferable: true,
-      tokenFeePercentage: 5,
-      extraFeePercentage: 0,
-      paymentFeePercentage: 3,
+      tokenFeePermillage: 50,
+      extraFeePermillage: 0,
+      paymentFeePermillage: 30,
       softCapPercentage: 0,
       saleAddress: addr0
     };
@@ -122,7 +122,7 @@ describe("SANFT", async function () {
 
     await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
         .emit(saleFactory, "NewSale")
-    saleAddress = await _saleDB.getSaleAddressById(saleId)
+    saleAddress = await saleDB.getSaleAddressById(saleId)
     const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
     assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 
