@@ -35,3 +35,4 @@ artifacts
 
 # for now
 .idea
+/src
