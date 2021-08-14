@@ -90,10 +90,9 @@ describe("Sale", async function () {
       sellingToken: sellingToken.address,
       totalValue: 50000,
       tokenIsTransferable: true,
-      tokenFeePermillage: 50,
-      extraFeePermillage: 0,
-      paymentFeePermillage: 30,
-      softCapPercentage: 0,
+      tokenFeePercentage: 500,
+      extraFeePercentage: 0,
+      paymentFeePercentage: 300,
       saleAddress: addr0
     };
 

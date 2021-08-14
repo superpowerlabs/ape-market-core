@@ -131,8 +131,8 @@ describe.skip("Integration Test", function () {
         pricingToken: 1,
         pricingPayment: 2,
         tokenListTimestamp: 0,
-        tokenFeePermillage: 50,
-        paymentFeePermillage: 100,
+        tokenFeePercentage: 500,
+        paymentFeePercentage: 1000,
         isTokenTransferable: true
       };
       saleVestingSchedule = [

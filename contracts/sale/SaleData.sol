@@ -192,7 +192,7 @@ contract SaleData is ISaleData, RegistryUser {
 
   function getTokensAmountAndFeeByValue(uint16 saleId, uint32 value) public view override returns (uint, uint) {
     uint amount = fromValueToTokensAmount(saleId, value);
-    uint256 fee = amount.mul(_saleDB.getSetupById(saleId).tokenFeePermillage).div(1000);
+    uint256 fee = amount.mul(_saleDB.getSetupById(saleId).tokenFeePercentage).div(10000);
     return (amount, fee);
   }
 
@@ -248,8 +248,8 @@ contract SaleData is ISaleData, RegistryUser {
     }
     uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
     uint256 payment = amount.mul(decimals).mul(setup.pricingPayment).div(setup.pricingToken);
-    uint256 buyerFee = payment.mul(setup.paymentFeePermillage).div(100);
-    uint256 sellerFee = tokensAmount.mul(setup.tokenFeePermillage).div(1000);
+    uint256 buyerFee = payment.mul(setup.paymentFeePercentage).div(10000);
+    uint256 sellerFee = tokensAmount.mul(setup.tokenFeePercentage).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
     _sanftmanager.mintInitialTokens(investor, setup.saleAddress, tokensAmount, sellerFee);
     return (payment, buyerFee);
@@ -268,7 +268,7 @@ contract SaleData is ISaleData, RegistryUser {
     // token are sold to investors.
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount <= setup.remainingAmount, "SaleData: Cannot withdraw more than remaining");
-    uint256 fee = uint256(setup.capAmount).mul(setup.tokenFeePermillage).div(1000);
+    uint256 fee = uint256(setup.capAmount).mul(setup.tokenFeePercentage).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(amount));
     return (setup.sellingToken, fee);
   }
