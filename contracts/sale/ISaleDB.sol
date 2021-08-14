@@ -66,7 +66,6 @@ interface ISaleDB {
   function triggerTokenListing(uint16 saleId) external;
 
   function addToRemainingAmount(uint16 saleId, uint120 remainingAmount) external;
-  function increaseRemainingAmount(uint16 saleId, uint120 extraAmount) external;
 
   function makeTransferable(uint16 saleId) external;
 

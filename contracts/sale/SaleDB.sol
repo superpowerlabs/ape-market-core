@@ -67,10 +67,6 @@ contract SaleDB is ISaleDB, RegistryUser {
     _setups[saleId].remainingAmount = _setups[saleId].remainingAmount + amount;
   }
 
-  function increaseRemainingAmount(uint16 saleId, uint120 extraAmount) external virtual override onlySaleData {
-    _setups[saleId].remainingAmount = _setups[saleId].remainingAmount + extraAmount;
-  }
-
   function makeTransferable(uint16 saleId) external override onlySaleData {
     if (!_setups[saleId].isTokenTransferable) {
       _setups[saleId].isTokenTransferable = true;
