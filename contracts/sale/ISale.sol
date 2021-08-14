@@ -14,7 +14,7 @@ interface ISale {
 
   function launch() external;
 
-  function extend(uint extraValue) external;
+  function extend(uint256 extraValue) external;
 
   function approveInvestor(address investor, uint256 amount) external;
 

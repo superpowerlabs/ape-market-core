@@ -39,21 +39,17 @@ interface ISaleData {
     address paymentToken
   ) external;
 
-  function getTokensAmountAndFeeByValue(uint16 saleId, uint32 value) external view returns (uint, uint);
+  function getTokensAmountAndFeeByValue(uint16 saleId, uint32 value) external view returns (uint256, uint256);
+
   function paymentTokenById(uint8 id) external view returns (address);
 
   function makeTransferable(uint16 saleId) external;
 
-  function fromValueToTokensAmount(uint16 saleId, uint32 value) external view returns (uint);
+  function fromValueToTokensAmount(uint16 saleId, uint32 value) external view returns (uint256);
 
   function fromTokensAmountToValue(uint16 saleId, uint120 amount) external view returns (uint32);
 
-  function setLaunchOrExtension(uint16 saleId, uint value)
-  external
-  returns (
-    IERC20Min,
-    uint256
-  );
+  function setLaunchOrExtension(uint16 saleId, uint256 value) external returns (IERC20Min, uint256);
 
   function getSetupById(uint16 saleId) external view returns (ISaleDB.Setup memory);
 
@@ -69,7 +65,7 @@ interface ISaleData {
     uint256 amount
   ) external returns (uint256, uint256);
 
-  function setWithdrawToken(uint16 saleId, uint256 amount) external returns (IERC20Min, uint256);
+  function setWithdrawToken(uint16 saleId, uint256 amount) external returns (IERC20Min);
 
   function isVested(
     uint16 saleId,

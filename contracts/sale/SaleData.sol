@@ -75,10 +75,10 @@ contract SaleData is ISaleData, RegistryUser {
    * @param vestingStepsArray The array of VestingStep
    */
   function validateAndPackVestingSteps(ISaleDB.VestingStep[] memory vestingStepsArray)
-  external
-  pure
-  override
-  returns (uint256[] memory, string memory)
+    external
+    pure
+    override
+    returns (uint256[] memory, string memory)
   {
     uint256 len = vestingStepsArray.length / 15;
     uint256[] memory errorCode = new uint256[](1);
@@ -101,7 +101,7 @@ contract SaleData is ISaleData, RegistryUser {
           return (errorCode, "waitTime should be monotonic increasing");
         }
       }
-      steps[j] += ((vestingStepsArray[i].percentage - 1) + 100 * (vestingStepsArray[i].waitTime % (10 ** 3))) * (10 ** (5 * k));
+      steps[j] += ((vestingStepsArray[i].percentage - 1) + 100 * (vestingStepsArray[i].waitTime % (10**3))) * (10**(5 * k));
       if (i % 15 == 14) {
         j++;
         k = 0;
@@ -132,7 +132,7 @@ contract SaleData is ISaleData, RegistryUser {
     for (uint256 i = extraVestingSteps.length + 1; i >= 1; i--) {
       uint256 steps = i > 1 ? extraVestingSteps[i - 2] : vestingSteps;
       for (uint256 k = 16; k >= 1; k--) {
-        uint256 step = steps / (10 ** (5 * (k - 1)));
+        uint256 step = steps / (10**(5 * (k - 1)));
         if (step != 0) {
           uint256 ts = (step / 100);
           uint256 percentage = (step % 100) + 1;
@@ -140,7 +140,7 @@ contract SaleData is ISaleData, RegistryUser {
             return uint8(percentage);
           }
         }
-        steps %= (10 ** (5 * (k - 1)));
+        steps %= (10**(5 * (k - 1)));
       }
     }
     return 0;
@@ -148,12 +148,12 @@ contract SaleData is ISaleData, RegistryUser {
 
   function vestedPercentage(uint16 saleId) public view override returns (uint8) {
     return
-    calculateVestedPercentage(
-      _saleDB.getSetupById(saleId).vestingSteps,
-      _saleDB.getExtraVestingStepsById(saleId),
-      _saleDB.getSetupById(saleId).tokenListTimestamp,
-      block.timestamp
-    );
+      calculateVestedPercentage(
+        _saleDB.getSetupById(saleId).vestingSteps,
+        _saleDB.getExtraVestingStepsById(saleId),
+        _saleDB.getSetupById(saleId).tokenListTimestamp,
+        block.timestamp
+      );
   }
 
   function setUpSale(
@@ -180,34 +180,31 @@ contract SaleData is ISaleData, RegistryUser {
     _saleDB.makeTransferable(saleId);
   }
 
-  function fromValueToTokensAmount(uint16 saleId, uint32 value) public view override returns (uint) {
+  function fromValueToTokensAmount(uint16 saleId, uint32 value) public view override returns (uint256) {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
-    return uint256(value).mul(10 ** setup.sellingToken.decimals()).mul(setup.pricingToken).div(setup.pricingPayment);
+    return uint256(value).mul(10**setup.sellingToken.decimals()).mul(setup.pricingToken).div(setup.pricingPayment);
   }
 
   function fromTokensAmountToValue(uint16 saleId, uint120 amount) public view override returns (uint32) {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
-    return uint32(uint256(amount).mul(setup.pricingPayment).div(setup.pricingToken).div(10 ** setup.sellingToken.decimals()));
+    return uint32(uint256(amount).mul(setup.pricingPayment).div(setup.pricingToken).div(10**setup.sellingToken.decimals()));
   }
 
-  function getTokensAmountAndFeeByValue(uint16 saleId, uint32 value) public view override returns (uint, uint) {
-    uint amount = fromValueToTokensAmount(saleId, value);
+  function getTokensAmountAndFeeByValue(uint16 saleId, uint32 value) public view override returns (uint256, uint256) {
+    uint256 amount = fromValueToTokensAmount(saleId, value);
     uint256 fee = amount.mul(_saleDB.getSetupById(saleId).tokenFeePercentage).div(10000);
     return (amount, fee);
   }
 
-  function setLaunchOrExtension(uint16 saleId, uint value)
-  external
-  virtual
-  override
-  onlySale(saleId)
-  returns (
-    IERC20Min,
-    uint256
-  )
+  function setLaunchOrExtension(uint16 saleId, uint256 value)
+    external
+    virtual
+    override
+    onlySale(saleId)
+    returns (IERC20Min, uint256)
   {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
-    (uint amount, uint fee) = getTokensAmountAndFeeByValue(saleId, value != 0 ? uint32(value) : setup.totalValue);
+    (uint256 amount, uint256 fee) = getTokensAmountAndFeeByValue(saleId, value != 0 ? uint32(value) : setup.totalValue);
     _saleDB.addToRemainingAmount(saleId, uint120(amount));
     if (value == 0) {
       emit SaleLaunched(saleId, setup.totalValue, uint120(amount));
@@ -222,6 +219,8 @@ contract SaleData is ISaleData, RegistryUser {
     return _saleDB.getSetupById(saleId);
   }
 
+  // before calling this the dApp should verify that the proposed amount
+  // is realistic, i.e., if there are enough tokens in the sale
   function approveInvestor(
     uint16 saleId,
     address investor,
@@ -240,7 +239,8 @@ contract SaleData is ISaleData, RegistryUser {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount >= setup.minAmount, "SaleData: Amount is too low");
     uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
-    require(tokensAmount <= setup.remainingAmount, "SaleData: Not enough tokens available");
+    uint256 remainingAmountWithoutFee = uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePercentage).div(10000));
+    require(tokensAmount <= remainingAmountWithoutFee, "SaleData: Not enough tokens available");
     if (amount == approved) {
       _saleDB.deleteApproval(saleId, investor);
     } else {
@@ -256,21 +256,16 @@ contract SaleData is ISaleData, RegistryUser {
   }
 
   function setWithdrawToken(uint16 saleId, uint256 amount)
-  external
-  virtual
-  override
-  onlySale(saleId)
-  returns (IERC20Min, uint256)
+    external
+    virtual
+    override
+    onlySale(saleId)
+    returns (IERC20Min)
   {
-    // TODO: this function looks wrong
-
-    // we cannot simply relying on the transfer to do the check, since some of the
-    // token are sold to investors.
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount <= setup.remainingAmount, "SaleData: Cannot withdraw more than remaining");
-    uint256 fee = uint256(setup.capAmount).mul(setup.tokenFeePercentage).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(amount));
-    return (setup.sellingToken, fee);
+    return setup.sellingToken;
   }
 
   function isVested(

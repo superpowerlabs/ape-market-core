@@ -24,7 +24,6 @@ contract Sale is RegistryUser {
     require(_msgSender() == saleData.getSetupById(_saleId).owner, "Sale: caller is not the owner");
   }
 
-
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external virtual {
@@ -36,10 +35,10 @@ contract Sale is RegistryUser {
 
   // Sale creator calls this function to extend a sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
-  function extend(uint extraValue) external virtual {
+  function extend(uint256 extraValue) external virtual {
     ISaleData saleData = ISaleData(_get("SaleData"));
     _isSaleOwner(saleData);
-  (IERC20Min sellingToken, uint256 extraAmount) = ISaleData(_get("SaleData")).setLaunchOrExtension(_saleId, extraValue);
+    (IERC20Min sellingToken, uint256 extraAmount) = ISaleData(_get("SaleData")).setLaunchOrExtension(_saleId, extraValue);
     sellingToken.transferFrom(_msgSender(), address(this), extraAmount);
   }
 
@@ -54,18 +53,18 @@ contract Sale is RegistryUser {
     paymentToken.transferFrom(_msgSender(), address(this), tokenPayment);
   }
 
-  function withdrawPayment(uint256 amount) external virtual  {
+  function withdrawPayment(uint256 amount) external virtual {
     ISaleData saleData = ISaleData(_get("SaleData"));
     _isSaleOwner(saleData);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(saleData.getSetupById(_saleId).paymentTokenId));
     paymentToken.transfer(_msgSender(), amount);
   }
 
-  function withdrawToken(uint256 amount) external virtual  {
+  function withdrawToken(uint256 amount) external virtual {
     ISaleData saleData = ISaleData(_get("SaleData"));
     _isSaleOwner(saleData);
-  (IERC20Min sellingToken, uint256 fee) = saleData.setWithdrawToken(_saleId, amount);
-    sellingToken.transfer(_msgSender(), amount + fee);
+    IERC20Min sellingToken = saleData.setWithdrawToken(_saleId, amount);
+    sellingToken.transfer(_msgSender(), amount);
   }
 
   function vest(

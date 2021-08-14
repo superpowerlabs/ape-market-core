@@ -43,7 +43,7 @@ interface ISaleDB {
     uint32 totalValue; // << USD
     bool isTokenTransferable;
     uint16 tokenFeePercentage; // << the fee in sellingToken due by sellers at launch
-                               // a value like 3.25% is set as 325
+    // a value like 3.25% is set as 325
     uint16 extraFeePercentage; // << the optional fee in USD paid by seller at launch
     uint16 paymentFeePercentage; // << the fee in USD paid by buyers when investing
     //  more bits available:
