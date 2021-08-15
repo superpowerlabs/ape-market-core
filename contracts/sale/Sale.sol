@@ -36,7 +36,7 @@ contract Sale is RegistryUser {
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint32 amount) external virtual {
     ISaleData saleData = ISaleData(_get("SaleData"));
-    ISaleData.Setup memory setup = saleData.getSetupById(_saleId);
+    ISaleDB.Setup memory setup = saleData.getSetupById(_saleId);
     (uint256 tokenPayment, uint256 buyerFee) = saleData.setInvest(_saleId, _msgSender(), amount);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(setup.paymentTokenId));
     paymentToken.transferFrom(_msgSender(), saleData.apeWallet(), buyerFee);

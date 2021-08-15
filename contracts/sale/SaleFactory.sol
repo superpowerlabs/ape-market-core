@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import "./ISaleSetupHasher.sol";
 import "./ISaleFactory.sol";
+import "./ISaleDB.sol";
 import "./Sale.sol";
 import "../registry/RegistryUser.sol";
 
@@ -36,6 +37,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
 
   ISaleData private _saleData;
   ISaleSetupHasher private _saleSetupHasher;
+  ISaleDB private _saleDB;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
     address addr = _get("SaleData");
@@ -45,6 +47,10 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     addr = _get("SaleSetupHasher");
     if (addr != address(_saleSetupHasher)) {
       _saleSetupHasher = ISaleSetupHasher(addr);
+    }
+    addr = _get("SaleDB");
+    if (addr != address(_saleDB)) {
+      _saleDB = ISaleDB(addr);
     }
   }
 
@@ -92,7 +98,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
 
   function approveSale(uint256 saleId) external override {
     require(isOperator(_msgSender()), "SaleFactory: only operators can call this function");
-    require(saleId == _saleData.nextSaleId(), "SaleFactory: invalid sale id");
+    require(saleId == _saleDB.nextSaleId(), "SaleFactory: invalid sale id");
     _saleData.increaseSaleId();
     _approvals[saleId] = true;
     emit SaleApproved(saleId);
@@ -106,7 +112,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
 
   function newSale(
     uint8 saleId,
-    ISaleData.Setup memory setup,
+    ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken,
     bytes memory validatorSignature

@@ -21,6 +21,7 @@ describe("SANFT", async function () {
       , profile
       , saleSetupHasher
       , saleData
+      , saleDB
       , saleFactory
       , sANFT
       , sANFTManager
@@ -64,6 +65,7 @@ describe("SANFT", async function () {
     profile = results.profile
     saleSetupHasher = results.saleSetupHasher
     saleData = results.saleData
+    saleDB = results.saleDB
     saleFactory = results.saleFactory
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager
@@ -112,7 +114,7 @@ describe("SANFT", async function () {
       saleAddress: addr0
     };
 
-    saleId = await saleData.nextSaleId()
+    saleId = await saleDB.nextSaleId()
 
     await saleFactory.connect(operator).approveSale(saleId)
 
@@ -120,9 +122,9 @@ describe("SANFT", async function () {
 
     await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
         .emit(saleFactory, "NewSale")
-    saleAddress = await saleData.getSaleAddressById(saleId)
+    saleAddress = await _saleDB.getSaleAddressById(saleId)
     const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
-    assert.isTrue(await saleData.getSaleIdByAddress(saleAddress) > 0)
+    assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 
     await sellingToken.connect(seller).approve(saleAddress, await saleData.fromValueToTokensAmount(saleId, saleSetup.totalValue * 1.05))
     await sale.connect(seller).launch()

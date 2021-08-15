@@ -66,5 +66,4 @@ contract Profile is IProfile, Ownable, FakeRegistryUser {
         )
       );
   }
-
 }

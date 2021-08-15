@@ -50,11 +50,11 @@ describe.skip("Integration Test", function () {
   })
 
   async function getSale(saleSetup, saleVestingSchedule) {
-    let saleId = await saleData.nextSaleId()
+    let saleId = await saleDB.nextSaleId()
     let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
     await factory.connect(factoryAdmin).approveSale(saleId)
     await factory.connect(factoryAdmin).newSale(saleId, saleSetup, saleVestingSchedule, signature)
-    let saleAddress = await saleData.getSaleAddressById(saleId)
+    let saleAddress = await saleDB.getSaleAddressById(saleId)
     return [new ethers.Contract(saleAddress, saleJson.abi, ethers.provider), saleId.toNumber()]
   }
 

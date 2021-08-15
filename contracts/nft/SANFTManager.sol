@@ -48,6 +48,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   ISANFT private _sanft;
   ISaleData private _saleData;
   IProfile private _profile;
+  ISaleDB private _saleDB;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
     address addr = _get("SANFT");
@@ -61,6 +62,10 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     addr = _get("Profile");
     if (addr != address(_profile)) {
       _profile = IProfile(addr);
+    }
+    addr = _get("SaleDB");
+    if (addr != address(_saleDB)) {
+      _saleDB = ISaleDB(addr);
     }
   }
 
@@ -84,9 +89,9 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     bool done;
     for (uint256 i = 0; i < bundle.length; i++) {
       if (amounts[i] > 0) {
-        ISaleData.Setup memory setup = _saleData.getSetupById(bundle[i].saleId);
+        ISaleDB.Setup memory setup = _saleData.getSetupById(bundle[i].saleId);
         if (setup.tokenListTimestamp != 0) {
-          ISale sale = ISale(_saleData.getSaleAddressById(bundle[i].saleId));
+          ISale sale = ISale(_saleDB.getSaleAddressById(bundle[i].saleId));
           if (sale.vest(tokenOwner, bundle[i].fullAmount, bundle[i].remainingAmount, amounts[i])) {
             bundle[i].remainingAmount = uint120(uint256(bundle[i].remainingAmount).sub(amounts[i]));
             done = true;
@@ -124,7 +129,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     for (uint256 i = 0; i < bundle.length; i++) {
       if (bundle[i].remainingAmount > 0) {
         if (!minted) {
-          _sanft.mint(owner, _saleData.getSaleAddressById(bundle[i].saleId), bundle[i].fullAmount, bundle[i].remainingAmount);
+          _sanft.mint(owner, _saleDB.getSaleAddressById(bundle[i].saleId), bundle[i].fullAmount, bundle[i].remainingAmount);
           minted = true;
         } else {
           _sanft.addSAToBundle(nextId, ISANFT.SA(bundle[i].saleId, bundle[i].fullAmount, bundle[i].remainingAmount));
@@ -138,7 +143,8 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     address to,
     uint256 tokenId
   ) external view override onlySANFT {
-    if (_profile == address(0) || !_profile.areAccountsAssociated(from, to)) {
+    if (address(_profile) == address(0) ||
+      !_profile.areAccountsAssociated(from, to)) {
       // check if any sale is not transferable:
       ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
       for (uint256 i = 0; i < bundle.length; i++) {

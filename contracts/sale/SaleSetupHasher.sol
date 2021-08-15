@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./ISaleSetupHasher.sol";
 import "../registry/FakeRegistryUser.sol";
+
 // we deploy this standalone to reduce the size of SaleFactory
 
 contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
@@ -12,7 +13,7 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
   */
   function packAndHashSaleConfiguration(
     uint256 saleId,
-    ISaleData.Setup memory setup,
+    ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken
   ) public pure override returns (bytes32) {
