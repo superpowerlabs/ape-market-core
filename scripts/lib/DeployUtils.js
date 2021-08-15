@@ -37,7 +37,7 @@ class DeployUtils {
       apeWallet,
       operators,
       validators,
-      feePercentage
+      feePoints
     } = conf
 
     const apeRegistry = await this.deployContract('ApeRegistry')
@@ -50,7 +50,7 @@ class DeployUtils {
     const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators, validators)
     const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
     const sANFT = await this.deployContract('SANFT', registryAddress)
-    const sANFTManager = await this.deployContract('SANFTManager', registryAddress, apeWallet, feePercentage)
+    const sANFTManager = await this.deployContract('SANFTManager', registryAddress, apeWallet, feePoints)
 
     await apeRegistry.register([
       'Profile',

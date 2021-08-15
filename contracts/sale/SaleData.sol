@@ -205,7 +205,7 @@ contract SaleData is ISaleData, RegistryUser {
   {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     (uint256 amount, uint256 fee) = getTokensAmountAndFeeByValue(saleId, value != 0 ? uint32(value) : setup.totalValue);
-    _saleDB.addToRemainingAmount(saleId, uint120(amount));
+    _saleDB.updateRemainingAmount(saleId, uint120(amount), true);
     if (value == 0) {
       emit SaleLaunched(saleId, setup.totalValue, uint120(amount));
     } else {

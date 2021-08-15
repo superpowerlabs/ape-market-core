@@ -843,7 +843,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "feePercentage_",
+            "name": "feePoints_",
             "type": "uint256"
           }
         ],
@@ -936,7 +936,7 @@
       },
       {
         "inputs": [],
-        "name": "feePercentage",
+        "name": "feePoints",
         "outputs": [
           {
             "internalType": "uint256",
@@ -1048,7 +1048,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "feePercentage_",
+            "name": "feePoints_",
             "type": "uint256"
           }
         ],

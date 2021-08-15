@@ -242,10 +242,10 @@ describe("SANFTManager", async function () {
       assert.equal(message, 'NFTs are mergeable')
 
       let sumAmountSale1 = bundle1[0].remainingAmount.add(bundle2[0].remainingAmount)
-      let fee1 = sumAmountSale1.mul(await sANFTManager.feePercentage()).div(10000)
+      let fee1 = sumAmountSale1.mul(await sANFTManager.feePoints()).div(10000)
 
       let sumAmountSale2 = bundle3[0].remainingAmount
-      let fee2 = sumAmountSale2.mul(await sANFTManager.feePercentage()).div(10000)
+      let fee2 = sumAmountSale2.mul(await sANFTManager.feePoints()).div(10000)
 
       await sANFTManager.connect(buyer).merge([nft, nft2, nft3])
 

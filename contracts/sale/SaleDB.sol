@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import "./ISaleDB.sol";
 import "../registry/RegistryUser.sol";
 
 contract SaleDB is ISaleDB, RegistryUser {
+  using SafeMath for uint;
+
   uint16 private _nextId = 1;
 
   mapping(uint16 => Setup) private _setups;
@@ -63,8 +67,12 @@ contract SaleDB is ISaleDB, RegistryUser {
     _setups[saleId].tokenListTimestamp = uint32(block.timestamp);
   }
 
-  function addToRemainingAmount(uint16 saleId, uint120 amount) external virtual override onlySaleData {
-    _setups[saleId].remainingAmount = _setups[saleId].remainingAmount + amount;
+  function updateRemainingAmount(uint16 saleId, uint120 amount, bool increment) external virtual override onlySaleData {
+    if (increment) {
+      _setups[saleId].remainingAmount = _setups[saleId].remainingAmount + amount;
+    } else {
+      _setups[saleId].remainingAmount = uint120(uint(_setups[saleId].remainingAmount).sub(amount));
+    }
   }
 
   function makeTransferable(uint16 saleId) external override onlySaleData {

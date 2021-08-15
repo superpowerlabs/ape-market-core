@@ -68,12 +68,6 @@ contract Sale is ISale, RegistryUser {
     sellingToken.transfer(_msgSender(), amount);
   }
 
-  function approveInvestor(address investor, uint32 amount) external override {
-    ISaleData saleData = ISaleData(_get("SaleData"));
-    _isSaleOwner(saleData);
-    saleData.approveInvestor(_saleId, investor, amount);
-  }
-
   function vest(
     address saOwner,
     uint120 fullAmount,
@@ -89,15 +83,4 @@ contract Sale is ISale, RegistryUser {
     }
   }
 
-  function makeTransferable() external override {
-    ISaleData saleData = ISaleData(_get("SaleData"));
-    _isSaleOwner(saleData);
-    saleData.makeTransferable(_saleId);
-  }
-
-  function triggerTokenListing() external override {
-    ISaleData saleData = ISaleData(_get("SaleData"));
-    _isSaleOwner(saleData);
-    saleData.triggerTokenListing(_saleId);
-  }
 }
