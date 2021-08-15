@@ -143,8 +143,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     address to,
     uint256 tokenId
   ) external view override onlySANFT {
-    if (address(_profile) == address(0) ||
-      !_profile.areAccountsAssociated(from, to)) {
+    if (!_profile.areAccountsAssociated(from, to)) {
       // check if any sale is not transferable:
       ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
       for (uint256 i = 0; i < bundle.length; i++) {
