@@ -22,7 +22,7 @@ WARNING: Do NOT store anything valuable in these accounts. They are shared acros
 networks. e.g local, testnet and mainnet.
 
 ApeOwner: Deployer of SANFT and Sale contracts.  Receiver of all the fees.
-Account #0: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 (10000 ETH)
+Account #0: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 (10000~~~~~~~~ ETH)
 Private Key: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
 TetherOwner: Deployer of tether contract

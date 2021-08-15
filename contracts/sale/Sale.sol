@@ -20,7 +20,7 @@ contract Sale is RegistryUser {
     return _saleId;
   }
 
-  function _isSaleOwner(ISaleData saleData) internal {
+  function _isSaleOwner(ISaleData saleData) internal view {
     require(_msgSender() == saleData.getSetupById(_saleId).owner, "Sale: caller is not the owner");
   }
 
