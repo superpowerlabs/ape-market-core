@@ -42,10 +42,10 @@ interface ISaleDB {
     address saleAddress; // 160
     uint32 totalValue; // << USD
     bool isTokenTransferable;
-    uint16 tokenFeePercentage; // << the fee in sellingToken due by sellers at launch
-    // a value like 3.25% is set as 325
-    uint16 extraFeePercentage; // << the optional fee in USD paid by seller at launch
-    uint16 paymentFeePercentage; // << the fee in USD paid by buyers when investing
+    uint16 tokenFeePoints; // << the fee in sellingToken due by sellers at launch
+    // a value like 3.25% is set as 325 base points
+    uint16 extraFeePoints; // << the optional fee in USD paid by seller at launch
+    uint16 paymentFeePoints; // << the fee in USD paid by buyers when investing
     //  more bits available:
   }
 

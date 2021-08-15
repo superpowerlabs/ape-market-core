@@ -192,7 +192,7 @@ contract SaleData is ISaleData, RegistryUser {
 
   function getTokensAmountAndFeeByValue(uint16 saleId, uint32 value) public view override returns (uint256, uint256) {
     uint256 amount = fromValueToTokensAmount(saleId, value);
-    uint256 fee = amount.mul(_saleDB.getSetupById(saleId).tokenFeePercentage).div(10000);
+    uint256 fee = amount.mul(_saleDB.getSetupById(saleId).tokenFeePoints).div(10000);
     return (amount, fee);
   }
 
@@ -239,7 +239,7 @@ contract SaleData is ISaleData, RegistryUser {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount >= setup.minAmount, "SaleData: Amount is too low");
     uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
-    uint256 remainingAmountWithoutFee = uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePercentage).div(10000));
+    uint256 remainingAmountWithoutFee = uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePoints).div(10000));
     require(tokensAmount <= remainingAmountWithoutFee, "SaleData: Not enough tokens available");
     if (amount == approved) {
       _saleDB.deleteApproval(saleId, investor);
@@ -248,8 +248,8 @@ contract SaleData is ISaleData, RegistryUser {
     }
     uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
     uint256 payment = amount.mul(decimals).mul(setup.pricingPayment).div(setup.pricingToken);
-    uint256 buyerFee = payment.mul(setup.paymentFeePercentage).div(10000);
-    uint256 sellerFee = tokensAmount.mul(setup.tokenFeePercentage).div(10000);
+    uint256 buyerFee = payment.mul(setup.paymentFeePoints).div(10000);
+    uint256 sellerFee = tokensAmount.mul(setup.tokenFeePoints).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
     _sanftmanager.mintInitialTokens(investor, setup.saleAddress, tokensAmount, sellerFee);
     return (payment, buyerFee);
