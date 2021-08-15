@@ -5,9 +5,10 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../nft/ISANFT.sol";
 import "./ISaleData.sol";
+import "./ISale.sol";
 import "../registry/RegistryUser.sol";
 
-contract Sale is RegistryUser {
+contract Sale is ISale, RegistryUser {
   using SafeMath for uint256;
 
   uint16 private _saleId;
@@ -16,7 +17,7 @@ contract Sale is RegistryUser {
     _saleId = saleId_;
   }
 
-  function saleId() external view returns (uint16) {
+  function saleId() external view override returns (uint16) {
     return _saleId;
   }
 
@@ -26,7 +27,7 @@ contract Sale is RegistryUser {
 
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
-  function launch() external virtual {
+  function launch() external virtual override {
     ISaleData saleData = ISaleData(_get("SaleData"));
     _isSaleOwner(saleData);
     (IERC20Min sellingToken, uint256 amount) = ISaleData(_get("SaleData")).setLaunchOrExtension(_saleId, 0);
@@ -35,7 +36,7 @@ contract Sale is RegistryUser {
 
   // Sale creator calls this function to extend a sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
-  function extend(uint256 extraValue) external virtual {
+  function extend(uint256 extraValue) external virtual override {
     ISaleData saleData = ISaleData(_get("SaleData"));
     _isSaleOwner(saleData);
     (IERC20Min sellingToken, uint256 extraAmount) = ISaleData(_get("SaleData")).setLaunchOrExtension(_saleId, extraValue);
@@ -44,7 +45,7 @@ contract Sale is RegistryUser {
 
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
-  function invest(uint32 amount) external virtual {
+  function invest(uint32 amount) external virtual override {
     ISaleData saleData = ISaleData(_get("SaleData"));
     ISaleDB.Setup memory setup = saleData.getSetupById(_saleId);
     (uint256 tokenPayment, uint256 buyerFee) = saleData.setInvest(_saleId, _msgSender(), amount);
@@ -53,18 +54,24 @@ contract Sale is RegistryUser {
     paymentToken.transferFrom(_msgSender(), address(this), tokenPayment);
   }
 
-  function withdrawPayment(uint256 amount) external virtual {
+  function withdrawPayment(uint256 amount) external virtual override {
     ISaleData saleData = ISaleData(_get("SaleData"));
     _isSaleOwner(saleData);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(saleData.getSetupById(_saleId).paymentTokenId));
     paymentToken.transfer(_msgSender(), amount);
   }
 
-  function withdrawToken(uint256 amount) external virtual {
+  function withdrawToken(uint256 amount) external virtual override {
     ISaleData saleData = ISaleData(_get("SaleData"));
     _isSaleOwner(saleData);
     IERC20Min sellingToken = saleData.setWithdrawToken(_saleId, amount);
     sellingToken.transfer(_msgSender(), amount);
+  }
+
+  function approveInvestor(address investor, uint32 amount) external override {
+    ISaleData saleData = ISaleData(_get("SaleData"));
+    _isSaleOwner(saleData);
+    saleData.approveInvestor(_saleId, investor, amount);
   }
 
   function vest(
@@ -72,7 +79,7 @@ contract Sale is RegistryUser {
     uint120 fullAmount,
     uint120 remainingAmount,
     uint256 requestedAmount
-  ) external virtual onlyFrom("SANFTManager") returns (bool) {
+  ) external virtual override onlyFrom("SANFTManager") returns (bool) {
     ISaleData saleData = ISaleData(_get("SaleData"));
     if (saleData.isVested(_saleId, fullAmount, remainingAmount, requestedAmount)) {
       saleData.getSetupById(_saleId).sellingToken.transfer(saOwner, requestedAmount);
@@ -80,5 +87,17 @@ contract Sale is RegistryUser {
     } else {
       return false;
     }
+  }
+
+  function makeTransferable() external override {
+    ISaleData saleData = ISaleData(_get("SaleData"));
+    _isSaleOwner(saleData);
+    saleData.makeTransferable(_saleId);
+  }
+
+  function triggerTokenListing() external override {
+    ISaleData saleData = ISaleData(_get("SaleData"));
+    _isSaleOwner(saleData);
+    saleData.triggerTokenListing(_saleId);
   }
 }
