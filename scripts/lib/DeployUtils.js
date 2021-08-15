@@ -13,16 +13,20 @@ class DeployUtils {
   }
 
   async deployContract(contractName, ...args) {
+    console.log("Deploying", contractName)
     const Contract = await this.ethers.getContractFactory(contractName)
     const contract = await Contract.deploy(...args)
     await contract.deployed()
+    console.log("Deployed at", contract.address)
     return contract
   }
 
   async deployContractBy(contractName, owner, ...args) {
+    console.log("Deploying", contractName)
     const Contract = await this.ethers.getContractFactory(contractName)
     const contract = await Contract.connect(owner).deploy(...args)
     await contract.deployed()
+    console.log("Deployed at", contract.address)
     return contract
   }
 
@@ -31,7 +35,9 @@ class DeployUtils {
     // line interface.
 
     const ethers = this.ethers
+    console.log(await ethers.provider.getNetwork())
     const chainId = (await ethers.provider.getNetwork()).chainId
+
     conf = Object.assign(config[chainId], conf)
     let {
       apeWallet,
