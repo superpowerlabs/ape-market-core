@@ -69,4 +69,6 @@ contract Sale is RegistryUser {
       return false;
     }
   }
+
+  function updateRegisteredContracts() external virtual override {}
 }
