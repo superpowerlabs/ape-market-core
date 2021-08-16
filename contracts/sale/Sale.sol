@@ -20,6 +20,7 @@ contract Sale is RegistryUser {
 
   constructor(uint16 saleId_, address registry) RegistryUser(registry) {
     _saleId = saleId_;
+    _saleData = ISaleData(_get("SaleData"));
   }
 
   function saleId() external view returns (uint16) {
