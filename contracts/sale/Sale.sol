@@ -83,4 +83,7 @@ contract Sale is ISale, RegistryUser {
     }
   }
 
+  function updateRegisteredContracts() external virtual override {
+    revert("Not implemented");
+  }
 }
