@@ -48,7 +48,7 @@ module.exports = {
       chainId: 1337,
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
-      allowUnlimitedContractSize: true,
+      allowUnlimitedContractSize: false,
       timeout: 1800000
     },
     rinkeby: env.rinkeby,
