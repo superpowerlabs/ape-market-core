@@ -42,6 +42,4 @@ abstract contract RegistryUser is IRegistryUser, Ownable {
     _registry = IApeRegistry(addr);
   }
 
-  // this must be overwritten
-  function updateRegisteredContracts() external virtual override;
 }
