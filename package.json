@@ -11,6 +11,7 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.4.1",
     "ethlint": "^1.2.5",
+    "fs-extra": "^10.0.0",
     "hardhat": "^2.4.1",
     "hardhat-contract-sizer": "^2.0.3",
     "hardhat-gas-reporter": "^1.0.4",
@@ -28,6 +29,7 @@
     "clean": "rm -rf cache && rm -rf src/artifacts",
     "compile": "npx hardhat compile",
     "size": "npx hardhat size-contracts",
+    "export": "bin/exportABIs.js",
     "lint": "prettier --write 'contracts/**/*.sol' && solhint 'contracts/**/*.sol'"
   }
 }

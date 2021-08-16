@@ -5,6 +5,12 @@ import "../nft/ISANFT.sol";
 import "./ISaleDB.sol";
 
 interface ISaleData {
+  event ApeWalletUpdated(address wallet);
+  event SaleSetup(uint16 saleId, address saleAddress);
+  event SaleLaunched(uint16 saleId, uint32 totalValue, uint120 totalTokens);
+  event SaleExtended(uint16 saleId, uint32 extraValue, uint120 extraTokens);
+  event TokenListed(uint16 saleId);
+
   function apeWallet() external view returns (address);
 
   function updateApeWallet(address apeWallet_) external;
@@ -33,21 +39,17 @@ interface ISaleData {
     address paymentToken
   ) external;
 
+  function getTokensAmountAndFeeByValue(uint16 saleId, uint32 value) external view returns (uint256, uint256);
+
   function paymentTokenById(uint8 id) external view returns (address);
 
   function makeTransferable(uint16 saleId) external;
 
-  function fromValueToTokensAmount(uint16 saleId, uint32 value) external view returns (uint120);
+  function fromValueToTokensAmount(uint16 saleId, uint32 value) external view returns (uint256);
 
   function fromTokensAmountToValue(uint16 saleId, uint120 amount) external view returns (uint32);
 
-  function setLaunch(uint16 saleId)
-    external
-    returns (
-      IERC20Min,
-      address,
-      uint256
-    );
+  function setLaunchOrExtension(uint16 saleId, uint256 value) external returns (IERC20Min, uint256);
 
   function getSetupById(uint16 saleId) external view returns (ISaleDB.Setup memory);
 
@@ -63,7 +65,7 @@ interface ISaleData {
     uint256 amount
   ) external returns (uint256, uint256);
 
-  function setWithdrawToken(uint16 saleId, uint256 amount) external returns (IERC20Min, uint256);
+  function setWithdrawToken(uint16 saleId, uint256 amount) external returns (IERC20Min);
 
   function isVested(
     uint16 saleId,

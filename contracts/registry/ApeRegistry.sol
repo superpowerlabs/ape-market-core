@@ -16,7 +16,7 @@ contract ApeRegistry is IApeRegistry, Ownable {
   event RegistryUpdated(string contractName, address addr);
 
   mapping(bytes32 => address) internal _registry;
-  bytes32[] internal _index;
+  bytes32[] internal _contractsList;
 
   function register(string[] memory contractNames, address[] memory addrs) external override onlyOwner {
     require(contractNames.length == addrs.length, "ApeRegistry: contractNames and addresses are inconsistent");
@@ -27,9 +27,9 @@ contract ApeRegistry is IApeRegistry, Ownable {
       if (addrs[i] == address(0)) {
         if (exists) {
           delete _registry[contractName];
-          for (uint256 j = 0; j < _index.length; j++) {
-            if (_index[j] == contractName) {
-              delete _index[j];
+          for (uint256 j = 0; j < _contractsList.length; j++) {
+            if (_contractsList[j] == contractName) {
+              delete _contractsList[j];
             }
           }
           changesDone = true;
@@ -37,7 +37,7 @@ contract ApeRegistry is IApeRegistry, Ownable {
       } else {
         _registry[contractName] = addrs[i];
         if (!exists) {
-          _index.push(contractName);
+          _contractsList.push(contractName);
         }
         changesDone = true;
       }
@@ -48,8 +48,8 @@ contract ApeRegistry is IApeRegistry, Ownable {
   function updateContracts(uint256 initialIndex, uint256 limit) public override onlyOwner {
     IRegistryUser registryUser;
     for (uint256 j = initialIndex; j < limit; j++) {
-      if (_index[j] != 0) {
-        registryUser = IRegistryUser(_registry[_index[j]]);
+      if (_contractsList[j] != 0) {
+        registryUser = IRegistryUser(_registry[_contractsList[j]]);
         registryUser.updateRegisteredContracts();
       }
     }
@@ -57,7 +57,7 @@ contract ApeRegistry is IApeRegistry, Ownable {
 
   function updateAllContracts() external override onlyOwner {
     // this could go out of gas
-    updateContracts(0, _index.length);
+    updateContracts(0, _contractsList.length);
   }
 
   function get(bytes32 contractName) external view override returns (address) {

@@ -39,14 +39,14 @@ interface ISaleDB {
     IERC20Min sellingToken;
     // 96 more bits available here
     //
-    address saleAddress;
+    address saleAddress; // 160
     uint32 totalValue; // << USD
     bool isTokenTransferable;
-    uint8 tokenFeePercentage; // << the fee in sellingToken due by sellers at launch
-    uint8 extraFeePercentage; // << the optional fee in USD paid by seller at launch
-    uint8 paymentFeePercentage; // << the fee in USD paid by buyers when investing
-    uint8 softCapPercentage; // << if 0, no soft cap - not sure we will implement it
-    // 32 more bits available:
+    uint16 tokenFeePoints; // << the fee in sellingToken due by sellers at launch
+    // a value like 3.25% is set as 325 base points
+    uint16 extraFeePoints; // << the optional fee in USD paid by seller at launch
+    uint16 paymentFeePoints; // << the fee in USD paid by buyers when investing
+    //  more bits available:
   }
 
   function nextSaleId() external view returns (uint256);
@@ -65,7 +65,7 @@ interface ISaleDB {
 
   function triggerTokenListing(uint16 saleId) external;
 
-  function updateRemainingAmount(uint16 saleId, uint120 remainingAmount) external;
+  function updateRemainingAmount(uint16 saleId, uint120 remainingAmount, bool increment) external;
 
   function makeTransferable(uint16 saleId) external;
 

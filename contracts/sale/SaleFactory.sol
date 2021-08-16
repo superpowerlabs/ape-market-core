@@ -20,6 +20,11 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   mapping(uint256 => address) private _operators;
   uint256 private _nextValidatorId;
 
+  modifier onlyOperator() {
+    require(isOperator(_msgSender()), "SaleFactory: only operators can call this function");
+    _;
+  }
+
   constructor(
     address registry,
     address[] memory operators,
@@ -96,16 +101,14 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     }
   }
 
-  function approveSale(uint256 saleId) external override {
-    require(isOperator(_msgSender()), "SaleFactory: only operators can call this function");
+  function approveSale(uint256 saleId) external override onlyOperator {
     require(saleId == _saleDB.nextSaleId(), "SaleFactory: invalid sale id");
     _saleData.increaseSaleId();
     _approvals[saleId] = true;
     emit SaleApproved(saleId);
   }
 
-  function revokeSale(uint256 saleId) external override {
-    require(isOperator(_msgSender()), "SaleFactory: only operators can call this function");
+  function revokeSale(uint256 saleId) external override onlyOperator{
     delete _approvals[saleId];
     emit SaleRevoked(saleId);
   }

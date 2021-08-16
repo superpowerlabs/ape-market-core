@@ -113,10 +113,9 @@ describe("SaleFactory", async function () {
         sellingToken: sellingToken.address,
         totalValue: 50000,
         tokenIsTransferable: true,
-        tokenFeePercentage: 5,
-        extraFeePercentage: 0,
-        paymentFeePercentage: 3,
-        softCapPercentage: 0,
+        tokenFeePoints: 500,
+        extraFeePoints: 0,
+        paymentFeePoints: 300,
         saleAddress: addr0
       };
 
