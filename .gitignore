@@ -30,5 +30,5 @@ node_modules
 #Hardhat files
 cache
 
-/src/artifacts/
+artifacts
 /src/config/deployed.json
