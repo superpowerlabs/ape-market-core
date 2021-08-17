@@ -100,7 +100,10 @@ class DeployUtils {
       await fs.writeFile(jsonpath, '{}')
     }
     const deployed = require(jsonpath)
-    deployed[chainId] = data
+    if (!deployed[chainId]) {
+      deployed[chainId] = []
+    }
+    deployed[chainId].push(data.apeRegistry)
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
   }
 
