@@ -1,7 +1,11 @@
-require("@nomiclabs/hardhat-waffle");
-require("hardhat-gas-reporter");
+require("@nomiclabs/hardhat-waffle")
+require('hardhat-contract-sizer')
 
-// const env = require('./env.json')
+if (process.env.GAS_REPORT === 'yes') {
+  require("hardhat-gas-reporter");
+}
+
+const env = require('./allEnvs').envJson
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -20,28 +24,29 @@ task("accounts", "Prints the list of accounts", async () => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.3",
+  solidity: "0.8.6",
+  settings: {
+    optimizer: {
+      enabled: true,
+      runs: 800 // << trying to reduce gas consumption for users
+    }
+  },
   paths: {
-    artifacts: './src/artifacts',
+    // artifacts: './src/artifacts',
   },
   networks: {
     hardhat: {
       chainId: 1337,
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
-      allowUnlimitedContractSize: true,
+      allowUnlimitedContractSize: false,
       timeout: 1800000
     },
-    // put whatever was here in the gitignored env.json in the root, like
-    /*
-     {
-        "rinkeby" : {...}
-     }
-     */
-    // rinkeby: env.rinkeby,
+    rinkeby: env.rinkeby,
   },
   gasReporter: {
-    currency: 'USD'
+    currency: 'USD',
+    coinmarketcap: env.coinmarketcap
   }
 };
 
