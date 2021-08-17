@@ -82,8 +82,4 @@ contract Sale is ISale, RegistryUser {
       return false;
     }
   }
-
-  function updateRegisteredContracts() external virtual override {
-    revert("Not implemented");
-  }
 }

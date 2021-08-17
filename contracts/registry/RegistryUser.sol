@@ -8,7 +8,7 @@ import "./IRegistryUser.sol";
 // for debugging only
 import "hardhat/console.sol";
 
-abstract contract RegistryUser is IRegistryUser, Ownable {
+contract RegistryUser is IRegistryUser, Ownable {
   IApeRegistry internal _registry;
   address internal _owner;
 
@@ -42,6 +42,7 @@ abstract contract RegistryUser is IRegistryUser, Ownable {
     _registry = IApeRegistry(addr);
   }
 
-  // this must be overwritten
-  function updateRegisteredContracts() external virtual override;
+  // This must be overwritten by passive users.
+  // Active users (like Sale.sol) do not have to do it
+  function updateRegisteredContracts() external override virtual {}
 }

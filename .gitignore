@@ -36,3 +36,4 @@ artifacts
 # for now
 .idea
 /src
+deployed.json
