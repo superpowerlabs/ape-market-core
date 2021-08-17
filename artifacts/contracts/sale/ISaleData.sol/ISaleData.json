@@ -1,0 +1,577 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ISaleData",
+  "sourceName": "contracts/sale/ISaleData.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "apeWallet",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "investor",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "approveInvestor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sellingToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint64",
+          "name": "amount",
+          "type": "uint64"
+        }
+      ],
+      "name": "denormalize",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getSaleAddressById",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getSetupById",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "contract ISAToken",
+              "name": "satoken",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IERC20Min",
+              "name": "sellingToken",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IERC20Min",
+              "name": "paymentToken",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "remainingAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "minAmount",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "capAmount",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "pricingToken",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "pricingPayment",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "tokenListTimestamp",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "tokenFeePercentage",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "paymentFeePercentage",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bool",
+              "name": "isTokenTransferable",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct ISaleData.Setup",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "vestedPercentage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lastVestedPercentage",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lockedAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "getVestedAmount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getVestedPercentage",
+      "outputs": [
+        {
+          "internalType": "uint128",
+          "name": "",
+          "type": "uint128"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "saleAddress",
+          "type": "address"
+        }
+      ],
+      "name": "grantManagerLevel",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "increaseSaleId",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sale",
+          "type": "address"
+        }
+      ],
+      "name": "isLegitSale",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        }
+      ],
+      "name": "makeTransferable",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextSaleId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64",
+          "name": "amount",
+          "type": "uint64"
+        }
+      ],
+      "name": "normalize",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "investor",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "setInvest",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        }
+      ],
+      "name": "setLaunch",
+      "outputs": [
+        {
+          "internalType": "contract IERC20Min",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "saleAddress",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "contract ISAToken",
+              "name": "satoken",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IERC20Min",
+              "name": "sellingToken",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IERC20Min",
+              "name": "paymentToken",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "owner",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "remainingAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "minAmount",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "capAmount",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "pricingToken",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "pricingPayment",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "tokenListTimestamp",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "tokenFeePercentage",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "paymentFeePercentage",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bool",
+              "name": "isTokenTransferable",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct ISaleData.Setup",
+          "name": "setup",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint128",
+              "name": "timestamp",
+              "type": "uint128"
+            },
+            {
+              "internalType": "uint128",
+              "name": "percentage",
+              "type": "uint128"
+            }
+          ],
+          "internalType": "struct ISaleData.VestingStep[]",
+          "name": "schedule",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "setUpSale",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint128",
+          "name": "lastVestedPercentage",
+          "type": "uint128"
+        },
+        {
+          "internalType": "uint256",
+          "name": "lockedAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "setVest",
+      "outputs": [
+        {
+          "internalType": "uint128",
+          "name": "",
+          "type": "uint128"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "setWithdrawToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20Min",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "saleId",
+          "type": "uint256"
+        }
+      ],
+      "name": "triggerTokenListing",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "apeWallet_",
+          "type": "address"
+        }
+      ],
+      "name": "updateApeWallet",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

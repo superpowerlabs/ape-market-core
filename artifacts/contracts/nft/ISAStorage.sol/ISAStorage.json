@@ -1,0 +1,148 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ISAStorage",
+  "sourceName": "contracts/nft/ISAStorage.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "bundleId",
+          "type": "uint256"
+        }
+      ],
+      "name": "BundleCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "bundleId",
+          "type": "uint256"
+        }
+      ],
+      "name": "BundleDeleted",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "bundleId",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "sale",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "remainingAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint128",
+              "name": "vestedPercentage",
+              "type": "uint128"
+            }
+          ],
+          "internalType": "struct ISAStorage.SA",
+          "name": "newSA",
+          "type": "tuple"
+        }
+      ],
+      "name": "addSAToBundle",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "bundleId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getBundle",
+      "outputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "sale",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "remainingAmount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint128",
+                  "name": "vestedPercentage",
+                  "type": "uint128"
+                }
+              ],
+              "internalType": "struct ISAStorage.SA[]",
+              "name": "sas",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "uint32",
+              "name": "creationTime",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "acquisitionTime",
+              "type": "uint32"
+            }
+          ],
+          "internalType": "struct ISAStorage.Bundle",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "bundleId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "saIndex",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "diff",
+          "type": "uint256"
+        }
+      ],
+      "name": "increaseAmountInSA",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
