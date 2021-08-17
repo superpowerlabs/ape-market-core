@@ -62,9 +62,9 @@ describe("Sale", async function () {
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager
     tokenRegistry = results.tokenRegistry
+    tether = results.tetherMock
 
     sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
-    tether = await deployUtils.deployContract("TetherMock")
 
     const [saleVestingSchedule, msg] = await saleData.validateAndPackVestingSteps([
       {

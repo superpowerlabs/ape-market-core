@@ -74,6 +74,11 @@ class DeployUtils {
 
     await apeRegistry.updateAllContracts()
 
+    let tetherMock
+    if (chainId === 1337 || chainId === 5777) {
+      tetherMock = await deployUtils.deployContract("TetherMock")
+    }
+
     return {
       apeRegistry,
       profile,
@@ -86,7 +91,8 @@ class DeployUtils {
       tokenRegistry,
       apeWallet,
       operators,
-      validators
+      validators,
+      tetherMock
     }
   }
 
