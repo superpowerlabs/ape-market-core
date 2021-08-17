@@ -74,6 +74,11 @@ class DeployUtils {
 
     await apeRegistry.updateAllContracts()
 
+    let tetherMock
+    if (chainId === 1337 || chainId === 5777) {
+      tetherMock = await this.deployContract("TetherMock")
+    }
+
     return {
       apeRegistry,
       profile,
@@ -86,7 +91,8 @@ class DeployUtils {
       tokenRegistry,
       apeWallet,
       operators,
-      validators
+      validators,
+      tetherMock
     }
   }
 
@@ -100,10 +106,11 @@ class DeployUtils {
       await fs.writeFile(jsonpath, '{}')
     }
     const deployed = require(jsonpath)
-    if (!deployed[chainId]) {
-      deployed[chainId] = []
+    if (!deployed[chainId] || Array.isArray(deployed[chainId])) {
+      deployed[chainId] = {}
     }
-    deployed[chainId].push(data.apeRegistry)
+    deployed[chainId].ApeRegistry = data.apeRegistry
+    deployed[chainId].TetherMock = data.tetherMock
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
   }
 

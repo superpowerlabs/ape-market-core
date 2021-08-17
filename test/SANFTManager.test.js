@@ -72,9 +72,9 @@ describe("SANFTManager", async function () {
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager
     tokenRegistry = results.tokenRegistry
+    tether = results.tetherMock
 
     sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
-    tether = await deployUtils.deployContract("TetherMock")
 
     await (await tether.transfer(buyer.address, normalize(40000, 6))).wait()
     await (await tether.transfer(buyer2.address, normalize(50000, 6))).wait()
