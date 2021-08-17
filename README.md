@@ -1,4 +1,4 @@
-# Ape Market Core
+# APE Market Core
 
 ## Install the dependencies and test the contracts
 
@@ -17,5 +17,5 @@ To check the size of the contract, after compiling
 ```
 npm run size
 ```
- 
+
 
