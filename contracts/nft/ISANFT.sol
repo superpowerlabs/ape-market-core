@@ -4,20 +4,24 @@ pragma solidity ^0.8.0;
 import "../sale/ISaleData.sol";
 
 interface ISANFT {
+
+  // Hold the data of a Smart Agreement, packed into an uint256
   struct SA {
-    uint16 saleId;
-    uint120 fullAmount;
+    uint16 saleId; // the sale that generated this SA
+    uint120 fullAmount; // the initial amount without any vesting
+    // the amount remaining in the SA that's not withdrawn.
+    // some of the remainingAmount can be vested already.
     uint120 remainingAmount;
   }
 
   function mint(
-    address to,
-    address saleAddress,
+    address recipient,
+    uint16 saleId,
     uint120 fullAmount,
     uint120 remainingAmount
   ) external;
 
-  function mint(address to, SA[] memory bundle) external;
+  function mint(address recipient, SA[] memory bundle) external;
 
   function nextTokenId() external view returns (uint256);
 
@@ -25,7 +29,7 @@ interface ISANFT {
 
   function withdraw(uint256 tokenId, uint256[] memory amounts) external;
 
-  function withdrawables(uint256 tokenId) external view returns (uint16[] memory, uint256[] memory);
+  function withdrawable(uint256 tokenId) external view returns (uint16[] memory, uint256[] memory);
 
   function addSAToBundle(uint256 bundleId, SA memory newSA) external;
 

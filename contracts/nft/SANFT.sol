@@ -58,22 +58,20 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   }
 
   function mint(
-    address to,
-    address saleAddress,
+    address recipient,
+    uint16 saleId,
     uint120 fullAmount,
     uint120 remainingAmount
   ) external virtual override onlySANFTManager {
-    ISale _sale = ISale(saleAddress);
-    uint16 saleId = _sale.saleId();
     require(_bundles[_nextTokenId].length == 0, "SANFT: Bundle already exists");
-    _safeMint(to, _nextTokenId);
+    _safeMint(recipient, _nextTokenId);
     _bundles[_nextTokenId].push(SA(saleId, fullAmount, remainingAmount));
     _nextTokenId++;
   }
 
-  function mint(address to, SA[] memory bundle) public virtual override onlySANFTManager {
+  function mint(address recipient, SA[] memory bundle) public virtual override onlySANFTManager {
     require(_bundles[_nextTokenId].length == 0, "SANFT: Bundle already exists");
-    _safeMint(to, _nextTokenId);
+    _safeMint(recipient, _nextTokenId);
     for (uint256 i = 0; i < bundle.length; i++) {
       _bundles[_nextTokenId].push(bundle[i]);
     }
@@ -93,7 +91,6 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   }
 
   function burn(uint256 tokenId) external virtual override onlySANFTManager {
-    //    console.log("Burning %s", tokenId);
     delete _bundles[tokenId];
     _burn(tokenId);
   }
