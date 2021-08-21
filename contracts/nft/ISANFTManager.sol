@@ -6,7 +6,7 @@ interface ISANFTManager {
 
   function mintInitialTokens(
     address investor,
-    address saleAddress,
+    uint16 saleId,
     uint256 amount,
     uint256 sellerFee
   ) external;
