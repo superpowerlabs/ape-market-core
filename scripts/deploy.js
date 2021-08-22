@@ -14,6 +14,9 @@ async function main() {
   const chainId = await deployUtils.currentChainId()
   const data = await deployUtils.initAndDeploy()
 
+  for (let i in data) {
+    data[i] = data[i].address ? data[i].address : data[i]
+  }
   console.log(data)
   if (process.env.SAVE_DEPLOYED_ADDRESSES) {
     await deployUtils.saveConfig(chainId, data)

@@ -5,16 +5,7 @@ if (process.env.GAS_REPORT === 'yes') {
   require("hardhat-gas-reporter");
 }
 
-const path = require('path')
-const fs = require('fs-extra')
-
-let envPath = path.resolve(__dirname, 'env.json')
-if (!fs.existsSync(envPath)) {
-  fs.writeFileSync(envPath, '{"rinkeby":{"url":""}}')
-}
-// look at env-example.json for an example of env.json
-const env = require('./env.json')
-
+const env = require('./allEnvs').envJson
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -48,7 +39,7 @@ module.exports = {
       chainId: 1337,
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
-      allowUnlimitedContractSize: true,
+      allowUnlimitedContractSize: false,
       timeout: 1800000
     },
     rinkeby: env.rinkeby,

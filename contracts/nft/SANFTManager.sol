@@ -30,7 +30,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   IERC20 private _feeToken;
 
   // we use a permillage to be able to charge, for example, the 2.5%. In this case the value would be 25
-  uint256 public feePermillage;
+  uint256 public feePoints;
 
   modifier onlySANFT() {
     require(_msgSender() == address(_sanft), "SANFTManager: only SANFT can call this function");
@@ -40,9 +40,9 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   constructor(
     address registry,
     address apeWallet_,
-    uint256 feePermillage_
+    uint256 feePoints_
   ) RegistryUser(registry) {
-    updatePayments(apeWallet_, feePermillage_);
+    updatePayments(apeWallet_, feePoints_);
   }
 
   ISANFT private _sanft;
@@ -69,9 +69,9 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     }
   }
 
-  function updatePayments(address apeWallet_, uint256 feePermillage_) public virtual override onlyOwner {
+  function updatePayments(address apeWallet_, uint256 feePoints_) public virtual override onlyOwner {
     apeWallet = apeWallet_;
-    feePermillage = feePermillage_;
+    feePoints = feePoints_;
   }
 
   /**
@@ -129,7 +129,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     for (uint256 i = 0; i < bundle.length; i++) {
       if (bundle[i].remainingAmount > 0) {
         if (!minted) {
-          _sanft.mint(owner, _saleDB.getSaleAddressById(bundle[i].saleId), bundle[i].fullAmount, bundle[i].remainingAmount);
+          _sanft.mint(owner, bundle[i].saleId, bundle[i].fullAmount, bundle[i].remainingAmount);
           minted = true;
         } else {
           _sanft.addSAToBundle(nextId, ISANFT.SA(bundle[i].saleId, bundle[i].fullAmount, bundle[i].remainingAmount));
@@ -157,13 +157,13 @@ contract SANFTManager is ISANFTManager, RegistryUser {
 
   function mintInitialTokens(
     address investor,
-    address saleAddress,
+    uint16 saleId,
     uint256 amount,
     uint256 sellerFee
   ) external override {
     require(_msgSender() == address(_saleData), "SANFTManager: only SaleData can call this function");
-    _sanft.mint(investor, saleAddress, uint120(amount), uint120(amount));
-    _sanft.mint(apeWallet, saleAddress, uint120(sellerFee), uint120(sellerFee));
+    _sanft.mint(investor, saleId, uint120(amount), uint120(amount));
+    _sanft.mint(apeWallet, saleId, uint120(sellerFee), uint120(sellerFee));
   }
 
   function areMergeable(uint256[] memory tokenIds)
@@ -241,9 +241,9 @@ contract SANFTManager is ISANFTManager, RegistryUser {
       uint256 fullAmount = uint256(bundle[i].fullAmount);
       uint256 remainingAmount = uint256(bundle[i].remainingAmount);
       // calculates the fee
-      uint256 fee = remainingAmount.mul(feePermillage).div(1000);
+      uint256 fee = remainingAmount.mul(feePoints).div(10000);
       // this is necessary to maintain correct vested percentages
-      uint256 catToFullAmount = fullAmount.mul(feePermillage).div(1000);
+      uint256 catToFullAmount = fullAmount.mul(feePoints).div(10000);
       bundle[i].fullAmount = uint120(fullAmount.sub(catToFullAmount));
       bundle[i].remainingAmount = uint120(remainingAmount.sub(fee));
       apeBundle[i].fullAmount = uint120(catToFullAmount);

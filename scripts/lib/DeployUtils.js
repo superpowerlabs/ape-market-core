@@ -43,7 +43,7 @@ class DeployUtils {
       apeWallet,
       operators,
       validators,
-      feePermillage
+      feePoints
     } = conf
 
     const apeRegistry = await this.deployContract('ApeRegistry')
@@ -56,7 +56,7 @@ class DeployUtils {
     const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators, validators)
     const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
     const sANFT = await this.deployContract('SANFT', registryAddress)
-    const sANFTManager = await this.deployContract('SANFTManager', registryAddress, apeWallet, feePermillage)
+    const sANFTManager = await this.deployContract('SANFTManager', registryAddress, apeWallet, feePoints)
 
     await apeRegistry.register([
       'Profile',
@@ -80,6 +80,11 @@ class DeployUtils {
 
     await apeRegistry.updateAllContracts()
 
+    let tetherMock
+    if (chainId === 1337 || chainId === 5777) {
+      tetherMock = await this.deployContract("TetherMock")
+    }
+
     return {
       apeRegistry,
       profile,
@@ -92,7 +97,8 @@ class DeployUtils {
       tokenRegistry,
       apeWallet,
       operators,
-      validators
+      validators,
+      tetherMock
     }
   }
 
@@ -106,7 +112,11 @@ class DeployUtils {
       await fs.writeFile(jsonpath, '{}')
     }
     const deployed = require(jsonpath)
-    deployed[chainId] = data
+    if (!deployed[chainId] || Array.isArray(deployed[chainId])) {
+      deployed[chainId] = {}
+    }
+    deployed[chainId].ApeRegistry = data.apeRegistry
+    deployed[chainId].TetherMock = data.tetherMock
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
   }
 

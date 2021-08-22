@@ -70,9 +70,9 @@ describe("SANFT", async function () {
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager
     tokenRegistry = results.tokenRegistry
+    tether = results.tetherMock
 
     sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
-    tether = await deployUtils.deployContract("TetherMock")
 
     await (await tether.transfer(buyer.address, normalize(40000, 6))).wait()
     await (await tether.transfer(buyer2.address, normalize(50000, 6))).wait()
@@ -107,10 +107,9 @@ describe("SANFT", async function () {
       sellingToken: sellingToken.address,
       totalValue: 50000,
       tokenIsTransferable: true,
-      tokenFeePercentage: 5,
-      extraFeePercentage: 0,
-      paymentFeePercentage: 3,
-      softCapPercentage: 0,
+      tokenFeePoints: 500,
+      extraFeePoints: 0,
+      paymentFeePoints: 300,
       saleAddress: addr0
     };
 
@@ -122,7 +121,7 @@ describe("SANFT", async function () {
 
     await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
         .emit(saleFactory, "NewSale")
-    saleAddress = await _saleDB.getSaleAddressById(saleId)
+    saleAddress = await saleDB.getSaleAddressById(saleId)
     const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
     assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 
