@@ -36,7 +36,6 @@ class DeployUtils {
 
     const ethers = this.ethers
     const chainId = (await ethers.provider.getNetwork()).chainId
-
     conf = Object.assign(config[chainId], conf)
     let {
       apeWallet,
