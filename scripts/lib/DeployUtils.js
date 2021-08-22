@@ -35,7 +35,6 @@ class DeployUtils {
     // line interface.
 
     const ethers = this.ethers
-    console.log(await ethers.provider.getNetwork())
     const chainId = (await ethers.provider.getNetwork()).chainId
 
     conf = Object.assign(config[chainId], conf)
