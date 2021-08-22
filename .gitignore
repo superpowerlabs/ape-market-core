@@ -18,7 +18,6 @@
 .env.test.local
 .env.production.local
 env.json
-hardhat.config.js
 
 npm-debug.log*
 yarn-debug.log*
