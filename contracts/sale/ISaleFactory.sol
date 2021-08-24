@@ -7,6 +7,7 @@ interface ISaleFactory {
   event SaleApproved(uint256 saleId);
   event SaleRevoked(uint256 saleId);
   event NewSale(uint256 saleId, address saleAddress);
+  event OperatorAdded(address operator, uint role);
 
   function addOperator(address newOperator, uint roles) external;
 

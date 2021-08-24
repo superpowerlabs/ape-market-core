@@ -79,9 +79,26 @@ describe("SaleFactory", async function () {
 
     it("should verify that the apeFactory is correctly set", async function () {
       assert.isTrue(await saleFactory.isOperator(operator.address, 1))
-      assert.isTrue(await saleFactory.isOperator(validator.address, 10))
-      assert.isFalse(await saleFactory.isOperator(operator.address, 10))
+      assert.isTrue(await saleFactory.isOperator(validator.address, 2))
+      assert.isFalse(await saleFactory.isOperator(operator.address, 2))
       assert.isFalse(await saleFactory.isOperator(validator.address, 1))
+    })
+
+  })
+
+  describe('#addOperator/revoke', async function () {
+
+    beforeEach(async function () {
+      await initNetworkAndDeploy()
+    })
+
+    it("should verify that the apeFactory is correctly set", async function () {
+      // adding operator&validator role
+      await expect(saleFactory.addOperator(buyer.address, 3))
+          .emit(saleFactory, 'OperatorAdded')
+          .withArgs(buyer.address, 3)
+      assert.isTrue(await saleFactory.isOperator(buyer.address, 1)) // is operator
+      assert.isTrue(await saleFactory.isOperator(buyer.address, 2)) // is validator
     })
 
   })
