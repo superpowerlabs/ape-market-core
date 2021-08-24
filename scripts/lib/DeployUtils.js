@@ -107,9 +107,13 @@ class DeployUtils {
     }
     const deployed = require(jsonpath)
     if (!deployed[chainId]) {
-      deployed[chainId] = []
+      deployed[chainId] = {
+        ApeRegistry: [],
+        TetherMock: []
+      }
     }
-    deployed[chainId].push(data.apeRegistry)
+    deployed[chainId].ApeRegistry.push(data.apeRegistry)
+    deployed[chainId].TetherMock.push(data.apeRegistry)
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
   }
 

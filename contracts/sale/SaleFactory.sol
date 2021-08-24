@@ -14,6 +14,16 @@ contract SaleFactory is ISaleFactory, RegistryUser {
 
   mapping(uint256 => bool) private _approvals;
 
+  struct Operator {
+    address addr;
+    uint8 role;
+  }
+
+  uint8 public operator = 0;
+  uint8 public validator = 1;
+
+  Operator[] private _operators;
+
   mapping(uint256 => address) private _validators;
   uint256 private _nextOperatorId;
 
