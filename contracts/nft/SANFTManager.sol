@@ -129,7 +129,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     for (uint256 i = 0; i < bundle.length; i++) {
       if (bundle[i].remainingAmount > 0) {
         if (!minted) {
-          _sanft.mint(owner, _saleDB.getSaleAddressById(bundle[i].saleId), bundle[i].fullAmount, bundle[i].remainingAmount);
+          _sanft.mint(owner, bundle[i].saleId, bundle[i].fullAmount, bundle[i].remainingAmount);
           minted = true;
         } else {
           _sanft.addSAToBundle(nextId, ISANFT.SA(bundle[i].saleId, bundle[i].fullAmount, bundle[i].remainingAmount));
@@ -157,13 +157,13 @@ contract SANFTManager is ISANFTManager, RegistryUser {
 
   function mintInitialTokens(
     address investor,
-    address saleAddress,
+    uint16 saleId,
     uint256 amount,
     uint256 sellerFee
   ) external override {
     require(_msgSender() == address(_saleData), "SANFTManager: only SaleData can call this function");
-    _sanft.mint(investor, saleAddress, uint120(amount), uint120(amount));
-    _sanft.mint(apeWallet, saleAddress, uint120(sellerFee), uint120(sellerFee));
+    _sanft.mint(investor, saleId, uint120(amount), uint120(amount));
+    _sanft.mint(apeWallet, saleId, uint120(sellerFee), uint120(sellerFee));
   }
 
   function areMergeable(uint256[] memory tokenIds)

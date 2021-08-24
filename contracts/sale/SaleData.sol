@@ -239,8 +239,8 @@ contract SaleData is ISaleData, RegistryUser {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount >= setup.minAmount, "SaleData: Amount is too low");
     uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
-    uint256 remainingAmountWithoutFee = uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePoints).div(10000));
-    require(tokensAmount <= remainingAmountWithoutFee, "SaleData: Not enough tokens available");
+    require(tokensAmount <= uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePoints).div(10000)), //remainingAmountWithoutFee,
+      "SaleData: Not enough tokens available");
     if (amount == approved) {
       _saleDB.deleteApproval(saleId, investor);
     } else {
@@ -251,7 +251,7 @@ contract SaleData is ISaleData, RegistryUser {
     uint256 buyerFee = payment.mul(setup.paymentFeePoints).div(10000);
     uint256 sellerFee = tokensAmount.mul(setup.tokenFeePoints).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
-    _sanftmanager.mintInitialTokens(investor, setup.saleAddress, tokensAmount, sellerFee);
+    _sanftmanager.mintInitialTokens(investor, saleId, tokensAmount, sellerFee);
     return (payment, buyerFee);
   }
 

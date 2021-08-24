@@ -8,15 +8,9 @@ interface ISaleFactory {
   event SaleRevoked(uint256 saleId);
   event NewSale(uint256 saleId, address saleAddress);
 
-  function addValidator(address newValidator) external;
+  function addOperator(address newOperator, uint roles) external;
 
-  function isValidator(address validator) external returns (bool);
-
-  function revokeValidator(address validator) external;
-
-  function addOperator(address newOperator) external;
-
-  function isOperator(address operator) external view returns (bool);
+  function isOperator(address operator, uint roles) external view returns (bool);
 
   function revokeOperator(address operator) external;
 

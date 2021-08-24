@@ -78,8 +78,8 @@ describe("SaleFactory", async function () {
     })
 
     it("should verify that the apeFactory is correctly set", async function () {
-      assert.isTrue(await saleFactory.isOperator(operator.address))
-      assert.isTrue(await saleFactory.isValidator(validator.address))
+      assert.isTrue(await saleFactory.isOperator(operator.address, 1))
+      assert.isTrue(await saleFactory.isOperator(validator.address, 10))
     })
 
   })
