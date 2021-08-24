@@ -28,7 +28,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     uint[] memory roles
   ) RegistryUser(registry) {
     for (uint256 i = 0; i < operators.length; i++) {
-      addOperator(operators[i], roles[i]);
+      addOrUpdateOperator(operators[i], roles[i]);
     }
   }
 
@@ -51,7 +51,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     }
   }
 
-  function addOperator(address newOperator, uint role) public override onlyOwner {
+  function addOrUpdateOperator(address newOperator, uint role) public override onlyOwner {
     _operators[newOperator] = role;
     emit OperatorAdded(newOperator, role);
   }

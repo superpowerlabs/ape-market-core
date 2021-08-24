@@ -9,7 +9,7 @@ interface ISaleFactory {
   event NewSale(uint256 saleId, address saleAddress);
   event OperatorAdded(address operator, uint role);
 
-  function addOperator(address newOperator, uint roles) external;
+  function addOrUpdateOperator(address newOperator, uint roles) external;
 
   function isOperator(address operator, uint roles) external view returns (bool);
 
