@@ -43,7 +43,7 @@ class DeployUtils {
     const _operators = operators.concat(validators)
     const _roles = []
     for (let i = 0; i < _operators.length; i++) {
-      _roles[i] = i < operators.length ? 1 : 2
+      _roles[i] = i < operators.length ? 1 : 1<<1
     }
 
     const apeRegistry = await this.deployContract('ApeRegistry')

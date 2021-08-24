@@ -14,6 +14,9 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   mapping(uint256 => bool) private _approvals;
   mapping(address => uint) private _operators;
 
+  uint constant public OPERATOR = 1;
+  uint constant public VALIDATOR = 1 << 1;
+
   modifier onlyOperator(uint roles) {
     require(isOperator(_msgSender(), roles), "SaleFactory: only operators can call this function");
     _;
@@ -61,14 +64,14 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     delete _operators[operator];
   }
 
-  function approveSale(uint256 saleId) external override onlyOperator(1) {
+  function approveSale(uint256 saleId) external override onlyOperator(OPERATOR) {
     require(saleId == _saleDB.nextSaleId(), "SaleFactory: invalid sale id");
     _saleData.increaseSaleId();
     _approvals[saleId] = true;
     emit SaleApproved(saleId);
   }
 
-  function revokeSale(uint256 saleId) external override onlyOperator(1) {
+  function revokeSale(uint256 saleId) external override onlyOperator(OPERATOR) {
     delete _approvals[saleId];
     emit SaleRevoked(saleId);
   }
@@ -84,7 +87,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
       _saleSetupHasher.packAndHashSaleConfiguration(saleId, setup, extraVestingSteps, paymentToken),
       validatorSignature
     );
-    require(isOperator(validator, 10), "SaleFactory: invalid signature or modified params");
+    require(isOperator(validator, VALIDATOR), "SaleFactory: invalid signature or modified params");
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
     _saleData.setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
