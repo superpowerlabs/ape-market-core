@@ -73,13 +73,13 @@ describe("SaleFactory", async function () {
 
   }
 
-  describe('#constructor & #updateFactory', async function () {
+  describe('#constructor', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
     })
 
-    it("should verify that the apeFactory is correctly set", async function () {
+    it("should verify that the factory is correctly set", async function () {
       assert.isTrue(await saleFactory.isOperator(operator.address, OPERATOR))
       assert.isTrue(await saleFactory.isOperator(validator.address, VALIDATOR))
       assert.isFalse(await saleFactory.isOperator(operator.address, VALIDATOR))
@@ -88,19 +88,30 @@ describe("SaleFactory", async function () {
 
   })
 
-  describe('#addOrUpdateOperator/revoke', async function () {
+  describe('#updateOperators/revoke', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
     })
 
-    it("should verify that the apeFactory is correctly set", async function () {
+    it("should verify that the operator is set", async function () {
       // adding operator&validator role
-      await expect(saleFactory.addOrUpdateOperator(buyer.address, OPERATOR | VALIDATOR))
-          .emit(saleFactory, 'OperatorAdded')
+      await expect(saleFactory.updateOperators(buyer.address, OPERATOR | VALIDATOR))
+          .emit(saleFactory, 'OperatorUpdated')
           .withArgs(buyer.address, 3)
       assert.isTrue(await saleFactory.isOperator(buyer.address, OPERATOR)) // is operator
       assert.isTrue(await saleFactory.isOperator(buyer.address, VALIDATOR)) // is validator
+    })
+
+    it("should revoke the operator", async function () {
+      // adding operator&validator role
+      await saleFactory.updateOperators(buyer.address, OPERATOR | VALIDATOR)
+      await expect(saleFactory.updateOperators(buyer.address, 0))
+          .emit(saleFactory, 'OperatorUpdated')
+          .withArgs(buyer.address, 0)
+
+      assert.isFalse(await saleFactory.isOperator(buyer.address, OPERATOR)) // is operator
+      assert.isFalse(await saleFactory.isOperator(buyer.address, VALIDATOR)) // is validator
     })
 
   })

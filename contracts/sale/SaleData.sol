@@ -239,8 +239,10 @@ contract SaleData is ISaleData, RegistryUser {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     require(amount >= setup.minAmount, "SaleData: Amount is too low");
     uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
-    require(tokensAmount <= uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePoints).div(10000)), //remainingAmountWithoutFee,
-      "SaleData: Not enough tokens available");
+    require(
+      tokensAmount <= uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePoints).div(10000)), //remainingAmountWithoutFee,
+      "SaleData: Not enough tokens available"
+    );
     if (amount == approved) {
       _saleDB.deleteApproval(saleId, investor);
     } else {
