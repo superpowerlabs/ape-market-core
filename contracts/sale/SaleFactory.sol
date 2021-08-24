@@ -10,34 +10,26 @@ import "./Sale.sol";
 import "../registry/RegistryUser.sol";
 
 contract SaleFactory is ISaleFactory, RegistryUser {
-  uint256 public constant OPERATOR_LEVEL = 3;
 
   mapping(uint256 => bool) private _approvals;
+  mapping(address => uint) private _operators;
 
-  mapping(uint256 => address) private _validators;
-  uint256 private _nextOperatorId;
+  uint constant public OPERATOR = 1;
+  uint constant public VALIDATOR = 1 << 1;
 
-  mapping(uint256 => address) private _operators;
-  uint256 private _nextValidatorId;
-
-  modifier onlyOperator() {
-    require(isOperator(_msgSender()), "SaleFactory: only operators can call this function");
+  modifier onlyOperator(uint roles) {
+    require(isOperator(_msgSender(), roles), "SaleFactory: only operators can call this function");
     _;
   }
 
   constructor(
     address registry,
     address[] memory operators,
-    address[] memory validators
+    uint[] memory roles
   ) RegistryUser(registry) {
     for (uint256 i = 0; i < operators.length; i++) {
-      _operators[i] = operators[i];
+      addOrUpdateOperator(operators[i], roles[i]);
     }
-    _nextOperatorId = operators.length;
-    for (uint256 i = 0; i < validators.length; i++) {
-      _validators[i] = validators[i];
-    }
-    _nextValidatorId = validators.length;
   }
 
   ISaleData private _saleData;
@@ -59,56 +51,27 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     }
   }
 
-  function addValidator(address newValidator) external override onlyOwner {
-    require(!isValidator(newValidator), "SaleFactory: validator already set");
-    _validators[_nextValidatorId++] = newValidator;
+  function addOrUpdateOperator(address newOperator, uint role) public override onlyOwner {
+    _operators[newOperator] = role;
+    emit OperatorAdded(newOperator, role);
   }
 
-  function isValidator(address validator) public view override returns (bool) {
-    for (uint256 i = 0; i < _nextValidatorId; i++) {
-      if (_validators[i] == validator) return true;
-    }
-    return false;
-  }
-
-  function revokeValidator(address validator) external override onlyOwner {
-    for (uint256 i = 0; i < _nextValidatorId; i++) {
-      if (_validators[i] == validator) {
-        delete _validators[i];
-        break;
-      }
-    }
-  }
-
-  function addOperator(address newOperator) external override onlyOwner {
-    require(!isOperator(newOperator), "SaleFactory: operator already set");
-    _operators[_nextOperatorId++] = newOperator;
-  }
-
-  function isOperator(address operator) public view override returns (bool) {
-    for (uint256 i = 0; i < _nextOperatorId; i++) {
-      if (_operators[i] == operator) return true;
-    }
-    return false;
+  function isOperator(address operator, uint role) public view override returns (bool) {
+    return _operators[operator] & role != 0;
   }
 
   function revokeOperator(address operator) external override onlyOwner {
-    for (uint256 i = 0; i < _nextOperatorId; i++) {
-      if (_operators[i] == operator) {
-        delete _operators[i];
-        break;
-      }
-    }
+    delete _operators[operator];
   }
 
-  function approveSale(uint256 saleId) external override onlyOperator {
+  function approveSale(uint256 saleId) external override onlyOperator(OPERATOR) {
     require(saleId == _saleDB.nextSaleId(), "SaleFactory: invalid sale id");
     _saleData.increaseSaleId();
     _approvals[saleId] = true;
     emit SaleApproved(saleId);
   }
 
-  function revokeSale(uint256 saleId) external override onlyOperator{
+  function revokeSale(uint256 saleId) external override onlyOperator(OPERATOR) {
     delete _approvals[saleId];
     emit SaleRevoked(saleId);
   }
@@ -124,7 +87,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
       _saleSetupHasher.packAndHashSaleConfiguration(saleId, setup, extraVestingSteps, paymentToken),
       validatorSignature
     );
-    require(isValidator(validator), "SaleFactory: invalid signature or modified params");
+    require(isOperator(validator, VALIDATOR), "SaleFactory: invalid signature or modified params");
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
     _saleData.setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);

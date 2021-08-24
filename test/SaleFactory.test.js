@@ -7,6 +7,8 @@ const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 describe("SaleFactory", async function () {
 
   const deployUtils = new DeployUtils(ethers)
+  const OPERATOR = 1
+  const VALIDATOR = 1<<1
 
   let apeRegistry
       , profile
@@ -78,8 +80,27 @@ describe("SaleFactory", async function () {
     })
 
     it("should verify that the apeFactory is correctly set", async function () {
-      assert.isTrue(await saleFactory.isOperator(operator.address))
-      assert.isTrue(await saleFactory.isValidator(validator.address))
+      assert.isTrue(await saleFactory.isOperator(operator.address, OPERATOR))
+      assert.isTrue(await saleFactory.isOperator(validator.address, VALIDATOR))
+      assert.isFalse(await saleFactory.isOperator(operator.address, VALIDATOR))
+      assert.isFalse(await saleFactory.isOperator(validator.address, OPERATOR))
+    })
+
+  })
+
+  describe('#addOrUpdateOperator/revoke', async function () {
+
+    beforeEach(async function () {
+      await initNetworkAndDeploy()
+    })
+
+    it("should verify that the apeFactory is correctly set", async function () {
+      // adding operator&validator role
+      await expect(saleFactory.addOrUpdateOperator(buyer.address, OPERATOR | VALIDATOR))
+          .emit(saleFactory, 'OperatorAdded')
+          .withArgs(buyer.address, 3)
+      assert.isTrue(await saleFactory.isOperator(buyer.address, OPERATOR)) // is operator
+      assert.isTrue(await saleFactory.isOperator(buyer.address, VALIDATOR)) // is validator
     })
 
   })

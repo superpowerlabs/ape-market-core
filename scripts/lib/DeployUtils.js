@@ -40,6 +40,12 @@ class DeployUtils {
       feePoints
     } = conf
 
+    const _operators = operators.concat(validators)
+    const _roles = []
+    for (let i = 0; i < _operators.length; i++) {
+      _roles[i] = i < operators.length ? 1 : 1<<1
+    }
+
     const apeRegistry = await this.deployContract('ApeRegistry')
     const registryAddress = apeRegistry.address
 
@@ -47,7 +53,7 @@ class DeployUtils {
     const saleSetupHasher = await this.deployContract('SaleSetupHasher')
     const saleDB = await this.deployContract('SaleDB', registryAddress)
     const saleData = await this.deployContract('SaleData', registryAddress, apeWallet)
-    const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators, validators)
+    const saleFactory = await this.deployContract('SaleFactory', registryAddress, _operators, _roles)
     const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
     const sANFT = await this.deployContract('SANFT', registryAddress)
     const sANFTManager = await this.deployContract('SANFTManager', registryAddress, apeWallet, feePoints)
