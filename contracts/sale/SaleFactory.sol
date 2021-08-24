@@ -10,14 +10,13 @@ import "./Sale.sol";
 import "../registry/RegistryUser.sol";
 
 contract SaleFactory is ISaleFactory, RegistryUser {
-
   mapping(uint256 => bool) private _approvals;
-  mapping(address => uint) private _operators;
+  mapping(address => uint256) private _operators;
 
-  uint constant public OPERATOR = 1;
-  uint constant public VALIDATOR = 1 << 1;
+  uint256 public constant OPERATOR = 1;
+  uint256 public constant VALIDATOR = 1 << 1;
 
-  modifier onlyOperator(uint roles) {
+  modifier onlyOperator(uint256 roles) {
     require(isOperator(_msgSender(), roles), "SaleFactory: only operators can call this function");
     _;
   }
@@ -25,10 +24,10 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   constructor(
     address registry,
     address[] memory operators,
-    uint[] memory roles
+    uint256[] memory roles
   ) RegistryUser(registry) {
     for (uint256 i = 0; i < operators.length; i++) {
-      addOrUpdateOperator(operators[i], roles[i]);
+      updateOperators(operators[i], roles[i]);
     }
   }
 
@@ -51,17 +50,17 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     }
   }
 
-  function addOrUpdateOperator(address newOperator, uint role) public override onlyOwner {
-    _operators[newOperator] = role;
-    emit OperatorAdded(newOperator, role);
+  function updateOperators(address operator, uint256 role) public override onlyOwner {
+    if (role == 0) {
+      delete _operators[operator];
+    } else {
+      _operators[operator] = role;
+    }
+    emit OperatorUpdated(operator, role);
   }
 
-  function isOperator(address operator, uint role) public view override returns (bool) {
+  function isOperator(address operator, uint256 role) public view override returns (bool) {
     return _operators[operator] & role != 0;
-  }
-
-  function revokeOperator(address operator) external override onlyOwner {
-    delete _operators[operator];
   }
 
   function approveSale(uint256 saleId) external override onlyOperator(OPERATOR) {

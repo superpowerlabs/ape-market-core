@@ -7,7 +7,7 @@ import "./ISaleDB.sol";
 import "../registry/RegistryUser.sol";
 
 contract SaleDB is ISaleDB, RegistryUser {
-  using SafeMath for uint;
+  using SafeMath for uint256;
 
   uint16 private _nextId = 1;
 
@@ -67,11 +67,15 @@ contract SaleDB is ISaleDB, RegistryUser {
     _setups[saleId].tokenListTimestamp = uint32(block.timestamp);
   }
 
-  function updateRemainingAmount(uint16 saleId, uint120 amount, bool increment) external virtual override onlySaleData {
+  function updateRemainingAmount(
+    uint16 saleId,
+    uint120 amount,
+    bool increment
+  ) external virtual override onlySaleData {
     if (increment) {
       _setups[saleId].remainingAmount = _setups[saleId].remainingAmount + amount;
     } else {
-      _setups[saleId].remainingAmount = uint120(uint(_setups[saleId].remainingAmount).sub(amount));
+      _setups[saleId].remainingAmount = uint120(uint256(_setups[saleId].remainingAmount).sub(amount));
     }
   }
 

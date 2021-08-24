@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "../sale/ISaleData.sol";
 
 interface ISANFT {
-
   // Hold the data of a Smart Agreement, packed into an uint256
   struct SA {
     uint16 saleId; // the sale that generated this SA
