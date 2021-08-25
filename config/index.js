@@ -13,6 +13,12 @@ const config = {
     operators: ['0xa0Ee7A142d267C1f36714E4a8F75612F20a79720'], // signers[9]
     validators: ['0x70997970C51812dc3A010C7d01b50e0d17dc79C8'], // signers[1]
     feePoints: 100
+  }),
+  '4': Object.assign(baseConfig, {
+    apeWallet: '0x36C3D76f3D2Ec925Ab51a028D1C44007EFc6574a', // ApeOwner
+    operators: ['0x36C3D76f3D2Ec925Ab51a028D1C44007EFc6574a'], // ApeOwner
+    validators: ['0x36C3D76f3D2Ec925Ab51a028D1C44007EFc6574a'], // ApeOwner
+    feePoints: 100
   })
 }
 

@@ -37,6 +37,12 @@ class DeployUtils {
     const ethers = this.ethers
     const chainId = (await ethers.provider.getNetwork()).chainId
     conf = Object.assign(config[chainId], conf)
+
+    if (conf == null) {
+      console.log("configuration for ", chainId, " not found in config/index.js")
+      return
+    }
+
     let {
       apeWallet,
       operators,
@@ -85,7 +91,7 @@ class DeployUtils {
     await apeRegistry.updateAllContracts()
 
     let tetherMock
-    if (chainId === 1337 || chainId === 5777) {
+    if (chainId === 1337 || chainId === 5777 || chainId === 4 ) {
       tetherMock = await this.deployContract("TetherMock")
     }
 
