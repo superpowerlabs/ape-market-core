@@ -42,7 +42,7 @@ module.exports = {
       allowUnlimitedContractSize: false,
       timeout: 1800000
     },
-    rinkeby: env.rinkeby,
+    "rinkeby" : env.rinkeby,
   },
   gasReporter: {
     currency: 'USD',
