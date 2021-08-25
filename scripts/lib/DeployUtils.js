@@ -66,7 +66,7 @@ class DeployUtils {
     conf = Object.assign(config[chainId], conf)
 
     if (conf == null) {
-      console.info("configuration for ", chainId, " not found in config/index.js")
+      console.info("Configuration for ", chainId, " not found in config/index.js")
       return
     }
 
