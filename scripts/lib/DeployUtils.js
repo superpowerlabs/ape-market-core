@@ -6,6 +6,12 @@ const config = require(configPath)
 
 const addr0 = '0x0000000000000000000000000000000000000000'
 
+function consoleLog(...args) {
+  if (process.env.VERBOSE_LOG) {
+    console.log(...args)
+  }
+}
+
 class DeployUtils {
 
   constructor(ethers) {
@@ -13,21 +19,42 @@ class DeployUtils {
   }
 
   async deployContract(contractName, ...args) {
-    console.log("Deploying", contractName)
+    consoleLog("Deploying", contractName)
     const Contract = await this.ethers.getContractFactory(contractName)
     const contract = await Contract.deploy(...args)
     await contract.deployed()
-    console.log("Deployed at", contract.address)
+    consoleLog("Deployed at", contract.address)
     return contract
   }
 
   async deployContractBy(contractName, owner, ...args) {
-    console.log("Deploying", contractName)
+    consoleLog("Deploying", contractName)
     const Contract = await this.ethers.getContractFactory(contractName)
     const contract = await Contract.connect(owner).deploy(...args)
     await contract.deployed()
-    console.log("Deployed at", contract.address)
+    consoleLog("Deployed at", contract.address)
     return contract
+  }
+
+  joinOperatorsAndValidators(operators, validators) {
+    const _operators = operators
+    const len = _operators.length
+    const _roles = []
+    FOR: for (let i = 0; i < _operators.length; i++) {
+      for (let j = 0; j < validators.length; j++) {
+        if (_operators[i] === validators[j]) {
+          _roles[i] = 1 | 1 << 1
+          validators.splice(j, 1)
+          continue FOR
+        }
+      }
+      _roles[i] = 1
+    }
+    for (let i = 0; i < validators.length; i++) {
+      _operators[len + i] = validators[i]
+      _roles[len + i] = 1 << 1
+    }
+    return [_operators, _roles]
   }
 
   async initAndDeploy(conf = {}) {
@@ -39,7 +66,7 @@ class DeployUtils {
     conf = Object.assign(config[chainId], conf)
 
     if (conf == null) {
-      console.log("configuration for ", chainId, " not found in config/index.js")
+      console.info("configuration for ", chainId, " not found in config/index.js")
       return
     }
 
@@ -50,12 +77,7 @@ class DeployUtils {
       feePoints
     } = conf
 
-    const _operators = operators.concat(validators)
-    const _roles = []
-    for (let i = 0; i < _operators.length; i++) {
-      _roles[i] = i < operators.length ? 1 : 1<<1
-    }
-
+    const [_operators, _roles] = this.joinOperatorsAndValidators(operators, validators)
     const apeRegistry = await this.deployContract('ApeRegistry')
     const registryAddress = apeRegistry.address
 
@@ -91,7 +113,7 @@ class DeployUtils {
     await apeRegistry.updateAllContracts()
 
     let tetherMock
-    if (chainId === 1337 || chainId === 5777 || chainId === 4 ) {
+    if (chainId === 1337 || chainId === 5777 || chainId === 4) {
       tetherMock = await this.deployContract("TetherMock")
     }
 
