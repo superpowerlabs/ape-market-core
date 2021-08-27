@@ -1,11 +1,6 @@
-require("@nomiclabs/hardhat-waffle")
-require('hardhat-contract-sizer')
+require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-etherscan");
 
-if (process.env.GAS_REPORT === 'yes') {
-  require("hardhat-gas-reporter");
-}
-
-const env = require('./allEnvs').envJson
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -24,29 +19,29 @@ task("accounts", "Prints the list of accounts", async () => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.6",
-  settings: {
-    optimizer: {
-      enabled: true,
-      runs: 800 // << trying to reduce gas consumption for users
-    }
-  },
+  solidity: "0.8.3",
   paths: {
-    // artifacts: './src/artifacts',
+    artifacts: './src/artifacts',
+    contracts: "./src/contracts",
   },
   networks: {
-    hardhat: {
-      chainId: 1337,
-      gas: 12000000,
-      blockGasLimit: 0x1fffffffffffff,
-      allowUnlimitedContractSize: false,
-      timeout: 1800000
+    // hardhat: {
+    //   chainId: 1337
+    // },
+    rinkeby: {
+      url: "https://eth-rinkeby.alchemyapi.io/v2/JqxAXeT7b2jG4E--K1_4GJlmc_OP2nRe",
+      accounts:["6a4aaa1d87e308cda1d88836b97d3a05381246eb1bf8742a54351712a9400739",
+      "3779ce9bce6df6c16a8ac658fd7e3d9edce199406cf857cae400c9fb3b048854",
+      "55c9efaad718cafb466b089129bb811ec065078fec3678772e3887c521203778",
+      "c17f32e3d8ee66ba45a7aa692cb9fd09f60419b441de049e4c7819a05f12540f",
+      "f61a6df835e097090f5a8b058bf7a04c84f169e305fb9ace5c044601ac54a207",
+      "7bf4c608a5f297d083b243e2462991bd9839750ac99e9b8f5c213a8a904be931"
+      ],
+      gas: "auto",
     },
-    rinkeby: env.rinkeby,
   },
-  gasReporter: {
-    currency: 'USD',
-    coinmarketcap: env.coinmarketcap
+  etherscan: {
+    apiKey: "JUIG4RKJHKAAFTP46HIWHN9ABUEANCP6VW"
   }
 };
 
