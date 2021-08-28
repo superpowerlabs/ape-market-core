@@ -15,11 +15,12 @@ contract Sale is ISale, Ownable {
   uint16 private _saleId;
   IApeRegistry private _apeRegistry;
   bytes32 _saleDataName;
+  bytes32 _managerName;
 
-  modifier onlyFrom(string memory contractName) {
+  modifier onlyFromManager {
     require(
-      _msgSender() == _apeRegistry.get(contractName),
-      string(abi.encodePacked("RegistryUser: only ", contractName, " can call this function"))
+      _msgSender() == _apeRegistry.get(_managerName),
+      string(abi.encodePacked("RegistryUser: only SANFTManager can call this function"))
     );
     _;
   }
@@ -28,6 +29,7 @@ contract Sale is ISale, Ownable {
     _saleId = saleId_;
     _apeRegistry = IApeRegistry(registry);
     _saleDataName = keccak256(abi.encodePacked("SaleData"));
+    _managerName = keccak256(abi.encodePacked("SANFTManager"));
   }
 
   function saleId() external view override returns (uint16) {
@@ -90,7 +92,7 @@ contract Sale is ISale, Ownable {
     uint120 fullAmount,
     uint120 remainingAmount,
     uint256 requestedAmount
-  ) external virtual override onlyFrom("SANFTManager") returns (bool) {
+  ) external virtual override onlyFromManager returns (bool) {
     ISaleData saleData = _getSaleData();
     if (saleData.isVested(_saleId, fullAmount, remainingAmount, requestedAmount)) {
       saleData.getSetupById(_saleId).sellingToken.transfer(saOwner, requestedAmount);
