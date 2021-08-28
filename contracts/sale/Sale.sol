@@ -28,7 +28,8 @@ contract Sale is ISale, Ownable {
   constructor(uint16 saleId_, address registry) {
     _saleId = saleId_;
     _apeRegistry = IApeRegistry(registry);
-    _saleDataName = keccak256(abi.encodePacked("SaleData"));
+    // keccak256(abi.encodePacked("SaleData"));
+    _saleDataName = 0x4c6f8a3b0e781d23cc0de15ca3e64123ce423f96990455fed9422d7afb22af03;
     _managerName = keccak256(abi.encodePacked("SANFTManager"));
   }
 
