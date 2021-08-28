@@ -2,18 +2,27 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../nft/ISANFT.sol";
 import "./ISaleData.sol";
 import "./ISale.sol";
 import "../registry/IApeRegistry.sol";
 
-contract Sale is ISale {
+contract Sale is ISale, Ownable {
   using SafeMath for uint256;
 
   uint16 private _saleId;
   IApeRegistry private _apeRegistry;
-  byte32 _saleDataName;
+  bytes32 _saleDataName;
+
+  modifier onlyFrom(string memory contractName) {
+    require(
+      _msgSender() == _apeRegistry.get(contractName),
+      string(abi.encodePacked("RegistryUser: only ", contractName, " can call this function"))
+    );
+    _;
+  }
 
   constructor(uint16 saleId_, address registry) {
     _saleId = saleId_;
@@ -25,7 +34,7 @@ contract Sale is ISale {
     return _saleId;
   }
 
-  function getSaleData() internal view returns (ISaleData) {
+  function _getSaleData() internal view returns (ISaleData) {
     return ISaleData(_apeRegistry.get(_saleDataName));
   }
 
@@ -36,7 +45,7 @@ contract Sale is ISale {
   // Sale creator calls this function to start the sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function launch() external virtual override {
-    ISaleData saleData = getSaleData();
+    ISaleData saleData = _getSaleData();
     _isSaleOwner(saleData);
     (IERC20Min sellingToken, uint256 amount) = saleData.setLaunchOrExtension(_saleId, 0);
     sellingToken.transferFrom(_msgSender(), address(this), amount);
@@ -45,7 +54,7 @@ contract Sale is ISale {
   // Sale creator calls this function to extend a sale.
   // Precondition: Sale creator needs to approve cap + fee Amount of token before calling this
   function extend(uint256 extraValue) external virtual override {
-    ISaleData saleData = getSaleData();
+    ISaleData saleData = _getSaleData();
     _isSaleOwner(saleData);
     (IERC20Min sellingToken, uint256 extraAmount) = saleData.setLaunchOrExtension(_saleId, extraValue);
     sellingToken.transferFrom(_msgSender(), address(this), extraAmount);
@@ -54,7 +63,7 @@ contract Sale is ISale {
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
   function invest(uint32 amount) external virtual override {
-    ISaleData saleData = getSaleData;
+    ISaleData saleData = _getSaleData();
     ISaleDB.Setup memory setup = saleData.getSetupById(_saleId);
     (uint256 tokenPayment, uint256 buyerFee) = saleData.setInvest(_saleId, _msgSender(), amount);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(setup.paymentTokenId));
@@ -63,14 +72,14 @@ contract Sale is ISale {
   }
 
   function withdrawPayment(uint256 amount) external virtual override {
-    ISaleData saleData = getSaleData();
+    ISaleData saleData = _getSaleData();
     _isSaleOwner(saleData);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(saleData.getSetupById(_saleId).paymentTokenId));
     paymentToken.transfer(_msgSender(), amount);
   }
 
   function withdrawToken(uint256 amount) external virtual override {
-    ISaleData saleData = getSaleData();
+    ISaleData saleData = _getSaleData();
     _isSaleOwner(saleData);
     IERC20Min sellingToken = saleData.setWithdrawToken(_saleId, amount);
     sellingToken.transfer(_msgSender(), amount);
@@ -82,7 +91,7 @@ contract Sale is ISale {
     uint120 remainingAmount,
     uint256 requestedAmount
   ) external virtual override onlyFrom("SANFTManager") returns (bool) {
-    ISaleData saleData = getSaleData();
+    ISaleData saleData = _getSaleData();
     if (saleData.isVested(_saleId, fullAmount, remainingAmount, requestedAmount)) {
       saleData.getSetupById(_saleId).sellingToken.transfer(saOwner, requestedAmount);
       return true;

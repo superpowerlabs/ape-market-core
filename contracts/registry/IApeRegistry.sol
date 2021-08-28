@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 interface IApeRegistry {
   function register(string[] memory contractNames, address[] memory addrs) external;
 
-  function get(byte32 contractName) external view returns (address);
+  function get(bytes32 contractName) external view returns (address);
 
   function get(string memory contractName) external view returns (address);
 

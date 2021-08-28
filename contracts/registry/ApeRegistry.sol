@@ -60,7 +60,7 @@ contract ApeRegistry is IApeRegistry, Ownable {
     updateContracts(0, _contractsList.length);
   }
 
-  function get(byte32 contractName) external view override returns (address) {
+  function get(bytes32 contractName) external view override returns (address) {
     return _registry[contractName];
   }
 
