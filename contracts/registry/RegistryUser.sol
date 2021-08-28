@@ -33,7 +33,7 @@ contract RegistryUser is IRegistryUser, Ownable {
   }
 
   function _get(string memory contractName) internal view returns (address) {
-    return _registry.get(contractName);
+    return _registry.get(keccak256(abi.encodePacked(contractName)));
   }
 
   function updateRegistry(address addr) external override onlyOwner {
@@ -43,6 +43,5 @@ contract RegistryUser is IRegistryUser, Ownable {
   }
 
   // This must be overwritten by passive users.
-  // Active users (like Sale.sol) do not have to do it
   function updateRegisteredContracts() external virtual override {}
 }
