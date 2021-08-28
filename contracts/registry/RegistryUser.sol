@@ -33,7 +33,7 @@ contract RegistryUser is IRegistryUser, Ownable {
   }
 
   function _get(string memory contractName) internal view returns (address) {
-    return _registry.get(keccak256(abi.encodePacked(contractName)));
+    return _registry.get(contractName);
   }
 
   function updateRegistry(address addr) external override onlyOwner {
