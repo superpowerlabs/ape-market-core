@@ -30,7 +30,8 @@ contract Sale is ISale, Ownable {
     _apeRegistry = IApeRegistry(registry);
     // keccak256(abi.encodePacked("SaleData"));
     _saleDataName = 0x4c6f8a3b0e781d23cc0de15ca3e64123ce423f96990455fed9422d7afb22af03;
-    _managerName = keccak256(abi.encodePacked("SANFTManager"));
+    // keccak256(abi.encodePacked("SANFTManager"));
+    _managerName = 0x88cd06859879bf344297cbaea74f021ed3bfbcd754ac1254362c18cd50af6931;
   }
 
   function saleId() external view override returns (uint16) {
