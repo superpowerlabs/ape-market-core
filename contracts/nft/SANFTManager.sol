@@ -26,6 +26,11 @@ interface IERC20 {
 contract SANFTManager is ISANFTManager, RegistryUser {
   using SafeMath for uint256;
 
+  bytes32 internal constant _SANFT = keccak256("SANFT");
+  bytes32 internal constant _SALE_DATA = keccak256("SaleData");
+  bytes32 internal constant _SALE_DB = keccak256("SaleDB");
+  bytes32 internal constant _PROFILE = keccak256("Profile");
+
   address public apeWallet;
   IERC20 private _feeToken;
 
@@ -51,19 +56,19 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   ISaleDB private _saleDB;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
-    address addr = _get("SANFT");
+    address addr = _get(_SANFT);
     if (addr != address(_sanft)) {
       _sanft = ISANFT(addr);
     }
-    addr = _get("SaleData");
+    addr = _get(_SALE_DATA);
     if (addr != address(_saleData)) {
       _saleData = ISaleData(addr);
     }
-    addr = _get("Profile");
+    addr = _get(_PROFILE);
     if (addr != address(_profile)) {
       _profile = IProfile(addr);
     }
-    addr = _get("SaleDB");
+    addr = _get(_SALE_DB);
     if (addr != address(_saleDB)) {
       _saleDB = ISaleDB(addr);
     }
