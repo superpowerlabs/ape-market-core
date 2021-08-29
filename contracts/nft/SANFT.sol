@@ -13,6 +13,8 @@ import "../registry/RegistryUser.sol";
 contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   using SafeMath for uint256;
 
+  bytes32 internal constant _SANFT_MANAGER = keccak256("SANFTManager");
+
   uint256 private _nextTokenId = 1;
 
   mapping(uint256 => SA[]) internal _bundles;
@@ -32,7 +34,7 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   ISANFTManager private _sanftmanager;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
-    address addr = _get("SANFTManager");
+    address addr = _get(_SANFT_MANAGER);
     if (addr != address(_sanftmanager)) {
       _sanftmanager = ISANFTManager(addr);
     }

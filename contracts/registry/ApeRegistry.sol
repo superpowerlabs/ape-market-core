@@ -13,35 +13,34 @@ import "./IApeRegistry.sol";
 import "./IRegistryUser.sol";
 
 contract ApeRegistry is IApeRegistry, Ownable {
-  event RegistryUpdated(string contractName, address addr);
 
   mapping(bytes32 => address) internal _registry;
   bytes32[] internal _contractsList;
 
-  function register(string[] memory contractNames, address[] memory addrs) external override onlyOwner {
-    require(contractNames.length == addrs.length, "ApeRegistry: contractNames and addresses are inconsistent");
+  function register(bytes32[] memory contractHashes, address[] memory addrs) external override onlyOwner {
+    require(contractHashes.length == addrs.length, "ApeRegistry: contractHashes and addresses are inconsistent");
     bool changesDone;
-    for (uint256 i = 0; i < contractNames.length; i++) {
-      bytes32 contractName = keccak256(abi.encodePacked(contractNames[i]));
-      bool exists = _registry[contractName] != address(0);
+    for (uint256 i = 0; i < contractHashes.length; i++) {
+      bytes32 contractHash = contractHashes[i];
+      bool exists = _registry[contractHash] != address(0);
       if (addrs[i] == address(0)) {
         if (exists) {
-          delete _registry[contractName];
+          delete _registry[contractHash];
           for (uint256 j = 0; j < _contractsList.length; j++) {
-            if (_contractsList[j] == contractName) {
+            if (_contractsList[j] == contractHash) {
               delete _contractsList[j];
             }
           }
           changesDone = true;
         }
       } else {
-        _registry[contractName] = addrs[i];
+        _registry[contractHash] = addrs[i];
         if (!exists) {
-          _contractsList.push(contractName);
+          _contractsList.push(contractHash);
         }
         changesDone = true;
       }
-      emit RegistryUpdated(contractNames[i], addrs[i]);
+      emit RegistryUpdated(contractHashes[i], addrs[i]);
     }
   }
 
@@ -60,7 +59,7 @@ contract ApeRegistry is IApeRegistry, Ownable {
     updateContracts(0, _contractsList.length);
   }
 
-  function get(bytes32 contractName) external view override returns (address) {
-    return _registry[contractName];
+  function get(bytes32 contractHash) external view override returns (address) {
+    return _registry[contractHash];
   }
 }

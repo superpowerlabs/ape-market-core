@@ -99,7 +99,7 @@ class DeployUtils {
       'SANFT',
       'SANFTManager',
       'TokenRegistry'
-    ], [
+    ].map(n => ethers.utils.id(n)), [
       profile.address,
       saleSetupHasher.address,
       saleDB.address,

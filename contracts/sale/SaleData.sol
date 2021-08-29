@@ -12,6 +12,11 @@ import "../registry/RegistryUser.sol";
 contract SaleData is ISaleData, RegistryUser {
   using SafeMath for uint256;
 
+  bytes32 internal constant _SANFT_MANAGER = keccak256("SANFTManager");
+  bytes32 internal constant _SALE_FACTORY = keccak256("SaleFactory");
+  bytes32 internal constant _SALE_DB = keccak256("SaleDB");
+  bytes32 internal constant _TOKEN_REGISTRY = keccak256("TokenRegistry");
+
   address private _apeWallet;
 
   modifier onlySaleOwner(uint16 saleId) {
@@ -39,19 +44,19 @@ contract SaleData is ISaleData, RegistryUser {
   ISaleDB private _saleDB;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
-    address addr = _get("SANFTManager");
+    address addr = _get(_SANFT_MANAGER);
     if (addr != address(_sanftmanager)) {
       _sanftmanager = ISANFTManager(addr);
     }
-    addr = _get("TokenRegistry");
+    addr = _get(_TOKEN_REGISTRY);
     if (addr != address(_tokenRegistry)) {
       _tokenRegistry = ITokenRegistry(addr);
     }
-    addr = _get("SaleFactory");
+    addr = _get(_SALE_FACTORY);
     if (addr != address(_saleFactory)) {
       _saleFactory = ISaleFactory(addr);
     }
-    addr = _get("SaleDB");
+    addr = _get(_SALE_DB);
     if (addr != address(_saleDB)) {
       _saleDB = ISaleDB(addr);
     }
