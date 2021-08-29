@@ -12,14 +12,15 @@ import "../registry/IApeRegistry.sol";
 contract Sale is ISale, Ownable {
   using SafeMath for uint256;
 
+  bytes32 internal constant _SALE_DATA = keccak256("SaleData");
+  bytes32 internal constant _SANFT_MANAGER = keccak256("SANFTManager");
+
   uint16 private _saleId;
   IApeRegistry private _apeRegistry;
-  bytes32 _saleDataName;
-  bytes32 _managerName;
 
   modifier onlyFromManager {
     require(
-      _msgSender() == _apeRegistry.get(_managerName),
+      _msgSender() == _apeRegistry.get(_SANFT_MANAGER),
       string(abi.encodePacked("RegistryUser: only SANFTManager can call this function"))
     );
     _;
@@ -28,10 +29,6 @@ contract Sale is ISale, Ownable {
   constructor(uint16 saleId_, address registry) {
     _saleId = saleId_;
     _apeRegistry = IApeRegistry(registry);
-    // keccak256(abi.encodePacked("SaleData"));
-    _saleDataName = 0x4c6f8a3b0e781d23cc0de15ca3e64123ce423f96990455fed9422d7afb22af03;
-    // keccak256(abi.encodePacked("SANFTManager"));
-    _managerName = 0x88cd06859879bf344297cbaea74f021ed3bfbcd754ac1254362c18cd50af6931;
   }
 
   function saleId() external view override returns (uint16) {
@@ -39,7 +36,7 @@ contract Sale is ISale, Ownable {
   }
 
   function _getSaleData() internal view returns (ISaleData) {
-    return ISaleData(_apeRegistry.get(_saleDataName));
+    return ISaleData(_apeRegistry.get(_SALE_DATA));
   }
 
   function _isSaleOwner(ISaleData saleData) internal view {
