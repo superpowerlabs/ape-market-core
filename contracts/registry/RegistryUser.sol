@@ -43,6 +43,5 @@ contract RegistryUser is IRegistryUser, Ownable {
   }
 
   // This must be overwritten by passive users.
-  // Active users (like Sale.sol) do not have to do it
   function updateRegisteredContracts() external virtual override {}
 }
