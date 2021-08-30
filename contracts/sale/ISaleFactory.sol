@@ -22,7 +22,6 @@ interface ISaleFactory {
     uint16 saleId,
     ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
-    address paymentToken,
-    bytes memory validatorSignature
+    address paymentToken
   ) external;
 }
