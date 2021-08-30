@@ -14,12 +14,12 @@ interface ISaleFactory {
 
   function isOperator(address operator, uint256 roles) external view returns (bool);
 
-  function approveSale(uint256 saleId) external;
+  function approveSale(uint16 saleId, bytes32 setupHash) external;
 
-  function revokeSale(uint256 saleId) external;
+  function revokeSale(uint16 saleId) external;
 
   function newSale(
-    uint8 saleId,
+    uint16 saleId,
     ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken,
