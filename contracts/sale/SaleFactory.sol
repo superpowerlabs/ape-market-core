@@ -84,8 +84,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     uint16 saleId,
     ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
-    address paymentToken,
-    bytes memory validatorSignature
+    address paymentToken
   ) external override {
     require(_saleSetupHasher.packAndHashSaleConfiguration(
       saleId, setup, extraVestingSteps, paymentToken) == _setupHashes[saleId],
