@@ -41,15 +41,15 @@ class DeployUtils {
     const _roles = []
     // all the operators should have role 1
     for (let i = 0 ; i < operators.length; i++) {
-      roles.push(1);
+      _roles.push(1);
     }
     for (let i = 0; i < validators.length; i++) {
       let k = _operators.indexOf(validators[i])
       if (k != -1) { // if validator is also an operator
-        roles[k] |= 1 << 1;
+        _roles[k] |= 1 << 1;
       } else {
         _operators.push(validators[i]);
-        roles.push(1 << 1)
+        _roles.push(1 << 1)
       }
     }
     return [_operators, _roles]
