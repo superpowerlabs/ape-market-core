@@ -12,8 +12,11 @@ let contracts = [
   'nft/SANFT',
   'nft/SANFTManager',
   'sale/SaleData',
+  'sale/SaleDB',
   'sale/Sale',
   'sale/SaleFactory',
+  'sale/SaleSetupHasher',
+  'sale/TokenRegistry',
   'user/Profile',
   'Ape'
 ]
