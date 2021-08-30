@@ -38,21 +38,19 @@ class DeployUtils {
 
   joinOperatorsAndValidators(operators, validators) {
     const _operators = operators
-    const len = _operators.length
     const _roles = []
-    FOR: for (let i = 0; i < _operators.length; i++) {
-      for (let j = 0; j < validators.length; j++) {
-        if (_operators[i] === validators[j]) {
-          _roles[i] = 1 | 1 << 1
-          validators.splice(j, 1)
-          continue FOR
-        }
-      }
-      _roles[i] = 1
+    // all the operators should have role 1
+    for (let i = 0 ; i < operators.length; i++) {
+      roles.push(1);
     }
     for (let i = 0; i < validators.length; i++) {
-      _operators[len + i] = validators[i]
-      _roles[len + i] = 1 << 1
+      let k = _operators.indexOf(validators[i])
+      if (k != -1) { // if validator is also an operator
+        roles[k] |= 1 << 1;
+      } else {
+        _operators.push(validators[i]);
+        roles.push(1 << 1)
+      }
     }
     return [_operators, _roles]
   }
