@@ -9,6 +9,8 @@ import "../registry/RegistryUser.sol";
 contract SaleDB is ISaleDB, RegistryUser {
   using SafeMath for uint256;
 
+  bytes32 internal constant _SALE_DATA = keccak256("SaleData");
+
   uint16 private _nextId = 1;
 
   mapping(uint16 => Setup) private _setups;
@@ -28,7 +30,7 @@ contract SaleDB is ISaleDB, RegistryUser {
   address private _saleDataAddress;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
-    address addr = _get("SaleData");
+    address addr = _get(_SALE_DATA);
     if (_saleDataAddress != addr) {
       _saleDataAddress = addr;
     }

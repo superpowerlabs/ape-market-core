@@ -6,6 +6,9 @@ import "../sale/ISaleData.sol";
 import "./ITokenRegistry.sol";
 
 contract TokenRegistry is ITokenRegistry, RegistryUser {
+
+  bytes32 internal constant _SALE_DATA = keccak256("SaleData");
+
   mapping(uint8 => address) private _addressesById;
   mapping(address => uint8) private _idByAddress;
 
@@ -16,7 +19,7 @@ contract TokenRegistry is ITokenRegistry, RegistryUser {
   address private _saleDataAddress;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
-    address addr = _get("SaleData");
+    address addr = _get(_SALE_DATA);
     if (addr != _saleDataAddress) {
       _saleDataAddress = addr;
     }

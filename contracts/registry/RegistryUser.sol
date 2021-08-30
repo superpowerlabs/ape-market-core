@@ -12,14 +12,6 @@ contract RegistryUser is IRegistryUser, Ownable {
   IApeRegistry internal _registry;
   address internal _owner;
 
-  modifier onlyFrom(string memory contractName) {
-    require(
-      _msgSender() == _get(contractName),
-      string(abi.encodePacked("RegistryUser: only ", contractName, " can call this function"))
-    );
-    _;
-  }
-
   modifier onlyRegistry() {
     require(
       _msgSender() == address(_registry),
@@ -32,8 +24,8 @@ contract RegistryUser is IRegistryUser, Ownable {
     _registry = IApeRegistry(addr);
   }
 
-  function _get(string memory contractName) internal view returns (address) {
-    return _registry.get(keccak256(abi.encodePacked(contractName)));
+  function _get(bytes32 contractHash) internal view returns (address) {
+    return _registry.get(contractHash);
   }
 
   function updateRegistry(address addr) external override onlyOwner {

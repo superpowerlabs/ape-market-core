@@ -10,6 +10,11 @@ import "./Sale.sol";
 import "../registry/RegistryUser.sol";
 
 contract SaleFactory is ISaleFactory, RegistryUser {
+
+  bytes32 internal constant _SALE_DATA = keccak256("SaleData");
+  bytes32 internal constant _SALE_SETUP_HASHER = keccak256("SaleSetupHasher");
+  bytes32 internal constant _SALE_DB = keccak256("SaleDB");
+
   mapping(uint256 => bool) private _approvals;
   mapping(address => uint256) private _operators;
 
@@ -36,15 +41,15 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   ISaleDB private _saleDB;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
-    address addr = _get("SaleData");
+    address addr = _get(_SALE_DATA);
     if (addr != address(_saleData)) {
       _saleData = ISaleData(addr);
     }
-    addr = _get("SaleSetupHasher");
+    addr = _get(_SALE_SETUP_HASHER);
     if (addr != address(_saleSetupHasher)) {
       _saleSetupHasher = ISaleSetupHasher(addr);
     }
-    addr = _get("SaleDB");
+    addr = _get(_SALE_DB);
     if (addr != address(_saleDB)) {
       _saleDB = ISaleDB(addr);
     }
