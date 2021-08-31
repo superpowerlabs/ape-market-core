@@ -69,8 +69,8 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     return _operators[operator] & role != 0;
   }
 
-  function approveSale(bytes32 setupHash) external override onlyOperator(OPERATOR) returns(uint16 saleId) {
-    saleId = _saleDB.nextSaleId();
+  function approveSale(bytes32 setupHash) external override onlyOperator(OPERATOR) {
+    uint16 saleId = _saleDB.nextSaleId();
     _saleData.increaseSaleId();
     _setupHashes[setupHash] = saleId;
     emit SaleApproved(saleId);
