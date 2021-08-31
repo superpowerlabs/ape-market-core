@@ -93,9 +93,11 @@ describe("Sale", async function () {
       saleAddress: addr0
     };
 
-    saleId = await saleDB.nextSaleId()
-    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId.toNumber(), saleSetup, [], tether.address)
-    await saleFactory.connect(operator).approveSale(saleId, hash)
+
+    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
+    transaction = await saleFactory.connect(operator).approveSale(hash)
+    await transaction.wait()
+    saleId = await saleFactory.getSaleIdBySetupHash(hash)
     await saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address)
     saleAddress = await saleDB.getSaleAddressById(saleId)
     sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
@@ -142,12 +144,7 @@ describe("Sale", async function () {
           .emit(saleData, 'SaleExtended')
           .withArgs(saleId, extraValue, extraAmount);
 
-      expect(await sellingToken.balanceOf(sale.address)).equal(amount.add(fee).add(extraAmount).add(extraFee));
-
-
+      expect(await sellingToken.balanceOf(sale.address)).equal(amount.add(fee).add(extraAmount).add(extraFee))
     })
-
-
   })
-
 })

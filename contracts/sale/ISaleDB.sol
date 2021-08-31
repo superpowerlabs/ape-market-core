@@ -49,7 +49,7 @@ interface ISaleDB {
     //  more bits available:
   }
 
-  function nextSaleId() external view returns (uint256);
+  function nextSaleId() external view returns (uint16);
 
   function increaseSaleId() external;
 

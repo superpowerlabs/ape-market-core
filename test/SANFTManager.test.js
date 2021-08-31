@@ -110,11 +110,14 @@ describe("SANFTManager", async function () {
       saleAddress: addr0
     };
 
-    saleId = await saleDB.nextSaleId()
 
-    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId.toNumber(), saleSetup, [], tether.address)
+    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
 
-    await saleFactory.connect(operator).approveSale(saleId, hash)
+    transaction = await saleFactory.connect(operator).approveSale(hash)
+
+    await transaction.wait()
+
+    saleId = await saleFactory.getSaleIdBySetupHash(hash)
 
     await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
         .emit(saleFactory, "NewSale")
@@ -199,10 +202,13 @@ describe("SANFTManager", async function () {
       saleSetup.pricingPayment = 1
 
       // setup the second sale
-      saleId2 = await saleDB.nextSaleId()
-      hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId2.toNumber(), saleSetup, [], tether.address)
-      await saleFactory.connect(operator).approveSale(saleId2, hash)
+
+      hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
+      transaction = await saleFactory.connect(operator).approveSale(hash)
+      transaction.wait()
+      saleId2 = await saleFactory.getSaleIdBySetupHash(hash)
       await saleFactory.connect(seller).newSale(saleId2, saleSetup, [], tether.address)
+
       saleAddress2 = await saleDB.getSaleAddressById(saleId2)
       sale2 = new ethers.Contract(saleAddress2, saleJson.abi, ethers.provider)
 

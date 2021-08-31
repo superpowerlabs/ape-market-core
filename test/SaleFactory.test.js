@@ -151,11 +151,11 @@ describe("SaleFactory", async function () {
 
     it("should create a new sale", async function () {
 
-      let saleId = await saleDB.nextSaleId()
+      hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
 
-      hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId.toNumber(), saleSetup, [], tether.address)
-
-      await saleFactory.connect(operator).approveSale(saleId, hash)
+      transaction = await saleFactory.connect(operator).approveSale(hash)
+      await transaction.wait()
+      saleId = await saleFactory.getSaleIdBySetupHash(hash)
 
       await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
           .emit(saleFactory, "NewSale")
@@ -177,11 +177,11 @@ describe("SaleFactory", async function () {
 
     it("should throw if trying to create a sale with a modified setup", async function () {
 
-      let saleId = await saleDB.nextSaleId()
+      hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
 
-      hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId.toNumber(), saleSetup, [], tether.address)
-
-      await saleFactory.connect(operator).approveSale(saleId, hash)
+      transaction = await saleFactory.connect(operator).approveSale(hash)
+      await transaction.wait()
+      saleId = await saleFactory.getSaleIdBySetupHash(hash)
 
       saleSetup.capAmount = 34500
 
