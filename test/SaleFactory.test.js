@@ -7,8 +7,6 @@ const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 describe("SaleFactory", async function () {
 
   const deployUtils = new DeployUtils(ethers)
-  const OPERATOR = 1
-  const VALIDATOR = 1<<1
 
   let apeRegistry
       , profile
@@ -47,7 +45,6 @@ describe("SaleFactory", async function () {
 
     const results = await deployUtils.initAndDeploy({
       apeWallet: apeWallet.address,
-      validators: [validator.address],
       operators: [operator.address]
     })
 
@@ -76,10 +73,7 @@ describe("SaleFactory", async function () {
     })
 
     it("should verify that the factory is correctly set", async function () {
-      assert.isTrue(await saleFactory.isOperator(operator.address, OPERATOR))
-      assert.isTrue(await saleFactory.isOperator(validator.address, VALIDATOR))
-      assert.isFalse(await saleFactory.isOperator(operator.address, VALIDATOR))
-      assert.isFalse(await saleFactory.isOperator(validator.address, OPERATOR))
+      assert.isTrue(await saleFactory.isOperator(operator.address))
     })
 
   })
@@ -92,24 +86,21 @@ describe("SaleFactory", async function () {
 
     it("should verify that the operator is set", async function () {
       // adding operator&validator role
-      await expect(saleFactory.updateOperators(buyer.address, OPERATOR | VALIDATOR))
+      await expect(saleFactory.setOperator(buyer.address, true))
           .emit(saleFactory, 'OperatorUpdated')
-          .withArgs(buyer.address, 3)
-      assert.isTrue(await saleFactory.isOperator(buyer.address, OPERATOR)) // is operator
-      assert.isTrue(await saleFactory.isOperator(buyer.address, VALIDATOR)) // is validator
+          .withArgs(buyer.address, true)
+      assert.isTrue(await saleFactory.isOperator(buyer.address))
     })
 
     it("should revoke the operator", async function () {
       // adding operator&validator role
-      await saleFactory.updateOperators(buyer.address, OPERATOR | VALIDATOR)
-      await expect(saleFactory.updateOperators(buyer.address, 0))
+      await saleFactory.setOperator(buyer.address, true)
+      await expect(saleFactory.setOperator(buyer.address, false))
           .emit(saleFactory, 'OperatorUpdated')
-          .withArgs(buyer.address, 0)
+          .withArgs(buyer.address, false)
 
-      assert.isFalse(await saleFactory.isOperator(buyer.address, OPERATOR)) // is operator
-      assert.isFalse(await saleFactory.isOperator(buyer.address, VALIDATOR)) // is validator
+      assert.isFalse(await saleFactory.isOperator(buyer.address))
     })
-
   })
 
   describe('#newSale', async function () {
@@ -146,7 +137,6 @@ describe("SaleFactory", async function () {
         paymentFeePoints: 300,
         saleAddress: addr0
       };
-
     })
 
     it("should create a new sale", async function () {
@@ -188,10 +178,6 @@ describe("SaleFactory", async function () {
       await assertThrowsMessage(
           saleFactory.newSale(saleId, saleSetup, [], tether.address),
           'SaleFactory: non approved sale or modified params')
-
     })
-
-
   })
-
 })

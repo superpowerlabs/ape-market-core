@@ -7,14 +7,13 @@ interface ISaleFactory {
   event SaleApproved(uint256 saleId);
   event SaleRevoked(uint256 saleId);
   event NewSale(uint256 saleId, address saleAddress);
-  event OperatorUpdated(address operator, uint256 role);
+  event OperatorUpdated(address operator, bool isOperator);
 
   function getSaleIdBySetupHash(bytes32 hash) external view returns(uint16);
 
-  // if roles is 0, the operator is removed
-  function updateOperators(address operator, uint256 roles) external;
+  function setOperator(address operator, bool isOperator) external;
 
-  function isOperator(address operator, uint256 roles) external view returns (bool);
+  function isOperator(address operator) external view returns (bool);
 
   function approveSale(bytes32 setupHash) external;
 

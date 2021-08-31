@@ -11,7 +11,6 @@ const config = {
   '1337': Object.assign(baseConfig, {
     apeWallet: '0x90f79bf6eb2c4f870365e785982e1f101e93b906', // signers[3]
     operators: ['0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc'], // signers[2]
-    validators: ['0x70997970c51812dc3a010c7d01b50e0d17dc79c8'], // signers[1]
     feePoints: 100
   }),
   // This is broken. if bellow is uncommented, 1337's operators will
