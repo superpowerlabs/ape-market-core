@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-
 import "./ISaleSetupHasher.sol";
 import "./ISaleFactory.sol";
 import "./ISaleDB.sol";
@@ -19,7 +17,6 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   mapping(address => uint256) private _operators;
 
   uint256 public constant OPERATOR = 1;
-  uint256 public constant VALIDATOR = 1 << 1;
 
   modifier onlyOperator(uint256 roles) {
     require(isOperator(_msgSender(), roles), "SaleFactory: only operators can call this function");
@@ -68,7 +65,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     return _operators[operator] & role != 0;
   }
 
-  function approveSale(uint16 saleId, bytes32 setupHash) external override onlyOperator(VALIDATOR) {
+  function approveSale(uint16 saleId, bytes32 setupHash) external override onlyOperator(OPERATOR) {
     require(saleId == _saleDB.nextSaleId(), "SaleFactory: invalid sale id");
     _saleData.increaseSaleId();
     _setupHashes[saleId] = setupHash;
@@ -88,7 +85,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   ) external override {
     require(_saleSetupHasher.packAndHashSaleConfiguration(
       saleId, setup, extraVestingSteps, paymentToken) == _setupHashes[saleId],
-      "SaleFactory: modified params");
+      "SaleFactory: non approved sale or modified params");
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
     _saleData.setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
