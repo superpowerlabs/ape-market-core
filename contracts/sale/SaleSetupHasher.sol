@@ -12,7 +12,6 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
   put the data contained in the struct in types that are packable.
   */
   function packAndHashSaleConfiguration(
-    uint256 saleId,
     ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken
@@ -22,7 +21,6 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
       keccak256(
         abi.encodePacked(
           "\x19\x00", /* EIP-191 */
-          saleId,
           setup.sellingToken,
           setup.owner,
           setup.isTokenTransferable,

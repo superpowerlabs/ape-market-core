@@ -13,7 +13,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   bytes32 internal constant _SALE_SETUP_HASHER = keccak256("SaleSetupHasher");
   bytes32 internal constant _SALE_DB = keccak256("SaleDB");
 
-  mapping(uint16 => bytes32) private _setupHashes;
+  mapping(bytes32 => uint16) private _setupHashes;
   mapping(address => uint256) private _operators;
 
   uint256 public constant OPERATOR = 1;
@@ -36,6 +36,10 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   ISaleData private _saleData;
   ISaleSetupHasher private _saleSetupHasher;
   ISaleDB private _saleDB;
+
+  function getSaleIdBySetupHash(bytes32 hash) virtual override external view returns(uint16)  {
+    return _setupHashes[hash];
+  }
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
     address addr = _get(_SALE_DATA);
@@ -68,13 +72,13 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   function approveSale(bytes32 setupHash) external override onlyOperator(OPERATOR) returns(uint16 saleId) {
     saleId = _saleDB.nextSaleId();
     _saleData.increaseSaleId();
-    _setupHashes[saleId] = setupHash;
+    _setupHashes[setupHash] = saleId;
     emit SaleApproved(saleId);
   }
 
-  function revokeSale(uint16 saleId) external override onlyOperator(OPERATOR) {
-    delete _setupHashes[saleId];
-    emit SaleRevoked(saleId);
+  function revokeSale(bytes32 setupHash) external override onlyOperator(OPERATOR) {
+    delete _setupHashes[setupHash];
+    emit SaleRevoked(_setupHashes[setupHash]);
   }
 
   function newSale(
@@ -83,13 +87,13 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     uint256[] memory extraVestingSteps,
     address paymentToken
   ) external override {
-    require(_saleSetupHasher.packAndHashSaleConfiguration(
-      saleId, setup, extraVestingSteps, paymentToken) == _setupHashes[saleId],
+    bytes32 setupHash = _saleSetupHasher.packAndHashSaleConfiguration(setup, extraVestingSteps, paymentToken);
+    require(saleId != 0 && _setupHashes[setupHash] == saleId,
       "SaleFactory: non approved sale or modified params");
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
     _saleData.setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
-    delete _setupHashes[saleId];
+    delete _setupHashes[setupHash];
     emit NewSale(saleId, addr);
   }
 }

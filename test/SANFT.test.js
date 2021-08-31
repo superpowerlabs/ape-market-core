@@ -108,11 +108,10 @@ describe("SANFT", async function () {
       saleAddress: addr0
     };
 
-    saleId = await saleDB.nextSaleId()
-
-    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId.toNumber(), saleSetup, [], tether.address)
-
-    await saleFactory.connect(operator).approveSale(saleId, hash)
+    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
+    transaction = await saleFactory.connect(operator).approveSale(hash)
+    transaction.wait()
+    saleId = await saleFactory.getSaleIdBySetupHash(hash)
 
     await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
         .emit(saleFactory, "NewSale")
