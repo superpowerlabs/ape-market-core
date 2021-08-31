@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-
 import "./ISaleSetupHasher.sol";
 import "./ISaleFactory.sol";
 import "./ISaleDB.sol";
@@ -15,11 +13,10 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   bytes32 internal constant _SALE_SETUP_HASHER = keccak256("SaleSetupHasher");
   bytes32 internal constant _SALE_DB = keccak256("SaleDB");
 
-  mapping(uint256 => bool) private _approvals;
+  mapping(uint16 => bytes32) private _setupHashes;
   mapping(address => uint256) private _operators;
 
   uint256 public constant OPERATOR = 1;
-  uint256 public constant VALIDATOR = 1 << 1;
 
   modifier onlyOperator(uint256 roles) {
     require(isOperator(_msgSender(), roles), "SaleFactory: only operators can call this function");
@@ -68,33 +65,31 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     return _operators[operator] & role != 0;
   }
 
-  function approveSale(uint256 saleId) external override onlyOperator(OPERATOR) {
+  function approveSale(uint16 saleId, bytes32 setupHash) external override onlyOperator(OPERATOR) {
     require(saleId == _saleDB.nextSaleId(), "SaleFactory: invalid sale id");
     _saleData.increaseSaleId();
-    _approvals[saleId] = true;
+    _setupHashes[saleId] = setupHash;
     emit SaleApproved(saleId);
   }
 
-  function revokeSale(uint256 saleId) external override onlyOperator(OPERATOR) {
-    delete _approvals[saleId];
+  function revokeSale(uint16 saleId) external override onlyOperator(OPERATOR) {
+    delete _setupHashes[saleId];
     emit SaleRevoked(saleId);
   }
 
   function newSale(
-    uint8 saleId,
+    uint16 saleId,
     ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
-    address paymentToken,
-    bytes memory validatorSignature
+    address paymentToken
   ) external override {
-    address validator = ECDSA.recover(
-      _saleSetupHasher.packAndHashSaleConfiguration(saleId, setup, extraVestingSteps, paymentToken),
-      validatorSignature
-    );
-    require(isOperator(validator, VALIDATOR), "SaleFactory: invalid signature or modified params");
+    require(_saleSetupHasher.packAndHashSaleConfiguration(
+      saleId, setup, extraVestingSteps, paymentToken) == _setupHashes[saleId],
+      "SaleFactory: non approved sale or modified params");
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
     _saleData.setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
+    delete _setupHashes[saleId];
     emit NewSale(saleId, addr);
   }
 }

@@ -2,7 +2,6 @@ const {expect, assert} = require("chai")
 const DeployUtils = require('../scripts/lib/DeployUtils')
 const {
   initEthers,
-  signPackedData,
   assertThrowsMessage,
   addr0
 } = require('../scripts/lib/TestHelpers')
@@ -41,10 +40,6 @@ describe("SANFTManager", async function () {
       , saleAddress2
       , saleId2
       , sale2
-
-  async function getSignatureByValidator(saleId, setup, schedule = []) {
-    return signPackedData(saleSetupHasher, 'packAndHashSaleConfiguration', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', saleId.toNumber(), setup, schedule, tether.address)
-  }
 
   before(async function () {
     [owner, validator, operator, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
@@ -117,11 +112,11 @@ describe("SANFTManager", async function () {
 
     saleId = await saleDB.nextSaleId()
 
-    await saleFactory.connect(operator).approveSale(saleId)
+    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId.toNumber(), saleSetup, [], tether.address)
 
-    let signature = await getSignatureByValidator(saleId, saleSetup)
+    await saleFactory.connect(operator).approveSale(saleId, hash)
 
-    await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
+    await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
         .emit(saleFactory, "NewSale")
     saleAddress = await saleDB.getSaleAddressById(saleId)
     sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
@@ -205,9 +200,9 @@ describe("SANFTManager", async function () {
 
       // setup the second sale
       saleId2 = await saleDB.nextSaleId()
-      await saleFactory.connect(operator).approveSale(saleId2)
-      let signature = await getSignatureByValidator(saleId2, saleSetup)
-      await saleFactory.connect(seller).newSale(saleId2, saleSetup, [], tether.address, signature)
+      hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId2.toNumber(), saleSetup, [], tether.address)
+      await saleFactory.connect(operator).approveSale(saleId2, hash)
+      await saleFactory.connect(seller).newSale(saleId2, saleSetup, [], tether.address)
       saleAddress2 = await saleDB.getSaleAddressById(saleId2)
       sale2 = new ethers.Contract(saleAddress2, saleJson.abi, ethers.provider)
 
