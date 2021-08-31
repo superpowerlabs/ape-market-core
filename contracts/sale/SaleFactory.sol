@@ -13,7 +13,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   bytes32 internal constant _SALE_SETUP_HASHER = keccak256("SaleSetupHasher");
   bytes32 internal constant _SALE_DB = keccak256("SaleDB");
 
-  mapping(uint16 => bytes32) private _setupHashes;
+  mapping(bytes32 => uint16) private _setupHashes;
   mapping(address => uint256) private _operators;
 
   uint256 public constant OPERATOR = 1;
@@ -65,10 +65,10 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     return _operators[operator] & role != 0;
   }
 
-  function approveSale(uint16 saleId, bytes32 setupHash) external override onlyOperator(OPERATOR) {
-    require(saleId == _saleDB.nextSaleId(), "SaleFactory: invalid sale id");
+  function approveSale(bytes32 setupHash) external override onlyOperator(OPERATOR) returns(uint16 saleId) {
+    saleId = _saleDB.nextSaleId();
     _saleData.increaseSaleId();
-    _setupHashes[saleId] = setupHash;
+    _setupHashes[setupHash] = saleId;
     emit SaleApproved(saleId);
   }
 
@@ -83,8 +83,8 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     uint256[] memory extraVestingSteps,
     address paymentToken
   ) external override {
-    require(_saleSetupHasher.packAndHashSaleConfiguration(
-      saleId, setup, extraVestingSteps, paymentToken) == _setupHashes[saleId],
+    require(_setupHashes[_saleSetupHasher.packAndHashSaleConfiguration(
+      saleId, setup, extraVestingSteps, paymentToken)] == saleId,
       "SaleFactory: non approved sale or modified params");
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
