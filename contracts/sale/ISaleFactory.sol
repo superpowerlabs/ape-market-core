@@ -9,7 +9,7 @@ interface ISaleFactory {
   event NewSale(uint256 saleId, address saleAddress);
   event OperatorUpdated(address operator, bool isOperator);
 
-  function getSaleIdBySetupHash(bytes32 hash) external view returns(uint16);
+  function getSaleIdBySetupHash(bytes32 hash) external view returns (uint16);
 
   function setOperator(address operator, bool isOperator) external;
 
