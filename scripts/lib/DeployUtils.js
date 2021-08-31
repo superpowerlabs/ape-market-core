@@ -71,11 +71,9 @@ class DeployUtils {
     let {
       apeWallet,
       operators,
-      validators,
       feePoints
     } = conf
 
-    const [_operators, _roles] = this.joinOperatorsAndValidators(operators, validators)
     const apeRegistry = await this.deployContract('ApeRegistry')
     const registryAddress = apeRegistry.address
 
@@ -83,7 +81,7 @@ class DeployUtils {
     const saleSetupHasher = await this.deployContract('SaleSetupHasher')
     const saleDB = await this.deployContract('SaleDB', registryAddress)
     const saleData = await this.deployContract('SaleData', registryAddress, apeWallet)
-    const saleFactory = await this.deployContract('SaleFactory', registryAddress, _operators, _roles)
+    const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators)
     const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
     const sANFT = await this.deployContract('SANFT', registryAddress)
     const sANFTManager = await this.deployContract('SANFTManager', registryAddress, apeWallet, feePoints)
@@ -127,7 +125,6 @@ class DeployUtils {
       tokenRegistry,
       apeWallet,
       operators,
-      validators,
       tetherMock
     }
   }
@@ -147,10 +144,8 @@ class DeployUtils {
     }
     deployed[chainId].ApeRegistry = data.apeRegistry
     deployed[chainId].TetherMock = data.tetherMock
-    deployed[chainId].validators = data.validators
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
   }
-
 }
 
 module.exports = DeployUtils

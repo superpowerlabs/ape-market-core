@@ -14,22 +14,19 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   bytes32 internal constant _SALE_DB = keccak256("SaleDB");
 
   mapping(bytes32 => uint16) private _setupHashes;
-  mapping(address => uint256) private _operators;
+  mapping(address => bool) private _operators;
 
-  uint256 public constant OPERATOR = 1;
-
-  modifier onlyOperator(uint256 roles) {
-    require(isOperator(_msgSender(), roles), "SaleFactory: only operators can call this function");
+  modifier onlyOperator() {
+    require(isOperator(_msgSender()), "SaleFactory: only operators can call this function");
     _;
   }
 
   constructor(
     address registry,
-    address[] memory operators,
-    uint256[] memory roles
+    address[] memory operators
   ) RegistryUser(registry) {
     for (uint256 i = 0; i < operators.length; i++) {
-      updateOperators(operators[i], roles[i]);
+      setOperator(operators[i], true);
     }
   }
 
@@ -56,27 +53,28 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     }
   }
 
-  function updateOperators(address operator, uint256 role) public override onlyOwner {
-    if (role == 0) {
+  function setOperator(address operator, bool isOperator) public override onlyOwner {
+    if (!isOperator && _operators[operator]) {
       delete _operators[operator];
-    } else {
-      _operators[operator] = role;
+      emit OperatorUpdated(operator, false);
+    } else if (isOperator && !_operators[operator]){
+      _operators[operator] = true;
+      emit OperatorUpdated(operator, true);
     }
-    emit OperatorUpdated(operator, role);
   }
 
-  function isOperator(address operator, uint256 role) public view override returns (bool) {
-    return _operators[operator] & role != 0;
+  function isOperator(address operator) public view override returns (bool) {
+    return _operators[operator];
   }
 
-  function approveSale(bytes32 setupHash) external override onlyOperator(OPERATOR) {
+  function approveSale(bytes32 setupHash) external override onlyOperator() {
     uint16 saleId = _saleDB.nextSaleId();
     _saleData.increaseSaleId();
     _setupHashes[setupHash] = saleId;
     emit SaleApproved(saleId);
   }
 
-  function revokeSale(bytes32 setupHash) external override onlyOperator(OPERATOR) {
+  function revokeSale(bytes32 setupHash) external override onlyOperator() {
     delete _setupHashes[setupHash];
     emit SaleRevoked(_setupHashes[setupHash]);
   }
