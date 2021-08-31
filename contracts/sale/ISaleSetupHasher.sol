@@ -5,7 +5,6 @@ import "./ISaleDB.sol";
 
 interface ISaleSetupHasher {
   function packAndHashSaleConfiguration(
-    uint256 saleId,
     ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken

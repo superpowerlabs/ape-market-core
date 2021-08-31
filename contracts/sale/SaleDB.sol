@@ -36,7 +36,7 @@ contract SaleDB is ISaleDB, RegistryUser {
     }
   }
 
-  function nextSaleId() external view override returns (uint256) {
+  function nextSaleId() external view override returns (uint16) {
     return _nextId;
   }
 
