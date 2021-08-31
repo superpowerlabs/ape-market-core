@@ -29,9 +29,6 @@ describe("Sale", async function () {
       , apeWallet
       , seller
 
-  async function getSignatureByValidator(saleId, setup, schedule = []) {
-    return signPackedData(saleSetupHasher, 'packAndHashSaleConfiguration', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', saleId.toNumber(), setup, schedule, tether.address)
-  }
 
   before(async function () {
     [owner, validator, operator, apeWallet, seller] = await ethers.getSigners()
@@ -97,12 +94,9 @@ describe("Sale", async function () {
     };
 
     saleId = await saleDB.nextSaleId()
-
-    await saleFactory.connect(operator).approveSale(saleId)
-
-    let signature = await getSignatureByValidator(saleId, saleSetup)
-
-    await saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature)
+    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId.toNumber(), saleSetup, [], tether.address)
+    await saleFactory.connect(operator).approveSale(saleId, hash)
+    await saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address)
     saleAddress = await saleDB.getSaleAddressById(saleId)
     sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
 

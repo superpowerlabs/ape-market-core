@@ -2,7 +2,6 @@ const {expect, assert} = require("chai")
 const DeployUtils = require('../scripts/lib/DeployUtils')
 const {
   initEthers,
-  signPackedData,
   assertThrowsMessage,
   addr0,
   getTimestamp,
@@ -39,10 +38,6 @@ describe("SANFT", async function () {
       , buyer2
       , saleAddress
       , saleId
-
-  async function getSignatureByValidator(saleId, setup, schedule = []) {
-    return signPackedData(saleSetupHasher, 'packAndHashSaleConfiguration', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', saleId.toNumber(), setup, schedule, tether.address)
-  }
 
   before(async function () {
     [owner, validator, operator, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
@@ -115,11 +110,11 @@ describe("SANFT", async function () {
 
     saleId = await saleDB.nextSaleId()
 
-    await saleFactory.connect(operator).approveSale(saleId)
+    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleId.toNumber(), saleSetup, [], tether.address)
 
-    let signature = await getSignatureByValidator(saleId, saleSetup)
+    await saleFactory.connect(operator).approveSale(saleId, hash)
 
-    await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
+    await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
         .emit(saleFactory, "NewSale")
     saleAddress = await saleDB.getSaleAddressById(saleId)
     const sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
