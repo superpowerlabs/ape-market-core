@@ -74,6 +74,7 @@ describe("SaleFactory", async function () {
 
     it("should verify that the factory is correctly set", async function () {
       assert.isTrue(await saleFactory.isOperator(operator.address))
+      assert.isFalse(!~(await saleFactory.operators()).indexOf(operator.address))
     })
 
   })

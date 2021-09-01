@@ -11,18 +11,19 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   bytes32 internal constant _SALE_DATA = keccak256("SaleData");
   bytes32 internal constant _SALE_SETUP_HASHER = keccak256("SaleSetupHasher");
   bytes32 internal constant _SALE_DB = keccak256("SaleDB");
+  uint internal constant _OUT_OF_RANGE = 10**8;
 
   mapping(bytes32 => uint16) private _setupHashes;
-  mapping(address => bool) private _operators;
+  address[] private _operators;
 
   modifier onlyOperator() {
     require(isOperator(_msgSender()), "SaleFactory: only operators can call this function");
     _;
   }
 
-  constructor(address registry, address[] memory operators) RegistryUser(registry) {
-    for (uint256 i = 0; i < operators.length; i++) {
-      setOperator(operators[i], true);
+  constructor(address registry, address[] memory operators_) RegistryUser(registry) {
+    for (uint256 i = 0; i < operators_.length; i++) {
+      setOperator(operators_[i], true);
     }
   }
 
@@ -50,17 +51,30 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   }
 
   function setOperator(address operator, bool isOperator_) public override onlyOwner {
-    if (!isOperator_ && _operators[operator]) {
-      delete _operators[operator];
+    if (!isOperator_ && isOperator(operator)) {
+      delete _operators[_operatorIndex(operator)];
       emit OperatorUpdated(operator, false);
-    } else if (isOperator_ && !_operators[operator]) {
-      _operators[operator] = true;
+    } else if (isOperator_ && !isOperator(operator)) {
+      _operators.push(operator);
       emit OperatorUpdated(operator, true);
     }
   }
 
-  function isOperator(address operator) public view override returns (bool) {
-    return _operators[operator];
+  function isOperator(address operator) public override view returns (bool) {
+    return _operatorIndex(operator) != _OUT_OF_RANGE;
+  }
+
+  function operators() external override view returns(address[] memory) {
+    return _operators;
+  }
+
+  function _operatorIndex(address operator) internal view returns (uint) {
+    for (uint i=0;i<_operators.length;i++) {
+      if (_operators[i] == operator) {
+        return i;
+      }
+    }
+    return _OUT_OF_RANGE;
   }
 
   function approveSale(bytes32 setupHash) external override onlyOperator {

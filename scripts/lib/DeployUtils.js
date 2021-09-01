@@ -144,6 +144,7 @@ class DeployUtils {
     }
     deployed[chainId].ApeRegistry = data.apeRegistry
     deployed[chainId].TetherMock = data.tetherMock
+    deployed[chainId].operators = data.operators
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
   }
 }

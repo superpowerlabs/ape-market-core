@@ -15,6 +15,8 @@ interface ISaleFactory {
 
   function isOperator(address operator) external view returns (bool);
 
+  function operators() external view returns(address[] memory);
+
   function approveSale(bytes32 setupHash) external;
 
   function revokeSale(bytes32 setupHash) external;
