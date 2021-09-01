@@ -36,25 +36,6 @@ class DeployUtils {
     return contract
   }
 
-  joinOperatorsAndValidators(operators, validators) {
-    const _operators = operators
-    const _roles = []
-    // all the operators should have role 1
-    for (let i = 0 ; i < operators.length; i++) {
-      _roles.push(1);
-    }
-    for (let i = 0; i < validators.length; i++) {
-      let k = _operators.indexOf(validators[i])
-      if (k != -1) { // if validator is also an operator
-        _roles[k] |= 1 << 1;
-      } else {
-        _operators.push(validators[i]);
-        _roles.push(1 << 1)
-      }
-    }
-    return [_operators, _roles]
-  }
-
   async initAndDeploy(conf = {}) {
     // Hardhat always runs the compile task when running scripts with its command
     // line interface.
