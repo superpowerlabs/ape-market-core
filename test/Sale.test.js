@@ -63,7 +63,7 @@ describe("Sale", async function () {
 
     sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
 
-    const [saleVestingSchedule, msg] = await saleData.validateAndPackVestingSteps([
+    const [saleVestingSchedule, msg] = await saleSetupHasher.validateAndPackVestingSteps([
       {
         waitTime: 10,
         percentage: 50

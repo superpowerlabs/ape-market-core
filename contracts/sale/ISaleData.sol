@@ -26,11 +26,6 @@ interface ISaleData {
 
   function vestedPercentage(uint16 saleId) external view returns (uint8);
 
-  function validateAndPackVestingSteps(ISaleDB.VestingStep[] memory vestingStepsArray)
-    external
-    pure
-    returns (uint256[] memory, string memory);
-
   function setUpSale(
     uint16 saleId,
     address saleAddress,

@@ -89,7 +89,7 @@ describe("SANFTManager", async function () {
       }
     ]
 
-    const [schedule, msg] = await saleData.validateAndPackVestingSteps(saleVestingSchedule)
+    const [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
 
     saleSetup = {
       owner: seller.address,
