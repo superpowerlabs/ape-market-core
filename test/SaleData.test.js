@@ -59,7 +59,7 @@ describe("SaleData", async function () {
               i === size ? 100 : i
         })
       }
-      let [steps, message] = await saleData.validateAndPackVestingSteps(schedule)
+      let [steps, message] = await saleSetupHasher.validateAndPackVestingSteps(schedule)
 
       assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044530), 0);
       assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (20 * 24 * 3600)), 2);
@@ -78,7 +78,7 @@ describe("SaleData", async function () {
         percentage: 100
       }
         ]
-      let [steps, message] = await saleData.validateAndPackVestingSteps(schedule)
+      let [steps, message] = await saleSetupHasher.validateAndPackVestingSteps(schedule)
 
       assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542), 30);
       assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (365 * 24 * 3600)), 100);

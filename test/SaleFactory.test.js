@@ -108,7 +108,7 @@ describe("SaleFactory", async function () {
     beforeEach(async function () {
       await initNetworkAndDeploy()
 
-      const [saleVestingSchedule, msg] = await saleData.validateAndPackVestingSteps([
+      const [saleVestingSchedule, msg] = await saleSetupHasher.validateAndPackVestingSteps([
         {
           waitTime: 10,
           percentage: 50
