@@ -39,7 +39,7 @@ async function main() {
 
   apeRegistryAddress = Deployed[chainId].ApeRegistry
 
-  tetherAddress = Deployed[chainId].TetherMock
+  tetherAddress = Deployed[chainId].USDT
 
   let apeRegistry = new ethers.Contract(apeRegistryAddress, ApeRegistryJson.abi, owner)
 
