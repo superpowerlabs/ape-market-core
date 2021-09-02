@@ -75,7 +75,6 @@ contract SaleData is ISaleData, RegistryUser {
     _saleDB.increaseSaleId();
   }
 
-
   /**
    * @dev Calculate the vesting percentage, based on values in Setup.vestingSteps and extraVestingSteps[]
    * @param vestingSteps The vales of Setup.VestingSteps, first 15 events
