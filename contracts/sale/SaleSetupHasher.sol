@@ -7,16 +7,15 @@ import "../registry/FakeRegistryUser.sol";
 // we deploy this standalone to reduce the size of SaleFactory
 
 contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
-
   /**
    * @dev Validate and pack a VestingStep[]. It must be called by the dApp during the configuration of the Sale setup. The same code can be executed in Javascript, but running a function on a smart contract guarantees future compatibility.
    * @param vestingStepsArray The array of VestingStep
    */
   function validateAndPackVestingSteps(ISaleDB.VestingStep[] memory vestingStepsArray)
-  external
-  pure
-  override
-  returns (uint256[] memory, string memory)
+    external
+    pure
+    override
+    returns (uint256[] memory, string memory)
   {
     uint256 len = vestingStepsArray.length / 15;
     uint256[] memory errorCode = new uint256[](1);
@@ -53,7 +52,6 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
     }
     return (steps, "Success");
   }
-
 
   /*
   abi.encodePacked is unable to pack structs. To get a signable hash, we need to

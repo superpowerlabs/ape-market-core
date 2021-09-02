@@ -139,11 +139,16 @@ class DeployUtils {
       await fs.writeFile(jsonpath, '{}')
     }
     const deployed = require(jsonpath)
-    if (!deployed[chainId] || Array.isArray(deployed[chainId])) {
+    if (chainId === 1337 || !deployed[chainId]
+        // legacy:
+        || Array.isArray(deployed[chainId]))
+    {
       deployed[chainId] = {}
     }
     deployed[chainId].ApeRegistry = data.apeRegistry
-    deployed[chainId].TetherMock = data.tetherMock
+    if (chainId === 1337) {
+      deployed[chainId].USDT = data.tetherMock
+    }
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
   }
 }
