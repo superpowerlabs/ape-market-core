@@ -27,7 +27,10 @@ async function main() {
   }
 
   async function getContractFromRegistry(contractName, abi, owner) {
+    console.log("Getting contract from registry", contractName)
     contractAddress = await apeRegistry.get(ethers.utils.id(contractName))
+    console.log(contractAddress)
+    console.log("Got contract from registry", contractName)
     return new ethers.Contract(contractAddress, abi, owner)
   }
 
@@ -39,16 +42,21 @@ async function main() {
 
   apeRegistryAddress = Deployed[chainId].ApeRegistry
 
-  tetherAddress = Deployed[chainId].USDT
+  console.log(apeRegistryAddress)
+
+  tetherAddress = Deployed[chainId].paymentTokens.USDT
+
+  console.log(tetherAddress)
 
   let apeRegistry = new ethers.Contract(apeRegistryAddress, ApeRegistryJson.abi, owner)
-
   let tether = new ethers.Contract(tetherAddress, TetherMockJson.abi, owner)
 
   sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
+  console.log("sellingTokenAddress", sellingToken.address)
 
   await (await tether.transfer(buyer.address, normalize(40000, 6))).wait()
   await (await tether.transfer(buyer2.address, normalize(50000, 6))).wait()
+  console.log("transferring usdt done")
 
   saleVestingSchedule = [
       {
@@ -66,8 +74,12 @@ async function main() {
     ]
 
   let saleData = await getContractFromRegistry("SaleData", SaleDataJson.abi, owner)
+  let saleSetupHasher = await getContractFromRegistry("SaleSetupHasher", SaleSetupHasherJson.abi, owner)
 
+  console.log("Packing Hash")
   const [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
+
+  console.log("Hash packed")
 
   saleSetup = {
       owner: seller.address,
@@ -88,13 +100,13 @@ async function main() {
       saleAddress: addr0
     };
 
-    saleDB = await getContractFromRegistry("SaleDB", SaleDBJson.abi, owner)
-
-    saleId = await saleDB.nextSaleId()
+    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
 
     saleFactory = await getContractFromRegistry("SaleFactory", SaleFactoryJson.abi, owner)
 
-    await saleFactory.connect(operator).approveSale(saleId)
+    transaction = await saleFactory.connect(operator).approveSale(hash)
+
+    await transaction.wait()
 
     saleSetup = {
       owner: seller.address,
@@ -115,20 +127,16 @@ async function main() {
       saleAddress: addr0
     };
 
-    saleId = await saleDB.nextSaleId()
+    transaction = await saleFactory.connect(operator).approveSale(hash)
 
-    let saleSetupHasher = await getContractFromRegistry("SaleSetupHasher", SaleSetupHasherJson.abi, owner)
+    await transaction.wait()
 
-    async function getSignatureByValidator(saleId, setup, schedule = []) {
-      return signPackedData(saleSetupHasher, 'packAndHashSaleConfiguration', '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', saleId.toNumber(), setup, schedule, tether.address)
-    }
+    saleId = await saleFactory.getSaleIdBySetupHash(hash)
 
-    let signature = await getSignatureByValidator(saleId, saleSetup)
-
-    await saleFactory.connect(operator).approveSale(saleId)
-
-    await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address, signature))
+    await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
         .emit(saleFactory, "NewSale")
+
+    saleDB = await getContractFromRegistry("SaleDB", SaleDBJson.abi, owner)
     saleAddress = await saleDB.getSaleAddressById(saleId)
     sale = new ethers.Contract(saleAddress, SaleJson.abi, ethers.provider)
     assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
