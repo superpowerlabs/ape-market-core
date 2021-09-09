@@ -67,7 +67,7 @@ describe("SANFTManager", async function () {
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager
     tokenRegistry = results.tokenRegistry
-    tether = results.tetherMock
+    tether = results.USDT
 
     sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
 
@@ -89,7 +89,7 @@ describe("SANFTManager", async function () {
       }
     ]
 
-    const [schedule, msg] = await saleData.validateAndPackVestingSteps(saleVestingSchedule)
+    const [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
 
     saleSetup = {
       owner: seller.address,

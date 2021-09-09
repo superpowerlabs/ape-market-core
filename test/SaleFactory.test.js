@@ -57,7 +57,7 @@ describe("SaleFactory", async function () {
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager
     tokenRegistry = results.tokenRegistry
-    tether = results.tetherMock
+    tether = results.USDT
 
     sellingToken = await deployUtils.deployContract("ERC20Token", "Abc Token", "ABC")
 
@@ -108,7 +108,7 @@ describe("SaleFactory", async function () {
     beforeEach(async function () {
       await initNetworkAndDeploy()
 
-      const [saleVestingSchedule, msg] = await saleData.validateAndPackVestingSteps([
+      const [saleVestingSchedule, msg] = await saleSetupHasher.validateAndPackVestingSteps([
         {
           waitTime: 10,
           percentage: 50

@@ -6,7 +6,6 @@ import "../sale/ISaleData.sol";
 import "./ITokenRegistry.sol";
 
 contract TokenRegistry is ITokenRegistry, RegistryUser {
-
   bytes32 internal constant _SALE_DATA = keccak256("SaleData");
 
   mapping(uint8 => address) private _addressesById;

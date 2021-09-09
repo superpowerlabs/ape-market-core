@@ -18,7 +18,7 @@ contract Sale is ISale, Ownable {
   uint16 private _saleId;
   IApeRegistry private _apeRegistry;
 
-  modifier onlyFromManager {
+  modifier onlyFromManager() {
     require(
       _msgSender() == _apeRegistry.get(_SANFT_MANAGER),
       string(abi.encodePacked("RegistryUser: only SANFTManager can call this function"))

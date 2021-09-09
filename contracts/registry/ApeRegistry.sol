@@ -13,7 +13,6 @@ import "./IApeRegistry.sol";
 import "./IRegistryUser.sol";
 
 contract ApeRegistry is IApeRegistry, Ownable {
-
   mapping(bytes32 => address) internal _registry;
   bytes32[] internal _contractsList;
 

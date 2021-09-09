@@ -39,7 +39,7 @@ async function main() {
 
   apeRegistryAddress = Deployed[chainId].ApeRegistry
 
-  tetherAddress = Deployed[chainId].TetherMock
+  tetherAddress = Deployed[chainId].USDT
 
   let apeRegistry = new ethers.Contract(apeRegistryAddress, ApeRegistryJson.abi, owner)
 
@@ -67,7 +67,7 @@ async function main() {
 
   let saleData = await getContractFromRegistry("SaleData", SaleDataJson.abi, owner)
 
-  const [schedule, msg] = await saleData.validateAndPackVestingSteps(saleVestingSchedule)
+  const [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
 
   saleSetup = {
       owner: seller.address,

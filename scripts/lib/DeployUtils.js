@@ -108,9 +108,10 @@ class DeployUtils {
 
     await apeRegistry.updateAllContracts()
 
-    let tetherMock
+    let USDT, USDC
     if (chainId === 1337 || chainId === 5777 || chainId === 4) {
-      tetherMock = await this.deployContract("TetherMock")
+      USDT = await this.deployContract("TetherMock")
+      USDC = await this.deployContract("ERC20Token", 'USDC', 'USDC')
     }
 
     return {
@@ -125,7 +126,8 @@ class DeployUtils {
       tokenRegistry,
       apeWallet,
       operators,
-      tetherMock
+      USDT,
+      USDC
     }
   }
 
@@ -139,11 +141,19 @@ class DeployUtils {
       await fs.writeFile(jsonpath, '{}')
     }
     const deployed = require(jsonpath)
-    if (!deployed[chainId] || Array.isArray(deployed[chainId])) {
-      deployed[chainId] = {}
+    if (chainId === 1337 || !deployed[chainId]
+        // legacy:
+        || Array.isArray(deployed[chainId]))
+    {
+      deployed[chainId] = {
+        paymentTokens: {}
+      }
     }
     deployed[chainId].ApeRegistry = data.apeRegistry
-    deployed[chainId].TetherMock = data.tetherMock
+    if (chainId === 1337) {
+      deployed[chainId].paymentTokens.USDT = data.USDT
+      deployed[chainId].paymentTokens.USDC = data.USDC
+    }
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
   }
 }
