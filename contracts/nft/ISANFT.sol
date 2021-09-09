@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "../sale/ISaleData.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-interface ISANFT {
+interface ISANFT is IERC721 {
   // Hold the data of a Smart Agreement, packed into an uint256
   struct SA {
     uint16 saleId; // the sale that generated this SA
@@ -33,6 +34,4 @@ interface ISANFT {
   function addSAToBundle(uint256 bundleId, SA memory newSA) external;
 
   function getBundle(uint256 bundleId) external view returns (SA[] memory);
-
-  function getOwnerOf(uint256 tokenId) external view returns (address);
 }

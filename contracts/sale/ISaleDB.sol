@@ -21,32 +21,35 @@ interface ISaleDB {
     uint256 percentage;
   }
 
+  // We groups the parameters by 32bytes to save space.
   struct Setup {
-    //
-    address owner;
-    uint32 minAmount; // << USD
-    uint32 capAmount; // << USD, it can be = totalValue (no cap to single investment)
-    uint32 tokenListTimestamp;
-    //
+    // first 32 bytes - full
+    address owner;  // 20 bytes
+    uint32 minAmount; // << USD, 4 bytes
+    uint32 capAmount; // << USD, it can be = totalValue (no cap to single investment), 4 bytes
+    uint32 tokenListTimestamp; // 4 bytes
+
+    // second 32 bytes - full
     uint120 remainingAmount; // << selling token
     // pricingPayments and pricingToken builds a fraction to define the price of the token
     uint64 pricingToken;
     uint64 pricingPayment;
     uint8 paymentTokenId; // << TokenRegistry Id of the token used for the payments (USDT, USDC...)
-    //
+
+    // third 32 bytes - full
     uint256 vestingSteps; // < at most 15 vesting events
-    //
+
+    // fourth 32 bytes - 31 bytes
     IERC20Min sellingToken;
-    // 96 more bits available here
-    //
-    address saleAddress; // 160
     uint32 totalValue; // << USD
-    bool isTokenTransferable;
     uint16 tokenFeePoints; // << the fee in sellingToken due by sellers at launch
     // a value like 3.25% is set as 325 base points
     uint16 extraFeePoints; // << the optional fee in USD paid by seller at launch
     uint16 paymentFeePoints; // << the fee in USD paid by buyers when investing
-    //  more bits available:
+    bool isTokenTransferable;
+
+    // fifth 32 bytes - 12 bytes remaining
+    address saleAddress; // 20 bytes
   }
 
   function nextSaleId() external view returns (uint16);

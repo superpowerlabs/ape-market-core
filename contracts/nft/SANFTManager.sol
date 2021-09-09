@@ -88,7 +88,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     uint256 tokenId,
     uint256[] memory amounts // <<
   ) external virtual override onlySANFT {
-    address tokenOwner = _sanft.getOwnerOf(tokenId);
+    address tokenOwner = _sanft.ownerOf(tokenId);
     ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
     require(amounts.length == bundle.length, "SANFTManager: amounts inconsistent with SAs");
     bool done;
@@ -106,7 +106,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     }
     if (done) {
       // puts the modified SA in a new NFT and burns the existing one
-      _createNewToken(_sanft.getOwnerOf(tokenId), bundle);
+      _createNewToken(_sanft.ownerOf(tokenId), bundle);
       _sanft.burn(tokenId);
     } else {
       revert("SANFTManager: Cannot withdraw not available tokens");
@@ -182,9 +182,9 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     )
   {
     if (tokenIds.length < 2) return (false, "Cannot merge a single NFT", 0);
-    address tokenOwner = _sanft.getOwnerOf(tokenIds[0]);
+    address tokenOwner = _sanft.ownerOf(tokenIds[0]);
     for (uint256 i = 0; i < tokenIds.length; i++) {
-      if (_sanft.getOwnerOf(tokenIds[i]) != tokenOwner) return (false, "All NFTs must be owned by same owner", 0);
+      if (_sanft.ownerOf(tokenIds[i]) != tokenOwner) return (false, "All NFTs must be owned by same owner", 0);
     }
     uint256 counter;
     ISANFT.SA[] memory bundle;
@@ -205,7 +205,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   }
 
   function merge(uint256[] memory tokenIds) external virtual override {
-    require(_sanft.getOwnerOf(tokenIds[0]) == _msgSender(), "SANFTManager: only owners can merge their NFTs");
+    require(_sanft.ownerOf(tokenIds[0]) == _msgSender(), "SANFTManager: only owners can merge their NFTs");
     (bool isMergeable, string memory message, uint256 counter) = areMergeable(tokenIds);
     require(isMergeable, string(abi.encodePacked("SANFTManager: ", message)));
     ISANFT.SA[] memory bundle;
@@ -257,7 +257,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   }
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) external virtual override {
-    require(_sanft.getOwnerOf(tokenId) == _msgSender(), "SANFTManager: only the owner can split an NFT");
+    require(_sanft.ownerOf(tokenId) == _msgSender(), "SANFTManager: only the owner can split an NFT");
     ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
     ISANFT.SA[] memory feeBundle;
     (bundle, feeBundle) = _applyFeesToBundle(bundle);
