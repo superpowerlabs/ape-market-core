@@ -55,7 +55,7 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
     }
   }
 
-  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
+  function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable, IERC165) returns (bool) {
     return super.supportsInterface(interfaceId);
   }
 
@@ -103,9 +103,5 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
 
   function getBundle(uint256 tokenId) external view override returns (SA[] memory) {
     return _bundles[tokenId];
-  }
-
-  function getOwnerOf(uint256 tokenId) external view override returns (address) {
-    return ownerOf(tokenId);
   }
 }
