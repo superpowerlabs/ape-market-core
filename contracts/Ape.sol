@@ -1,23 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.1.0/contracts/token/ERC20/ERC20.sol";
 contract Ape is ERC20 {
-  uint256 private _tokenPrice;
-
-  constructor() ERC20("APE Token", "APE") {
-    // TODO: change to correct supply
-    _mint(msg.sender, 10000);
-    _tokenPrice = 1;
-  }
-
-  function currentTokenPrice() external view virtual returns (uint256) {
-    // fall back: use selling price
-    return _tokenPrice;
-  }
-
-  function setTokenPrice(uint256 price) external virtual {
-    _tokenPrice = price;
+  constructor(string memory tokenName, string memory tokenSymbol, address receiver) ERC20(tokenName, tokenSymbol) {
+    require(receiver != address(0), "cannot mint to address 0");
+    _mint(receiver, 10 ** 27);  // 1B token, with default 18 decimals
   }
 }
+
