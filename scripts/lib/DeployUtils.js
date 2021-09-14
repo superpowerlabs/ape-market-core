@@ -164,13 +164,17 @@ class DeployUtils {
         || Array.isArray(deployed[chainId]))
     {
       deployed[chainId] = {
-        paymentTokens: {}
+        paymentTokens: {},
+        sellingTokens: {}
       }
     }
     deployed[chainId].ApeRegistry = data.apeRegistry
     if (this.localChain(chainId)) {
-      for (let k of 'USDT,USDC,ABC,MNO,XYZ'.split(',')) {
+      for (let k of 'USDT,USDC'.split(',')) {
         deployed[chainId].paymentTokens[k] = data[k]
+      }
+      for (let k of 'ABC,MNO,XYZ'.split(',')) {
+        deployed[chainId].sellingTokens[k] = data[k]
       }
     }
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
