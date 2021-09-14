@@ -246,4 +246,13 @@ contract SaleData is ISaleData, RegistryUser {
     _saleDB.triggerTokenListing(saleId);
     emit TokenListed(saleId);
   }
+
+  function emergencyTriggerTokenListing(uint16 saleId) external virtual override onlyOwner {
+    // this is an emergency function, to be called only in case
+    // the seller blocks the listing forever,
+    // locking forever the tokens in the sale.
+    // In the future, it should be approved by the Ape DAO
+    _saleDB.triggerTokenListing(saleId);
+    emit TokenListed(saleId);
+  }
 }

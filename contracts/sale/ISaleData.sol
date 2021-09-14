@@ -76,4 +76,6 @@ interface ISaleData {
   ) external view returns (uint256);
 
   function triggerTokenListing(uint16 saleId) external;
+
+  function emergencyTriggerTokenListing(uint16 saleId) external;
 }
