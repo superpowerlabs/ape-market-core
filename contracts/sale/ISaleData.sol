@@ -10,6 +10,7 @@ interface ISaleData {
   event SaleLaunched(uint16 saleId, uint32 totalValue, uint120 totalTokens);
   event SaleExtended(uint16 saleId, uint32 extraValue, uint120 extraTokens);
   event TokenListed(uint16 saleId);
+  event TokenForcefullyListed(uint16 saleId);
 
   function apeWallet() external view returns (address);
 

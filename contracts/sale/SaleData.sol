@@ -253,6 +253,6 @@ contract SaleData is ISaleData, RegistryUser {
 //     locking forever the tokens in the sale.
 //     In the future, it should be approved by the Ape DAO
     _saleDB.triggerTokenListing(saleId);
-    emit TokenListed(saleId);
+    emit TokenForcefullyListed(saleId);
   }
 }
