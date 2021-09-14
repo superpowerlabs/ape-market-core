@@ -18,6 +18,7 @@ contract SaleData is ISaleData, RegistryUser {
   bytes32 internal constant _TOKEN_REGISTRY = keccak256("TokenRegistry");
 
   address private _apeWallet;
+  address private _DAOWallet;
 
   modifier onlySaleOwner(uint16 saleId) {
     require(_msgSender() == _saleDB.getSetupById(saleId).owner, "SaleData: caller is not the owner");
@@ -69,6 +70,16 @@ contract SaleData is ISaleData, RegistryUser {
   function updateApeWallet(address apeWallet_) public override onlyOwner {
     _apeWallet = apeWallet_;
     emit ApeWalletUpdated(apeWallet_);
+  }
+
+  function updateDAOWallet(address DAOWallet_) public override {
+    if (_DAOWallet == address(0)) {
+      require(_msgSender() == owner(), "Forbidden");
+    } else {
+      require(_msgSender() == _DAOWallet, "Forbidden");
+    }
+    _DAOWallet = DAOWallet_;
+    emit DaoWalletUpdated(DAOWallet_);
   }
 
   function increaseSaleId() external override onlySaleFactory {
@@ -247,11 +258,11 @@ contract SaleData is ISaleData, RegistryUser {
     emit TokenListed(saleId);
   }
 
-  function emergencyTriggerTokenListing(uint16 saleId) external virtual override onlyOwner {
+  function emergencyTriggerTokenListing(uint16 saleId) external virtual override {
 //     this is an emergency function, to be called only in case
 //     the seller blocks the listing forever,
 //     locking forever the tokens in the sale.
-//     In the future, it should be approved by the Ape DAO
+    require(_DAOWallet != address(0) && _msgSender() == _DAOWallet, "Only the DAO can call this");
     _saleDB.triggerTokenListing(saleId);
     emit TokenForcefullyListed(saleId);
   }

@@ -6,6 +6,7 @@ import "./ISaleDB.sol";
 
 interface ISaleData {
   event ApeWalletUpdated(address wallet);
+  event DaoWalletUpdated(address wallet);
   event SaleSetup(uint16 saleId, address saleAddress);
   event SaleLaunched(uint16 saleId, uint32 totalValue, uint120 totalTokens);
   event SaleExtended(uint16 saleId, uint32 extraValue, uint120 extraTokens);
@@ -15,6 +16,8 @@ interface ISaleData {
   function apeWallet() external view returns (address);
 
   function updateApeWallet(address apeWallet_) external;
+
+  function updateDAOWallet(address apeWallet_) external;
 
   function increaseSaleId() external;
 
