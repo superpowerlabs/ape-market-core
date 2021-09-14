@@ -17,8 +17,7 @@ let contracts = [
   'sale/SaleFactory',
   'sale/SaleSetupHasher',
   'sale/TokenRegistry',
-  'user/Profile',
-  'Ape'
+  'user/Profile'
 ]
 
 for (let contract of contracts) {
@@ -27,5 +26,9 @@ for (let contract of contracts) {
   let json = require(source)
   ABIs.contracts[name] = json.abi
 }
+
+// we need an ERC20 token for the app
+let json = require(path.resolve(__dirname, `../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json`))
+ABIs.contracts['ERC20'] = json.abi
 
 fs.writeFileSync(path.resolve(__dirname, '../config/ABIs.json'), JSON.stringify(ABIs, null, 2))
