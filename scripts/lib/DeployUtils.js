@@ -108,10 +108,21 @@ class DeployUtils {
 
     await apeRegistry.updateAllContracts()
 
-    let USDT, USDC
-    if (chainId === 1337 || chainId === 5777 || chainId === 4) {
-      USDT = await this.deployContract("TetherMock")
-      USDC = await this.deployERC20('USDC', 'USDC')
+    // for app debugging:
+    let uSDT
+    let uSDC
+    let abcToken // owned by signers[1]
+    let mnoToken // owned by signers[3]
+    let xyzToken // owned by signers[4]
+    if (this.localChain(chainId) || chainId === 4) {
+      const [owner, seller1, operator, seller3, seller4] = await ethers.getSigners()
+      uSDT = await this.deployContract("TetherMock")
+      uSDC = await this.deployERC20(owner, 'USDC', 'USDC')
+      if (this.localChain(chainId)) {
+        abcToken = await this.deployERC20(seller1, 'Abc Token', 'ABC')
+        mnoToken = await this.deployERC20(seller3, 'Mno Token', 'MNO')
+        xyzToken = await this.deployERC20(seller4, 'Xyz Token', 'XYZ')
+      }
     }
 
     return {
@@ -126,9 +137,16 @@ class DeployUtils {
       tokenRegistry,
       apeWallet,
       operators,
-      USDT,
-      USDC
+      USDT: uSDT,
+      USDC: uSDC,
+      ABC: abcToken,
+      MNO: mnoToken,
+      XYZ: xyzToken
     }
+  }
+
+  localChain(chainId) {
+    return chainId === 1337 || chainId === 5777
   }
 
   async currentChainId() {
@@ -141,7 +159,7 @@ class DeployUtils {
       await fs.writeFile(jsonpath, '{}')
     }
     const deployed = require(jsonpath)
-    if (chainId === 1337 || !deployed[chainId]
+    if (this.localChain(chainId) || !deployed[chainId]
         // legacy:
         || Array.isArray(deployed[chainId]))
     {
@@ -150,15 +168,16 @@ class DeployUtils {
       }
     }
     deployed[chainId].ApeRegistry = data.apeRegistry
-    if (chainId === 1337) {
-      deployed[chainId].paymentTokens.USDT = data.USDT
-      deployed[chainId].paymentTokens.USDC = data.USDC
+    if (this.localChain(chainId)) {
+      for (let k of 'USDT,USDC,ABC,MNO,XYZ'.split(',')) {
+        deployed[chainId].paymentTokens[k] = data[k]
+      }
     }
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
   }
 
   async deployERC20(owner, name, ticker) {
-    return await this.deployContract("ERC20Token", name, ticker)
+    return await this.deployContractBy("ERC20Token", owner, name, ticker)
   }
 }
 
