@@ -6,14 +6,18 @@ import "./ISaleDB.sol";
 
 interface ISaleData {
   event ApeWalletUpdated(address wallet);
+  event DaoWalletUpdated(address wallet);
   event SaleSetup(uint16 saleId, address saleAddress);
   event SaleLaunched(uint16 saleId, uint32 totalValue, uint120 totalTokens);
   event SaleExtended(uint16 saleId, uint32 extraValue, uint120 extraTokens);
   event TokenListed(uint16 saleId);
+  event TokenForcefullyListed(uint16 saleId);
 
   function apeWallet() external view returns (address);
 
   function updateApeWallet(address apeWallet_) external;
+
+  function updateDAOWallet(address apeWallet_) external;
 
   function increaseSaleId() external;
 
@@ -76,4 +80,6 @@ interface ISaleData {
   ) external view returns (uint256);
 
   function triggerTokenListing(uint16 saleId) external;
+
+  function emergencyTriggerTokenListing(uint16 saleId) external;
 }

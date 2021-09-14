@@ -111,7 +111,7 @@ class DeployUtils {
     let USDT, USDC
     if (chainId === 1337 || chainId === 5777 || chainId === 4) {
       USDT = await this.deployContract("TetherMock")
-      USDC = await this.deployContract("ERC20Token", 'USDC', 'USDC')
+      USDC = await this.deployERC20('USDC', 'USDC')
     }
 
     return {
@@ -155,6 +155,10 @@ class DeployUtils {
       deployed[chainId].paymentTokens.USDC = data.USDC
     }
     await fs.writeFile(jsonpath, JSON.stringify(deployed, null, 2))
+  }
+
+  async deployERC20(owner, name, ticker) {
+    return await this.deployContract("ERC20Token", name, ticker)
   }
 }
 
