@@ -46,7 +46,6 @@ describe("Sale", async function () {
 
     const results = await deployUtils.initAndDeploy({
       apeWallet: apeWallet.address,
-      validators: [validator.address],
       operators: [operator.address]
     })
 
@@ -59,7 +58,7 @@ describe("Sale", async function () {
     sANFT = results.sANFT
     sANFTManager = results.sANFTManager
     tokenRegistry = results.tokenRegistry
-    tether = results.USDT
+    tether = results.uSDT
 
     sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
 
