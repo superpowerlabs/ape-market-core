@@ -107,7 +107,7 @@ contract SaleDB is ISaleDB, RegistryUser {
     delete _approvedAmounts[saleId][investor];
   }
 
-  function getApproval(uint16 saleId, address investor) external virtual override returns (uint256) {
+  function getApproval(uint16 saleId, address investor) external view virtual override returns (uint256) {
     return _approvedAmounts[saleId][investor];
   }
 }
