@@ -11,7 +11,17 @@ async function main() {
   // line interface.
 
   const ethers = hre.ethers
-  const [owner, apeWallet, operator, seller1, seller2, seller3, investor1, investor2, investor3] = await ethers.getSigners()
+  const [
+    owner,      // hardhat 0
+    apeWallet,  // 1
+    operator,   // 2
+    seller1,    // 3
+    seller2,    // 4
+    seller3,    // 5
+    investor1,  // 6
+    investor2,  // 7
+    investor3   // 8
+  ] = await ethers.getSigners()
 
   const deployUtils = new DeployUtils(ethers)
   const chainId = await deployUtils.currentChainId()
