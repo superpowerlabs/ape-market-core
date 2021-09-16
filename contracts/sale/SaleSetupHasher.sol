@@ -83,7 +83,8 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
             uint256(setup.tokenFeePoints),
             uint256(setup.totalValue),
             uint256(setup.paymentFeePoints),
-            uint256(setup.extraFeePoints)
+            uint256(setup.extraFeePoints),
+            uint256(setup.withdrawFeePoints)
           ]
         )
       );

@@ -227,10 +227,16 @@ contract SaleData is ISaleData, RegistryUser {
     return (payment, buyerFee);
   }
 
-  function setWithdrawToken(uint16 saleId, uint256 amount) external virtual override onlySale(saleId) returns (IERC20Min, uint256) {
+  function setWithdrawToken(uint16 saleId, uint256 amount)
+    external
+    virtual
+    override
+    onlySale(saleId)
+    returns (IERC20Min, uint256)
+  {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     uint256 withdrawFee = amount.mul(setup.withdrawFeePoints).div(10000);
-    require(amount + withdrawFee<= setup.remainingAmount, "SaleData: Cannot withdraw more than remaining");
+    require(amount + withdrawFee <= setup.remainingAmount, "SaleData: Cannot withdraw more than remaining");
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(amount));
     return (setup.sellingToken, withdrawFee);
   }

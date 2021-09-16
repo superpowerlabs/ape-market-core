@@ -84,7 +84,7 @@ contract Sale is ISale, Ownable {
     _isSaleOwner(saleData);
     (IERC20Min sellingToken, uint256 withdrawFee) = saleData.setWithdrawToken(_saleId, amount);
     sellingToken.transfer(_msgSender(), amount);
-    if (withdrawFee !=0) {
+    if (withdrawFee != 0) {
       sellingToken.transfer(saleData.apeWallet(), withdrawFee);
     }
   }

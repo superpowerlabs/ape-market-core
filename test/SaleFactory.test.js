@@ -135,7 +135,8 @@ describe("SaleFactory", async function () {
         tokenFeePoints: 500,
         extraFeePoints: 0,
         paymentFeePoints: 300,
-        saleAddress: addr0
+        saleAddress: addr0,
+        withdrawFeePoints: 0
       };
     })
 
