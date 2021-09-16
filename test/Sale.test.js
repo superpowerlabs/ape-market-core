@@ -68,7 +68,7 @@ describe("Sale", async function () {
         percentage: 50
       },
       {
-        waitTime: 1000,
+        waitTime: 999,
         percentage: 100
       }
     ])

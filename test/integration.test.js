@@ -141,7 +141,7 @@ describe.skip("Integration Test", function () {
           percentage: 50
         },
         {
-          waitTime: 1000,
+          waitTime: 999,
           percentage: 100
         }]
 
