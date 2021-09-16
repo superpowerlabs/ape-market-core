@@ -4,7 +4,7 @@ const {signPackedData, assertThrowsMessage, addr0} = require('../scripts/lib/Tes
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe.only("Sale", async function () {
+describe("Sale", async function () {
 
   const deployUtils = new DeployUtils(ethers)
 
