@@ -27,7 +27,6 @@ describe("SaleData", async function () {
 
     const results = await deployUtils.initAndDeploy({
       apeWallet: apeWallet.address,
-      validators: [validator.address],
       operators: [operator.address]
     })
 
