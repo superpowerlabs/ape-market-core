@@ -18,24 +18,20 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
     returns (uint256[] memory, string memory)
   {
     uint256 len = vestingStepsArray.length / 15;
-    uint256[] memory errorCode = new uint256[](1);
     if (vestingStepsArray.length % 15 > 0) len++;
     uint256[] memory steps = new uint256[](len);
     uint256 j;
     uint256 k;
     for (uint256 i = 0; i < vestingStepsArray.length; i++) {
       if (vestingStepsArray[i].waitTime > 999) {
-        errorCode[0] = 4;
-        return (errorCode, "waitTime cannot be more than 999 days");
+        revert("waitTime cannot be more than 999 days");
       }
       if (i > 0) {
         if (vestingStepsArray[i].percentage <= vestingStepsArray[i - 1].percentage) {
-          errorCode[0] = 1;
-          return (errorCode, "Vest percentage should be monotonic increasing");
+          revert("Vest percentage should be monotonic increasing");
         }
         if (vestingStepsArray[i].waitTime <= vestingStepsArray[i - 1].waitTime) {
-          errorCode[0] = 2;
-          return (errorCode, "waitTime should be monotonic increasing");
+          revert("waitTime should be monotonic increasing");
         }
       }
       steps[j] += ((vestingStepsArray[i].percentage - 1) + 100 * (vestingStepsArray[i].waitTime % (10**3))) * (10**(5 * k));
@@ -47,8 +43,7 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
       }
     }
     if (vestingStepsArray[vestingStepsArray.length - 1].percentage != 100) {
-      errorCode[0] = 3;
-      return (errorCode, "Vest percentage should end at 100");
+      revert("Vest percentage should end at 100");
     }
     return (steps, "Success");
   }
