@@ -60,7 +60,7 @@ interface ISaleData {
     uint256 amount
   ) external returns (uint256, uint256);
 
-  function setWithdrawToken(uint16 saleId, uint256 amount) external returns (IERC20Min);
+  function setWithdrawToken(uint16 saleId, uint256 amount) external returns (IERC20Min, uint256);
 
   function isVested(
     uint16 saleId,

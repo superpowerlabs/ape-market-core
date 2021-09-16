@@ -4,7 +4,7 @@ const {signPackedData, assertThrowsMessage, addr0} = require('../scripts/lib/Tes
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe("Sale", async function () {
+describe.only("Sale", async function () {
 
   const deployUtils = new DeployUtils(ethers)
 
@@ -90,7 +90,8 @@ describe("Sale", async function () {
       tokenFeePoints: 500,
       extraFeePoints: 0,
       paymentFeePoints: 300,
-      saleAddress: addr0
+      saleAddress: addr0,
+      withdrawFeePoints: 1000 // 10%
     };
 
 
@@ -145,6 +146,17 @@ describe("Sale", async function () {
           .withArgs(saleId, extraValue, extraAmount);
 
       expect(await sellingToken.balanceOf(sale.address)).equal(amount.add(fee).add(extraAmount).add(extraFee))
+    })
+
+    it("should withdraw from an existing sale", async function () {
+      let [amount, fee] = await saleData.getTokensAmountAndFeeByValue(saleId, saleSetup.totalValue)
+      await sellingToken.connect(seller).approve(saleAddress, amount.add(fee))
+      await sale.connect(seller).launch()
+      let withdrawAmount = 10000;
+      let withdrawFee = withdrawAmount * saleSetup.withdrawFeePoints / 10000;
+      await sale.connect(seller).withdrawToken(withdrawAmount);
+      expect(await sellingToken.balanceOf(sale.address)).equal(amount.add(fee).sub(withdrawAmount).sub(withdrawFee))
+      expect(await sellingToken.balanceOf(apeWallet.address)).equal(withdrawFee)
     })
   })
 })

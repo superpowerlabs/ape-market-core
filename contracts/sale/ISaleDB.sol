@@ -50,6 +50,7 @@ interface ISaleDB {
 
     // fifth 32 bytes - 12 bytes remaining
     address saleAddress; // 20 bytes
+    uint16 withdrawFeePoints; // the fee paid in token for early
   }
 
   function nextSaleId() external view returns (uint16);

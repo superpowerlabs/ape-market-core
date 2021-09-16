@@ -82,8 +82,9 @@ contract Sale is ISale, Ownable {
   function withdrawToken(uint256 amount) external virtual override {
     ISaleData saleData = _getSaleData();
     _isSaleOwner(saleData);
-    IERC20Min sellingToken = saleData.setWithdrawToken(_saleId, amount);
+    (IERC20Min sellingToken, uint256 withdrawFee) = saleData.setWithdrawToken(_saleId, amount);
     sellingToken.transfer(_msgSender(), amount);
+    sellingToken.transfer(saleData.apeWallet(), withdrawFee);
   }
 
   function vest(
