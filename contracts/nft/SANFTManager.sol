@@ -159,15 +159,13 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     }
   }
 
-  function mintInitialTokens(
-    address investor,
+  function mint(
+    address receiver,
     uint16 saleId,
-    uint256 amount,
-    uint256 sellerFee
+    uint256 amount
   ) external override {
     require(_msgSender() == address(_saleData), "SANFTManager: only SaleData can call this function");
-    _sanft.mint(investor, saleId, uint120(amount), uint120(amount));
-    _sanft.mint(apeWallet, saleId, uint120(sellerFee), uint120(sellerFee));
+    _sanft.mint(receiver, saleId, uint120(amount), uint120(amount));
   }
 
   function areMergeable(uint256[] memory tokenIds)
