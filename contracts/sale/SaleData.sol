@@ -88,7 +88,7 @@ contract SaleData is ISaleData, RegistryUser {
 
   /**
    * @dev Calculate the vesting percentage, based on values in Setup.vestingSteps and extraVestingSteps[]
-   * @param vestingSteps The vales of Setup.VestingSteps, first 15 events
+   * @param vestingSteps The vales of Setup.VestingSteps, first 11 events
    * @param extraVestingSteps The array of extra vesting steps
    * @param tokenListTimestamp The timestamp when token has been listed
    * @param currentTimestamp The current timestamp (it'd be, most likely, block.timestamp)
@@ -101,8 +101,8 @@ contract SaleData is ISaleData, RegistryUser {
   ) public pure override returns (uint8) {
     for (uint256 i = extraVestingSteps.length + 1; i >= 1; i--) {
       uint256 steps = i > 1 ? extraVestingSteps[i - 2] : vestingSteps;
-      for (uint256 k = 16; k >= 1; k--) {
-        uint256 step = steps / (10**(5 * (k - 1)));
+      for (uint256 k = 12; k >= 1; k--) {
+        uint256 step = steps / (10**(6 * (k - 1)));
         if (step != 0) {
           uint256 ts = (step / 100);
           uint256 percentage = (step % 100) + 1;
@@ -110,7 +110,7 @@ contract SaleData is ISaleData, RegistryUser {
             return uint8(percentage);
           }
         }
-        steps %= (10**(5 * (k - 1)));
+        steps %= (10**(6 * (k - 1)));
       }
     }
     return 0;

@@ -133,8 +133,8 @@ describe("SaleFactory", async function () {
         if (p > 100) {
           p = 100
         }
-        if (d >= 999) {
-          d = 999
+        if (d >= 9999) {
+          d = 9999
           p = 100
         }
         if (i === steps - 1) {
@@ -145,7 +145,7 @@ describe("SaleFactory", async function () {
           waitTime: d,
           percentage: p
         })
-        if (p === 100 || d === 999) {
+        if (p === 100 || d === 9999) {
           break
         }
       }
@@ -159,7 +159,7 @@ describe("SaleFactory", async function () {
     it('random generation schedules', async function () {
 
       for (let i = 0; i < 100; i++) {
-        let schedule = generateRandomSchedule(i, i * parseInt(10 * Math.random()))
+        let schedule = generateRandomSchedule(i, i * parseInt(100 * Math.random()))
         try {
           await saleSetupHasher.validateAndPackVestingSteps(schedule)
           assert.isTrue(!!1)
@@ -195,11 +195,11 @@ describe("SaleFactory", async function () {
               percentage: 50
             },
             {
-              waitTime: 1000,
+              waitTime: 10000,
               percentage: 100
             }
           ]),
-          'waitTime cannot be more than 999 days'
+          'waitTime cannot be more than 9999 days'
       )
 
       assertThrowsMessage(
