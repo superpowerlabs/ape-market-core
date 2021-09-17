@@ -136,7 +136,8 @@ describe("SANFT", async function () {
 
     it("should verify that the SANFT is correctly set when the buyer invests", async function () {
       let tokenId = await sANFT.tokenOfOwnerByIndex(buyer.address, 0);
-      assert.equal(tokenId, 1);
+      // id 1 was mint as fee
+      assert.equal(tokenId.toNumber(), 2);
     })
 
   })
