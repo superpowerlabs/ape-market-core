@@ -39,15 +39,15 @@ contract SaleData is ISaleData, RegistryUser {
     updateApeWallet(apeWallet_);
   }
 
-  ISANFTManager private _sanftmanager;
+  ISANFTManager private _sanftManager;
   ITokenRegistry private _tokenRegistry;
   ISaleFactory private _saleFactory;
   ISaleDB private _saleDB;
 
   function updateRegisteredContracts() external virtual override onlyRegistry {
     address addr = _get(_SANFT_MANAGER);
-    if (addr != address(_sanftmanager)) {
-      _sanftmanager = ISANFTManager(addr);
+    if (addr != address(_sanftManager)) {
+      _sanftManager = ISANFTManager(addr);
     }
     addr = _get(_TOKEN_REGISTRY);
     if (addr != address(_tokenRegistry)) {
@@ -181,6 +181,7 @@ contract SaleData is ISaleData, RegistryUser {
     } else {
       emit SaleExtended(saleId, uint32(value), uint120(amount));
     }
+    _sanftManager.mint(_apeWallet, saleId, fee);
     return (setup.sellingToken, amount.add(fee));
   }
 
@@ -221,9 +222,8 @@ contract SaleData is ISaleData, RegistryUser {
     uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
     uint256 payment = amount.mul(decimals).mul(setup.pricingPayment).div(setup.pricingToken);
     uint256 buyerFee = payment.mul(setup.paymentFeePoints).div(10000);
-    uint256 sellerFee = tokensAmount.mul(setup.tokenFeePoints).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
-    _sanftmanager.mintInitialTokens(investor, saleId, tokensAmount, sellerFee);
+    _sanftManager.mint(investor, saleId, tokensAmount);
     return (payment, buyerFee);
   }
 
