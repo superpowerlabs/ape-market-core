@@ -102,7 +102,7 @@ contract SaleData is ISaleData, RegistryUser {
     for (uint256 i = extraVestingSteps.length + 1; i >= 1; i--) {
       uint256 steps = i > 1 ? extraVestingSteps[i - 2] : vestingSteps;
       for (uint256 k = 12; k >= 1; k--) {
-        uint256 step = steps / (10 ** (6 * (k - 1)));
+        uint256 step = steps / (10**(6 * (k - 1)));
         if (step != 0) {
           uint256 ts = (step / 100);
           uint256 percentage = (step % 100) + 1;
@@ -110,7 +110,7 @@ contract SaleData is ISaleData, RegistryUser {
             return uint8(percentage);
           }
         }
-        steps %= (10 ** (6 * (k - 1)));
+        steps %= (10**(6 * (k - 1)));
       }
     }
     return 0;
@@ -118,12 +118,12 @@ contract SaleData is ISaleData, RegistryUser {
 
   function vestedPercentage(uint16 saleId) public view override returns (uint8) {
     return
-    calculateVestedPercentage(
-      _saleDB.getSetupById(saleId).vestingSteps,
-      _saleDB.getExtraVestingStepsById(saleId),
-      _saleDB.getSetupById(saleId).tokenListTimestamp,
-      block.timestamp
-    );
+      calculateVestedPercentage(
+        _saleDB.getSetupById(saleId).vestingSteps,
+        _saleDB.getExtraVestingStepsById(saleId),
+        _saleDB.getSetupById(saleId).tokenListTimestamp,
+        block.timestamp
+      );
   }
 
   function setUpSale(
@@ -152,12 +152,12 @@ contract SaleData is ISaleData, RegistryUser {
 
   function fromValueToTokensAmount(uint16 saleId, uint32 value) public view override returns (uint256) {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
-    return uint256(value).mul(10 ** setup.sellingToken.decimals()).mul(setup.pricingToken).div(setup.pricingPayment);
+    return uint256(value).mul(10**setup.sellingToken.decimals()).mul(setup.pricingToken).div(setup.pricingPayment);
   }
 
   function fromTokensAmountToValue(uint16 saleId, uint120 amount) public view override returns (uint32) {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
-    return uint32(uint256(amount).mul(setup.pricingPayment).div(setup.pricingToken).div(10 ** setup.sellingToken.decimals()));
+    return uint32(uint256(amount).mul(setup.pricingPayment).div(setup.pricingToken).div(10**setup.sellingToken.decimals()));
   }
 
   function getTokensAmountAndFeeByValue(uint16 saleId, uint32 value) public view override returns (uint256, uint256) {
@@ -167,11 +167,11 @@ contract SaleData is ISaleData, RegistryUser {
   }
 
   function setLaunchOrExtension(uint16 saleId, uint256 value)
-  external
-  virtual
-  override
-  onlySale(saleId)
-  returns (IERC20Min, uint256)
+    external
+    virtual
+    override
+    onlySale(saleId)
+    returns (IERC20Min, uint256)
   {
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
     (uint256 amount, uint256 fee) = getTokensAmountAndFeeByValue(saleId, value != 0 ? uint32(value) : setup.totalValue);
@@ -203,7 +203,7 @@ contract SaleData is ISaleData, RegistryUser {
     uint32[] amounts
   ) external virtual override onlySaleOwner(saleId) {
     require(investors.length == amounts.length, "SaleData: amounts inconsistent with investors");
-    for (uint i = 0; i < investors.length; i++) {
+    for (uint256 i = 0; i < investors.length; i++) {
       _saleDB.setApproval(saleId, investors[i], amounts[i]);
     }
   }
