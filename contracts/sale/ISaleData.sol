@@ -52,10 +52,18 @@ interface ISaleData {
 
   function getSetupById(uint16 saleId) external view returns (ISaleDB.Setup memory);
 
+  // before calling this the dApp should verify that the proposed amount
+  // is realistic, i.e., if there are enough tokens in the sale
   function approveInvestor(
     uint16 saleId,
     address investor,
     uint32 amount
+  ) external;
+
+  function approveInvestors(
+    uint16 saleId,
+    address[] investors,
+    uint32[] amounts
   ) external;
 
   function setInvest(
