@@ -190,14 +190,15 @@ contract SaleData is ISaleData, RegistryUser {
     return _saleDB.getSetupById(saleId);
   }
 
-  // before calling this the dApp should verify that the proposed amount
-  // is realistic, i.e., if there are enough tokens in the sale
-  function approveInvestor(
+  function approveInvestors(
     uint16 saleId,
-    address investor,
-    uint32 amount
+    address[] memory investors,
+    uint32[] memory amounts
   ) external virtual override onlySaleOwner(saleId) {
-    _saleDB.setApproval(saleId, investor, amount);
+    require(investors.length == amounts.length, "SaleData: amounts inconsistent with investors");
+    for (uint256 i = 0; i < investors.length; i++) {
+      _saleDB.setApproval(saleId, investors[i], amounts[i]);
+    }
   }
 
   function setInvest(

@@ -128,7 +128,7 @@ describe("SANFTManager", async function () {
     await sale.connect(seller).launch()
 
     await tether.connect(buyer).approve(saleAddress, normalize(400, 6));
-    await saleData.connect(seller).approveInvestor(saleId, buyer.address, normalize(200, 6))
+    await saleData.connect(seller).approveInvestors(saleId, [buyer.address], [normalize(200, 6)])
     await sale.connect(buyer).invest(200)
 
   }
@@ -188,7 +188,7 @@ describe("SANFTManager", async function () {
 
       // buyer makes a second investment in sale 1
       await tether.connect(buyer).approve(saleAddress, normalize(50, 6));
-      await saleData.connect(seller).approveInvestor(saleId, buyer.address, normalize(40, 6))
+      await saleData.connect(seller).approveInvestors(saleId, [buyer.address], [normalize(40, 6)])
       await sale.connect(buyer).invest(40)
 
       // deploy a new token
@@ -218,12 +218,12 @@ describe("SANFTManager", async function () {
 
       // buyer invests in sale 2
       await tether.connect(buyer).approve(saleAddress2, normalize(400, 6));
-      await saleData.connect(seller).approveInvestor(saleId2, buyer.address, normalize(300, 6))
+      await saleData.connect(seller).approveInvestors(saleId2, [buyer.address], [normalize(300, 6)])
       await sale2.connect(buyer).invest(300)
 
       // buyer2 invests in sale 2
       await tether.connect(buyer2).approve(saleAddress2, normalize(400, 6));
-      await saleData.connect(seller).approveInvestor(saleId2, buyer2.address, normalize(300, 6))
+      await saleData.connect(seller).approveInvestors(saleId2, [buyer2.address], [normalize(300, 6)])
       await sale2.connect(buyer2).invest(300)
 
     })
