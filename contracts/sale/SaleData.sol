@@ -189,18 +189,10 @@ contract SaleData is ISaleData, RegistryUser {
     return _saleDB.getSetupById(saleId);
   }
 
-  function approveInvestor(
-    uint16 saleId,
-    address investor,
-    uint32 amount
-  ) external virtual override onlySaleOwner(saleId) {
-    _saleDB.setApproval(saleId, investor, amount);
-  }
-
   function approveInvestors(
     uint16 saleId,
-    address[] investors,
-    uint32[] amounts
+    address[] memory investors,
+    uint32[] memory amounts
   ) external virtual override onlySaleOwner(saleId) {
     require(investors.length == amounts.length, "SaleData: amounts inconsistent with investors");
     for (uint256 i = 0; i < investors.length; i++) {

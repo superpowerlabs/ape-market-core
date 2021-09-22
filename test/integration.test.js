@@ -176,7 +176,7 @@ describe.skip("Integration Test", function () {
 
       CL("Investor1 investing in ABC Sale with approval");
       // using hardcoded numbers here to simplicity
-      await saleData.connect(abcOwner).approveInvestor(abcSaleId, investor1.address, normalize(10000));
+      await saleData.connect(abcOwner).approveInvestors(abcSaleId, [investor1.address], [normalize(10000)]);
       await abcSale.connect(investor1).invest(normalize(6000));
       expect(await satoken.balanceOf(investor1.address)).equal(1);
       let saId = await satoken.tokenOfOwnerByIndex(investor1.address, 0);
@@ -204,7 +204,7 @@ describe.skip("Integration Test", function () {
       CL("Investor2 investing int XYZ Sale with approval");
       // using hardcoded numbers here to simplicity
       await tether.connect(investor2).approve(xyzSale.address, normalize(20000 * 1.1));
-      await saleData.connect(xyzOwner).approveInvestor(xyzSaleId, investor2.address, normalize(20000));
+      await saleData.connect(xyzOwner).approveInvestors(xyzSaleId, [investor2.address], [normalize(20000)]);
       await xyzSale.connect(investor2).invest(normalize(20000));
       expect(await satoken.balanceOf(investor2.address)).equal(1);
       saId = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
