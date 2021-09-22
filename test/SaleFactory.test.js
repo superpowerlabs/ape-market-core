@@ -103,6 +103,153 @@ describe("SaleFactory", async function () {
     })
   })
 
+  describe('#SaleSetupHasher', async function () {
+
+    function randomizeValue(v) {
+      let inc = Math.random() > 0.5
+      let add = parseInt(v / 10)
+      // console.log(v, add)
+        return v + (inc ? 1 : -1) * add
+    }
+
+    function generateRandomSchedule(p, d) {
+
+      let steps = 90 * Math.random() | 1
+      let p0 = p * Math.random() | 1
+      let d0 = d * Math.random() | 1
+      if (p0 === 0) p0++
+      let s = []
+      s.push({
+        waitTime: d0,
+        percentage: p0
+      })
+      p = p0
+      d = d0
+      for (let i = 0; i < steps; i++) {
+
+        p += randomizeValue(p0)
+        d += randomizeValue(d0)
+
+        if (p > 100) {
+          p = 100
+        }
+        if (d >= 9999) {
+          d = 9999
+          p = 100
+        }
+        if (i === steps - 1) {
+          p = 100
+        }
+
+        s.push({
+          waitTime: d,
+          percentage: p
+        })
+        if (p === 100 || d === 9999) {
+          break
+        }
+      }
+      return s
+    }
+
+    beforeEach(async function () {
+      await initNetworkAndDeploy()
+    })
+
+    it('random generation schedules', async function () {
+
+      for (let i = 0; i < 100; i++) {
+        let schedule = generateRandomSchedule(i, i * parseInt(100 * Math.random()))
+        try {
+          await saleSetupHasher.validateAndPackVestingSteps(schedule)
+          assert.isTrue(!!1)
+        } catch (e) {
+          console.log(schedule)
+          assert.isTrune(!1)
+        }
+      }
+
+    })
+
+    it('should revert if the schedule is wrong', async function () {
+
+
+      assertThrowsMessage(
+          saleSetupHasher.validateAndPackVestingSteps([
+            {
+              waitTime: 10,
+              percentage: 50
+            },
+            {
+              waitTime: 70,
+              percentage: 110
+            }
+          ]),
+          'Vest percentage should end at 100'
+      )
+
+      assertThrowsMessage(
+          saleSetupHasher.validateAndPackVestingSteps([
+            {
+              waitTime: 10,
+              percentage: 50
+            },
+            {
+              waitTime: 10000,
+              percentage: 100
+            }
+          ]),
+          'waitTime cannot be more than 9999 days'
+      )
+
+      assertThrowsMessage(
+          saleSetupHasher.validateAndPackVestingSteps([
+            {
+              waitTime: 10,
+              percentage: 30
+            },
+            {
+              waitTime: 30,
+              percentage: 60
+            },
+            {
+              waitTime: 20,
+              percentage: 90
+            },
+            {
+              waitTime: 40,
+              percentage: 100
+            }
+          ]),
+          'waitTime should be monotonic increasing'
+      )
+
+      assertThrowsMessage(
+          saleSetupHasher.validateAndPackVestingSteps([
+            {
+              waitTime: 10,
+              percentage: 30
+            },
+            {
+              waitTime: 20,
+              percentage: 50
+            },
+            {
+              waitTime: 30,
+              percentage: 40
+            },
+            {
+              waitTime: 40,
+              percentage: 100
+            }
+          ]),
+          'Vest percentage should be monotonic increasing'
+      )
+
+    })
+
+  })
+
   describe('#newSale', async function () {
 
     beforeEach(async function () {
@@ -114,7 +261,7 @@ describe("SaleFactory", async function () {
           percentage: 50
         },
         {
-          waitTime: 1000,
+          waitTime: 999,
           percentage: 100
         }
       ])

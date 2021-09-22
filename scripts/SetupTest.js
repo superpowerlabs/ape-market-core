@@ -145,7 +145,7 @@ async function main() {
     await sale.connect(seller).launch()
 
     await tether.connect(buyer).approve(saleAddress, normalize(400, 6));
-    await saleData.connect(seller).approveInvestor(saleId, buyer.address, normalize(200, 6))
+    await saleData.connect(seller).approveInvestors(saleId, [buyer.address], [normalize(200, 6)])
     await sale.connect(buyer).invest(200)
 
     saNFT = await getContractFromRegistry("SANFT", SANFTJson.abi, owner)
