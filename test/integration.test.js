@@ -1,11 +1,12 @@
 const {expect, assert} = require("chai")
 const {assertThrowsMessage, formatBundle, getTimestamp} = require('./helpers')
+const DeployUtils = require('../scripts/lib/DeployUtils')
 
 // const delay = ms => new Promise(res => setTimeout(res, ms));
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe.skip("Integration Test", function () {
+describe.only("Integration Test", function () {
 
   let Profile
   let profile
@@ -22,12 +23,10 @@ describe.skip("Integration Test", function () {
   let tokenExtras
   let SaleData
   let saleData
-
-
   let saleSetup
   let saleVestingSchedule
 
-  let owner, validator, factoryAdmin, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet
+  let owner, operator, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet
   let addr0 = '0x0000000000000000000000000000000000000000'
 
   async function getSignatureByValidator(saleId, setup, schedule) {
@@ -46,54 +45,89 @@ describe.skip("Integration Test", function () {
   }
 
   before(async function () {
-    [owner, validator, factoryAdmin, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet] = await ethers.getSigners()
+    [owner, validator, operator, apeWallet, seller, buyer, buyer2] = await ethers.getSigners()
   })
 
-  async function getSale(saleSetup, saleVestingSchedule) {
-    let saleId = await saleDB.nextSaleId()
-    let signature = getSignatureByValidator(saleId, saleSetup, saleVestingSchedule)
-    await factory.connect(factoryAdmin).approveSale(saleId)
-    await factory.connect(factoryAdmin).newSale(saleId, saleSetup, saleVestingSchedule, signature)
-    let saleAddress = await saleDB.getSaleAddressById(saleId)
-    return [new ethers.Contract(saleAddress, saleJson.abi, ethers.provider), saleId.toNumber()]
-  }
+  const deployUtils = new DeployUtils(ethers)
 
   async function initNetworkAndDeploy() {
 
-    Profile = await ethers.getContractFactory("Profile")
-    profile = await Profile.deploy()
-    await profile.deployed()
+   const results = await deployUtils.initAndDeploy({
+      apeWallet: apeWallet.address,
+      operators: [operator.address]
+    })
 
-    SaleData = await ethers.getContractFactory("SaleData")
-    saleData = await SaleData.deploy(apeWallet.address)
-    await saleData.deployed()
+    apeRegistry = results.apeRegistry
+    profile = results.profile
+    saleSetupHasher = results.saleSetupHasher
+    saleData = results.saleData
+    saleDB = results.saleDB
+    saleFactory = results.saleFactory
+    sANFT = results.sANFT
+    sANFTManager = results.sANFTManager
+    tokenRegistry = results.tokenRegistry
+    tether = results.uSDT
 
-    SaleFactory = await ethers.getContractFactory("SaleFactory")
-    factory = await SaleFactory.deploy(saleData.address, validator.address)
-    await factory.deployed()
-    await saleData.grantLevel(await saleData.ADMIN_LEVEL(), factory.address)
-    await factory.grantLevel(await factory.OPERATOR_LEVEL(), factoryAdmin.address)
+    sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
 
-    SANFTManager = await ethers.getContractFactory("SANFTManager")
-    tokenExtras = await SANFTManager.deploy(profile.address)
-    await tokenExtras.deployed()
+    saleVestingSchedule = [
+      {
+        waitTime: 0,
+        percentage: 20
+      },
+      {
+        waitTime: 30,
+        percentage: 50
+      },
+      {
+        waitTime: 90,
+        percentage: 100
+      }
+    ]
 
-    SANFT = await ethers.getContractFactory("SANFT")
-    satoken = await SANFT.deploy(factory.address, tokenExtras.address)
-    await satoken.deployed()
-    await tokenExtras.setToken(satoken.address)
+    const [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
 
-    ERC20Token = await ethers.getContractFactory("ERC20Token")
-    abc = await ERC20Token.connect(abcOwner).deploy("Abc Token", "ABC")
-    await abc.deployed()
-    xyz = await ERC20Token.connect(xyzOwner).deploy("XYZ", "XYZ");
-    await xyz.deployed();
+    saleSetup = {
+      owner: seller.address,
+      minAmount: 30,
+      capAmount: 20000,
+      tokenListTimestamp: 0,
+      remainingAmount: 0,
+      pricingToken: 1,
+      pricingPayment: 2,
+      paymentTokenId: 0,
+      vestingSteps: schedule[0],
+      sellingToken: sellingToken.address,
+      totalValue: 50000,
+      tokenIsTransferable: true,
+      tokenFeePoints: 500,
+      extraFeePoints: 0,
+      paymentFeePoints: 300,
+      saleAddress: addr0
+    };
 
-    Tether = await ethers.getContractFactory("TetherMock")
-    tether = await Tether.connect(tetherOwner).deploy()
-    await tether.deployed()
 
-    await satoken.setupUpPayments(tether.address, 100, apeWallet.address)
+    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
+
+    transaction = await saleFactory.connect(operator).approveSale(hash)
+
+    await transaction.wait()
+
+    saleId = await saleFactory.getSaleIdBySetupHash(hash)
+
+    await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
+        .emit(saleFactory, "NewSale")
+    saleAddress = await saleDB.getSaleAddressById(saleId)
+    sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
+    assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
+
+    await sellingToken.connect(seller).approve(saleAddress, await saleData.fromValueToTokensAmount(saleId, saleSetup.totalValue * 1.05))
+    await sale.connect(seller).launch()
+
+    await tether.connect(buyer).approve(saleAddress, normalize(400, 6));
+    await saleData.connect(seller).approveInvestor(saleId, [buyer.address], [normalize(200, 6)])
+    await sale.connect(buyer).invest(200)
+
   }
 
   function normalize(amount) {
@@ -330,9 +364,5 @@ describe.skip("Integration Test", function () {
       CL("Withdraw token from sale");
 
     })
-
-
   })
-
-
 })
