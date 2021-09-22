@@ -70,6 +70,10 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     emit SaleApproved(saleId);
   }
 
+  function isSaleApproved(bytes32 setupHash, uint16 saleId) public view override returns (bool) {
+    return _setupHashes[setupHash] == saleId;
+  }
+
   function revokeSale(bytes32 setupHash) external override onlyOperator {
     delete _setupHashes[setupHash];
     emit SaleRevoked(_setupHashes[setupHash]);
@@ -82,7 +86,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     address paymentToken
   ) external override {
     bytes32 setupHash = _saleSetupHasher.packAndHashSaleConfiguration(setup, extraVestingSteps, paymentToken);
-    require(saleId != 0 && _setupHashes[setupHash] == saleId, "SaleFactory: non approved sale or modified params");
+    require(isSaleApproved(setupHash, saleId), "SaleFactory: non approved sale or modified params");
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
     _saleData.setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
