@@ -17,7 +17,7 @@ contract SaleDB is ISaleDB, RegistryUser {
   mapping(address => uint16) private _saleIdByAddress;
   mapping(uint16 => uint256[]) private _extraVestingSteps;
 
-  mapping(uint16 => mapping(address => uint32)) private _approvedAmounts;
+  mapping(uint16 => mapping(address => uint32)) private _approvedAmounts; // Amount are in USD, uint is $1
   mapping(uint16 => mapping(address => uint32)) private _valuesInEscrow;
 
   modifier onlySaleData() {
@@ -98,9 +98,9 @@ contract SaleDB is ISaleDB, RegistryUser {
   function setApproval(
     uint16 saleId,
     address investor,
-    uint32 amount
+    uint32 usdValueAmount
   ) external virtual override onlySaleData {
-    _approvedAmounts[saleId][investor] = amount;
+    _approvedAmounts[saleId][investor] = usdValueAmount;
   }
 
   function deleteApproval(uint16 saleId, address investor) external virtual override onlySaleData {

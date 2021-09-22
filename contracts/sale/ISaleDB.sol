@@ -79,7 +79,7 @@ interface ISaleDB {
   function setApproval(
     uint16 saleId,
     address investor,
-    uint32 amount
+    uint32 usdValueAmount
   ) external;
 
   function deleteApproval(uint16 saleId, address investor) external;

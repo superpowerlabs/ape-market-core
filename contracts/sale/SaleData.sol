@@ -193,39 +193,39 @@ contract SaleData is ISaleData, RegistryUser {
   function approveInvestors(
     uint16 saleId,
     address[] memory investors,
-    uint32[] memory amounts
+    uint32[] memory USDValueAmounts
   ) external virtual override onlySaleOwner(saleId) {
-    require(investors.length == amounts.length, "SaleData: amounts inconsistent with investors");
+    require(investors.length == USDValueAmounts.length, "SaleData: amounts inconsistent with investors length");
     for (uint256 i = 0; i < investors.length; i++) {
-      _saleDB.setApproval(saleId, investors[i], amounts[i]);
+      _saleDB.setApproval(saleId, investors[i], USDValueAmounts[i]);
     }
   }
 
   function setInvest(
     uint16 saleId,
     address investor,
-    uint256 amount
+    uint256 usdValueAmount
   ) external virtual override onlySale(saleId) returns (uint256, uint256) {
     uint256 approved = _saleDB.getApproval(saleId, investor);
-    require(amount <= approved, "SaleData: Amount is above approved amount");
+    require(usdValueAmount <= approved, "SaleData: Amount is above approved amount");
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
-    require(amount >= setup.minAmount, "SaleData: Amount is too low");
-    uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
+    require(usdValueAmount >= setup.minAmount, "SaleData: Amount is too low");
+    uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(usdValueAmount));
     require(
       tokensAmount <= uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePoints).div(10000)), //remainingAmountWithoutFee,
       "SaleData: Not enough tokens available"
     );
-    if (amount == approved) {
+    if (usdValueAmount == approved) {
       _saleDB.deleteApproval(saleId, investor);
     } else {
-      _saleDB.setApproval(saleId, investor, uint32(uint256(approved).sub(amount)));
+      _saleDB.setApproval(saleId, investor, uint32(uint256(approved).sub(usdValueAmount)));
     }
     uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
-    uint256 payment = amount.mul(decimals).mul(setup.pricingPayment).div(setup.pricingToken);
-    uint256 buyerFee = payment.mul(setup.paymentFeePoints).div(10000);
+    uint256 paymentTokenAmount = usdValueAmount.mul(10 ** decimals);
+    uint256 buyerFee = paymentTokenAmount.mul(setup.paymentFeePoints).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
     _sanftManager.mint(investor, saleId, tokensAmount);
-    return (payment, buyerFee);
+    return (paymentTokenAmount, buyerFee);
   }
 
   function setWithdrawToken(uint16 saleId, uint256 amount) external virtual override onlySale(saleId) returns (IERC20Min) {
