@@ -193,11 +193,11 @@ contract SaleData is ISaleData, RegistryUser {
   function approveInvestors(
     uint16 saleId,
     address[] memory investors,
-    uint32[] memory uSDValueAmounts
+    uint32[] memory USDValueAmounts
   ) external virtual override onlySaleOwner(saleId) {
-    require(investors.length == uSDValueAmounts.length, "SaleData: amounts inconsistent with investors length");
+    require(investors.length == USDValueAmounts.length, "SaleData: amounts inconsistent with investors length");
     for (uint256 i = 0; i < investors.length; i++) {
-      _saleDB.setApproval(saleId, investors[i], uSDValueAmounts[i]);
+      _saleDB.setApproval(saleId, investors[i], USDValueAmounts[i]);
     }
   }
 
@@ -221,7 +221,7 @@ contract SaleData is ISaleData, RegistryUser {
       _saleDB.setApproval(saleId, investor, uint32(uint256(approved).sub(usdValueAmount)));
     }
     uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
-    uint256 paymentTokenAmount = usdValueAmount.mul(10**decimals);
+    uint256 paymentTokenAmount = usdValueAmount.mul(10 ** decimals);
     uint256 buyerFee = paymentTokenAmount.mul(setup.paymentFeePoints).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
     _sanftManager.mint(investor, saleId, tokensAmount);
