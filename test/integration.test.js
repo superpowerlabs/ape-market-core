@@ -6,7 +6,7 @@ const DeployUtils = require('../scripts/lib/DeployUtils')
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe.only("Integration Test", function () {
+describe("Integration Test", function () {
 
   let Profile
   let profile
@@ -16,7 +16,7 @@ describe.only("Integration Test", function () {
   let Tether
   let tether
   let SANFT
-  let satoken
+  let sANFT
   let SaleFactory
   let factory
   let SANFTManager
@@ -26,7 +26,7 @@ describe.only("Integration Test", function () {
   let saleSetup
   let saleVestingSchedule
 
-  let owner, operator, tetherOwner, abcOwner, xyzOwner, investor1, investor2, apeWallet
+  let owner, operator, tetherOwner, abcOwner, xyzOwner, buyer, buyer1, apeWallet
   let addr0 = '0x0000000000000000000000000000000000000000'
 
   async function getSignatureByValidator(saleId, setup, schedule) {
@@ -67,25 +67,44 @@ describe.only("Integration Test", function () {
     sANFTManager = results.sANFTManager
     tokenRegistry = results.tokenRegistry
     tether = results.uSDT
+  }
 
-    sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
+  function normalize(val, n = 18) {
+    return '' + val + '0'.repeat(n)
+  }
 
-    saleVestingSchedule = [
-      {
-        waitTime: 0,
-        percentage: 20
-      },
-      {
-        waitTime: 30,
-        percentage: 50
-      },
-      {
-        waitTime: 90,
-        percentage: 100
-      }
-    ]
+  describe('Full flow', async function () {
 
-    const [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
+    beforeEach(async function () {
+      await initNetworkAndDeploy()
+    })
+
+    it("should verify that the entire process works", async function () {
+
+      CL('Fund investors')
+      await (await tether.transfer(buyer.address, normalize(40000, 6))).wait()
+      await (await tether.transfer(buyer2.address, normalize(50000, 6))).wait()
+
+      CL('Deploy ABC Token')
+      sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
+
+      saleVestingSchedule = [
+        {
+          waitTime: 0,
+          percentage: 20
+        },
+        {
+          waitTime: 30,
+          percentage: 50
+        },
+        {
+          waitTime: 90,
+          percentage: 100
+        }
+      ]
+
+    CL('validateAndPackVestingSteps')
+    let [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
 
     saleSetup = {
       owner: seller.address,
@@ -106,11 +125,11 @@ describe.only("Integration Test", function () {
       saleAddress: addr0
     };
 
-
+    CL('packAndHashSaleConfiguration')
     hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
 
+    CL("Approve Sale")
     transaction = await saleFactory.connect(operator).approveSale(hash)
-
     await transaction.wait()
 
     saleId = await saleFactory.getSaleIdBySetupHash(hash)
@@ -118,242 +137,140 @@ describe.only("Integration Test", function () {
     await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
         .emit(saleFactory, "NewSale")
     saleAddress = await saleDB.getSaleAddressById(saleId)
-    sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
+    abcSale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
     assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 
+    CL("Launch abcSale")
     await sellingToken.connect(seller).approve(saleAddress, await saleData.fromValueToTokensAmount(saleId, saleSetup.totalValue * 1.05))
-    await sale.connect(seller).launch()
+    await abcSale.connect(seller).launch()
 
-    await tether.connect(buyer).approve(saleAddress, normalize(400, 6));
-    await saleData.connect(seller).approveInvestor(saleId, [buyer.address], [normalize(200, 6)])
-    await sale.connect(buyer).invest(200)
+    CL("Buyer investing in ABC Sale without approval");
+    // using hardcoded numbers here to simplicity
+    await tether.connect(buyer).approve(abcSale.address, normalize(10000 * 1.1, 6));
+    await expect(abcSale.connect(buyer).invest(10000)).revertedWith("SaleData: Amount is above approved amount");
 
-  }
+    CL("Buyer investing in ABC Sale with approval");
+    // using hardcoded numbers here to simplicity
+    await saleData.connect(seller).approveInvestors(saleId, [buyer.address], [10000]);
+    await abcSale.connect(buyer).invest(6000);
+    expect(await sANFT.balanceOf(buyer.address)).equal(1);
+    let saId = await sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+    let bundle = await sANFT.getBundle(saId);
+    expect(await bundle[0].saleId).equal(saleId);
+    CL("Checking token balance");
+    expect(await bundle[0].fullAmount).equal(normalize(3000));
+    CL("Check Tether balance");
+    expect(await tether.balanceOf(abcSale.address)).equal(normalize(6000, 6));
 
-  function normalize(amount) {
-    return '' + amount + '0'.repeat(18);
-  }
-
-  function normalizeMinMaxAmount (amount) {
-    return '' + amount + '0'.repeat(15);
-  }
-
-  describe('Full flow', async function () {
-
-    beforeEach(async function () {
-      await initNetworkAndDeploy()
-    })
-
-    it("should verify that the entire process works", async function () {
-
-      CL('Fund investors')
-      await (await tether.connect(tetherOwner).transfer(investor1.address, normalize(40000)))
-      expect(await tether.balanceOf(investor1.address)).equal(normalize(40000));
-      await (await tether.connect(tetherOwner).transfer(investor2.address, normalize(50000)))
-      expect(await tether.balanceOf(investor2.address)).equal(normalize(50000));
-
-      // create sales
-
-      saleSetup = {
-        satoken: satoken.address,
-        sellingToken: abc.address,
-        paymentToken: tether.address,
-        owner: abcOwner.address,
-        remainingAmount: 0,
-        minAmount: 100000,
-        capAmount: 20000000,
-        pricingToken: 1,
-        pricingPayment: 2,
-        tokenListTimestamp: 0,
-        tokenFeePoints: 500,
-        paymentFeePoints: 1000,
-        isTokenTransferable: true
-      };
-      saleVestingSchedule = [
-        {
-          waitTime: 10,
-          percentage: 50
-        },
-        {
-          waitTime: 999,
-          percentage: 100
-        }]
-
-      CL('Deploy new sale for ABC')
-      const [abcSale, abcSaleId] = await getSale(saleSetup, saleVestingSchedule)
-
-      const setup = await saleData.getSetupById(abcSaleId)
-      expect(setup.owner).equal(abcOwner.address)
-
-      CL('Launching ABC Sale')
-      await abc.connect(abcOwner).approve(abcSale.address, normalizeMinMaxAmount(setup.capAmount * 1.05))
-
-      await abcSale.connect(abcOwner).launch()
-      expect(await abc.balanceOf(abcSale.address)).equal(normalizeMinMaxAmount(setup.capAmount * 1.05));
-
-      saleSetup.owner = xyzOwner.address;
-      saleSetup.sellingToken = xyz.address;
-      saleSetup.pricingPayment = 1;
-
-      CL('Deploy new sale for XYZ')
-      const [xyzSale, xyzSaleId] = await getSale(saleSetup, saleVestingSchedule)
-
-      CL("Launching XYZ Sale");
-      await xyz.connect(xyzOwner).approve(xyzSale.address, normalizeMinMaxAmount(setup.capAmount * 1.05));
-      await xyzSale.connect(xyzOwner).launch()
-      expect(await xyz.balanceOf(xyzSale.address)).equal(normalizeMinMaxAmount(setup.capAmount * 1.05));
-
-      CL("Investor1 investing in ABC Sale without approval");
-      // using hardcoded numbers here to simplicity
-      await tether.connect(investor1).approve(abcSale.address, normalize(10000 * 2 * 1.1));
-      await expect(abcSale.connect(investor1).invest(normalize(10000))).revertedWith("Sale: Amount if above approved amount");
-
-      CL("Investor1 investing in ABC Sale with approval");
-      // using hardcoded numbers here to simplicity
-      await saleData.connect(abcOwner).approveInvestors(abcSaleId, [investor1.address], [normalize(10000)]);
-      await abcSale.connect(investor1).invest(normalize(6000));
-      expect(await satoken.balanceOf(investor1.address)).equal(1);
-      let saId = await satoken.tokenOfOwnerByIndex(investor1.address, 0);
-      let bundle = await satoken.getBundle(saId);
-      expect(await bundle.sas[0].sale).equal(abcSale.address);
-      // 5% fee
-      expect(await bundle.sas[0].remainingAmount).equal(normalize(6000));
-      // 10% fee
-      expect(await tether.balanceOf(abcSale.address)).equal(normalize(6000 * 2));
+    CL("buyer investing in ABC Sale with approval again");
+    // using hardcoded numbers here to simplicity
+    await abcSale.connect(buyer).invest(4000);
+    expect(await sANFT.balanceOf(buyer.address)).equal(2);
+    saId = await sANFT.tokenOfOwnerByIndex(buyer.address, 1);
+    bundle = await sANFT.getBundle(saId);
+    expect(bundle[0].saleId).equal(saleId);
+    expect(bundle[0].fullAmount).equal(normalize(2000));
+    expect(await tether.balanceOf(abcSale.address)).equal(normalize(6000 + 4000, 6));
 
 
-      CL("Investor1 investing in ABC Sale with approval again");
-      // using hardcoded numbers here to simplicity
-      await abcSale.connect(investor1).invest(normalize(4000));
-      expect(await satoken.balanceOf(investor1.address)).equal(2);
-      saId = await satoken.tokenOfOwnerByIndex(investor1.address, 1);
-      bundle = await satoken.getBundle(saId);
-      expect(await bundle.sas[0].sale).equal(abcSale.address);
-      // 5% fee
-      expect(await bundle.sas[0].remainingAmount).equal(normalize(4000));
-      // 10% fee
-      expect(await tether.balanceOf(abcSale.address)).equal(normalize((6000 + 4000) * 2));
+    CL("Checking Ape Owner for investing fee");
+    expect(await sANFT.balanceOf(apeWallet.address)).equal(1);
+    let nft = sANFT.tokenOfOwnerByIndex(apeWallet.address, 0);
+    bundle = await sANFT.getBundle(nft);
+    expect(bundle[0].saleId).equal(saleId);
+    expect(bundle[0].fullAmount).equal(normalize(1250));
+    expect(await tether.balanceOf(apeWallet.address)).equal(normalize(300, 6));
 
-
-      CL("Investor2 investing int XYZ Sale with approval");
-      // using hardcoded numbers here to simplicity
-      await tether.connect(investor2).approve(xyzSale.address, normalize(20000 * 1.1));
-      await saleData.connect(xyzOwner).approveInvestors(xyzSaleId, [investor2.address], [normalize(20000)]);
-      await xyzSale.connect(investor2).invest(normalize(20000));
-      expect(await satoken.balanceOf(investor2.address)).equal(1);
-      saId = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
-      bundle = await satoken.getBundle(saId);
-      expect(await bundle.sas[0].sale).equal(xyzSale.address);
-      // 5% fee
-      expect(await bundle.sas[0].remainingAmount).equal(normalize(20000))
-      // 10% fee
-      expect(await tether.balanceOf(xyzSale.address)).equal(normalize(20000));
-
-
-      CL("Checking Ape Owner for investing fee");
-      expect(await satoken.balanceOf(apeWallet.address)).equal(3);
-      let nft = satoken.tokenOfOwnerByIndex(apeWallet.address, 0);
-      bundle = await satoken.getBundle(nft);
-      expect(bundle.sas[0].sale).equal(abcSale.address);
-      expect(bundle.sas[0].remainingAmount).equal(normalize(300));
-      nft = satoken.tokenOfOwnerByIndex(apeWallet.address, 1);
-      bundle = await satoken.getBundle(nft);
-      expect(bundle.sas[0].sale).equal(abcSale.address);
-      expect(bundle.sas[0].remainingAmount).equal(normalize(200));
-      bundle = await satoken.getBundle(satoken.tokenOfOwnerByIndex(apeWallet.address, 2));
-      expect(bundle.sas[0].sale).equal(xyzSale.address);
-      expect(bundle.sas[0].remainingAmount).equal(normalize(1000));
-      expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4000));
-
+/*
       CL("Splitting investor 2's nft");
-      nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
-      bundle = await satoken.getBundle(nft);
-      expect(bundle.sas[0].remainingAmount).equal(normalize(20000));
+      nft = await sANFT.tokenOfOwnerByIndex(buyer1.address, 0);
+      bundle = await sANFT.getBundle(nft);
+      expect(bundle[0].remainingAmount).equal(normalize(20000));
       // do the split
       let keptAmounts = [normalize(8000)];
-      await tether.connect(investor2).approve(satoken.address, normalize(100));
-      await satoken.connect(investor2).split(nft, keptAmounts);
-      expect(await satoken.balanceOf(investor2.address)).equal(2);
-      nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
+      await tether.connect(buyer1).approve(sANFT.address, normalize(100));
+      await sANFT.connect(buyer1).split(nft, keptAmounts);
+      expect(await sANFT.balanceOf(buyer1.address)).equal(2);
+      nft = await sANFT.tokenOfOwnerByIndex(buyer1.address, 0);
       // CL('nft', nft.toNumber()) // 7
-      bundle = await satoken.getBundle(nft);
+      bundle = await sANFT.getBundle(nft);
       CL(xyzSale.address)
-      expect(bundle.sas[0].sale).equal(xyzSale.address);
-      expect(bundle.sas[0].remainingAmount).equal(normalize(8000));
-      nft = await satoken.tokenOfOwnerByIndex(investor2.address, 1);
+      expect(bundle[0].sale).equal(xyzSale.address);
+      expect(bundle[0].remainingAmount).equal(normalize(8000));
+      nft = await sANFT.tokenOfOwnerByIndex(buyer1.address, 1);
       // CL('nft', nft.toNumber()) // 6
 
-      bundle = await satoken.getBundle(nft);
-      expect(bundle.sas[0].sale).equal(xyzSale.address);
-      expect(bundle.sas[0].remainingAmount).equal(normalize(12000));
+      bundle = await sANFT.getBundle(nft);
+      expect(bundle[0].sale).equal(xyzSale.address);
+      expect(bundle[0].remainingAmount).equal(normalize(12000));
       // check for 100 fee collected
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4100));
 
 
-      CL("Transfer one of investor2 nft to investor1");
-      expect(await satoken.balanceOf(investor2.address)).equal(2);
-      expect(await satoken.balanceOf(investor1.address)).equal(2);
-      nft = await satoken.tokenOfOwnerByIndex(investor2.address, 0);
-      await tether.connect(investor2).approve(satoken.address, normalize(100))
-      await satoken.connect(investor2).transferFrom(investor2.address, investor1.address, nft)
-      expect(await satoken.balanceOf(investor2.address)).equal(1);
-      expect(await satoken.balanceOf(investor1.address)).equal(3);
+      CL("Transfer one of buyer1 nft to buyer");
+      expect(await sANFT.balanceOf(buyer1.address)).equal(2);
+      expect(await sANFT.balanceOf(buyer.address)).equal(2);
+      nft = await sANFT.tokenOfOwnerByIndex(buyer1.address, 0);
+      await tether.connect(buyer1).approve(sANFT.address, normalize(100))
+      await sANFT.connect(buyer1).transferFrom(buyer1.address, buyer.address, nft)
+      expect(await sANFT.balanceOf(buyer1.address)).equal(1);
+      expect(await sANFT.balanceOf(buyer.address)).equal(3);
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4100));
 
-      CL("Merge investor1's nft");
-      expect(await satoken.balanceOf(investor1.address)).equal(3);
-      let nft0 = satoken.tokenOfOwnerByIndex(investor1.address, 0);
-      let nft1 = satoken.tokenOfOwnerByIndex(investor1.address, 1);
-      let nft2 = satoken.tokenOfOwnerByIndex(investor1.address, 2);
-      await tether.connect(investor1).approve(satoken.address, normalize(100));
-      await satoken.connect(investor1).merge([nft0, nft1, nft2]);
-      expect(await satoken.balanceOf(investor1.address)).equal(1);
+      CL("Merge buyer's nft");
+      expect(await sANFT.balanceOf(buyer.address)).equal(3);
+      let nft0 = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+      let nft1 = sANFT.tokenOfOwnerByIndex(buyer.address, 1);
+      let nft2 = sANFT.tokenOfOwnerByIndex(buyer.address, 2);
+      await tether.connect(buyer).approve(sANFT.address, normalize(100));
+      await sANFT.connect(buyer).merge([nft0, nft1, nft2]);
+      expect(await sANFT.balanceOf(buyer.address)).equal(1);
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4200));
-      nft = await satoken.tokenOfOwnerByIndex(investor1.address, 0);
-      bundle = await satoken.getBundle(nft);
-      expect(bundle.sas.length).equal(2);
-      expect(bundle.sas[0].sale).equal(abcSale.address);
-      expect(bundle.sas[0].remainingAmount).equal(normalize(10000));
-      expect(bundle.sas[1].sale).equal(xyzSale.address);
-      expect(bundle.sas[1].remainingAmount).equal(normalize(8000));
+      nft = await sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+      bundle = await sANFT.getBundle(nft);
+      expect(bundle.length).equal(2);
+      expect(bundle[0].sale).equal(abcSale.address);
+      expect(bundle[0].remainingAmount).equal(normalize(10000));
+      expect(bundle[1].sale).equal(xyzSale.address);
+      expect(bundle[1].remainingAmount).equal(normalize(8000));
       expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4200));
 
       let currentBlockTimeStamp;
-      CL("Vesting NFT of investor1 after first mile stone");
+      CL("Vesting NFT of buyer after first mile stone");
       // list tokens
       await saleData.connect(abcOwner).triggerTokenListing(abcSaleId);
       await saleData.connect(xyzOwner).triggerTokenListing(xyzSaleId);
 
       // before vesting
-      nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
-      bundle = await satoken.getBundle(nft);
-      expect(await abc.balanceOf(investor1.address)).equal(0);
-      expect(bundle.sas[0].remainingAmount).equal(normalize(10000));
+      nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+      bundle = await sANFT.getBundle(nft);
+      expect(await abc.balanceOf(buyer.address)).equal(0);
+      expect(bundle[0].remainingAmount).equal(normalize(10000));
 
       // move forward in time
       await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp(ethers) + 20]);
 
-      await satoken.connect(investor1).vest(nft);
-      nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
-      bundle = await satoken.getBundle(nft);
-      expect(await abc.balanceOf(investor1.address)).equal(normalize(5000));
-      expect(bundle.sas[0].remainingAmount).equal(normalize(5000));
-      expect(await xyz.balanceOf(investor1.address)).equal(normalize(4000));
-      expect(bundle.sas[1].remainingAmount).equal(normalize(4000));
+      await sANFT.connect(buyer).vest(nft);
+      nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+      bundle = await sANFT.getBundle(nft);
+      expect(await abc.balanceOf(buyer.address)).equal(normalize(5000));
+      expect(bundle[0].remainingAmount).equal(normalize(5000));
+      expect(await xyz.balanceOf(buyer.address)).equal(normalize(4000));
+      expect(bundle[1].remainingAmount).equal(normalize(4000));
 
-      CL("Vesting NFT 1 of investor1 after second mile stone");
-      expect(await satoken.balanceOf(investor1.address)).equal(1);
-      nft = satoken.tokenOfOwnerByIndex(investor1.address, 0);
+      CL("Vesting NFT 1 of buyer after second mile stone");
+      expect(await sANFT.balanceOf(buyer.address)).equal(1);
+      nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
       network = await ethers.provider.getNetwork();
 
       await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp(ethers) + 1020]);
 
-      await satoken.connect(investor1).vest(nft);
-      expect(await abc.balanceOf(investor1.address)).equal(normalize(10000));
-      expect(await xyz.balanceOf(investor1.address)).equal(normalize(8000));
+      await sANFT.connect(buyer).vest(nft);
+      expect(await abc.balanceOf(buyer.address)).equal(normalize(10000));
+      expect(await xyz.balanceOf(buyer.address)).equal(normalize(8000));
       // SAs should have been burned
 
-      expect(await satoken.balanceOf(investor1.address)).equal(0);
+      expect(await sANFT.balanceOf(buyer.address)).equal(0);
 
       CL("Withdraw payment from sale");
       await expect(abcSale.connect(xyzOwner).withdrawPayment(normalize(20000))).revertedWith("Sale: caller is not the owner");
@@ -361,7 +278,7 @@ describe.only("Integration Test", function () {
       CL("balance is", (await tether.balanceOf(abcSale.address)).toString());
       await abcSale.connect(abcOwner).withdrawPayment(normalize(20000))
 
-      CL("Withdraw token from sale");
+      CL("Withdraw token from sale"); */
 
     })
   })

@@ -63,13 +63,13 @@ contract Sale is ISale, Ownable {
 
   // Invest amount into the sale.
   // Investor needs to approve the payment + fee amount need for purchase before calling this
-  function invest(uint32 amount) external virtual override {
+  function invest(uint32 USDValueAmount) external virtual override {
     ISaleData saleData = _getSaleData();
     ISaleDB.Setup memory setup = saleData.getSetupById(_saleId);
-    (uint256 tokenPayment, uint256 buyerFee) = saleData.setInvest(_saleId, _msgSender(), amount);
+    (uint256 paymentTokenAmount, uint256 buyerFee) = saleData.setInvest(_saleId, _msgSender(), USDValueAmount);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(setup.paymentTokenId));
     paymentToken.transferFrom(_msgSender(), saleData.apeWallet(), buyerFee);
-    paymentToken.transferFrom(_msgSender(), address(this), tokenPayment);
+    paymentToken.transferFrom(_msgSender(), address(this), paymentTokenAmount);
   }
 
   function withdrawPayment(uint256 amount) external virtual override {

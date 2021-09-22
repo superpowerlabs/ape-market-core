@@ -204,28 +204,28 @@ contract SaleData is ISaleData, RegistryUser {
   function setInvest(
     uint16 saleId,
     address investor,
-    uint256 amount
+    uint256 USDValueAmount
   ) external virtual override onlySale(saleId) returns (uint256, uint256) {
     uint256 approved = _saleDB.getApproval(saleId, investor);
-    require(amount <= approved, "SaleData: Amount is above approved amount");
+    require(USDValueAmount <= approved, "SaleData: Amount is above approved amount");
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
-    require(amount >= setup.minAmount, "SaleData: Amount is too low");
-    uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(amount));
+    require(USDValueAmount >= setup.minAmount, "SaleData: Amount is too low");
+    uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(USDValueAmount));
     require(
       tokensAmount <= uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePoints).div(10000)), //remainingAmountWithoutFee,
       "SaleData: Not enough tokens available"
     );
-    if (amount == approved) {
+    if (USDValueAmount == approved) {
       _saleDB.deleteApproval(saleId, investor);
     } else {
-      _saleDB.setApproval(saleId, investor, uint32(uint256(approved).sub(amount)));
+      _saleDB.setApproval(saleId, investor, uint32(uint256(approved).sub(USDValueAmount)));
     }
     uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
-    uint256 payment = amount.mul(decimals).mul(setup.pricingPayment).div(setup.pricingToken);
-    uint256 buyerFee = payment.mul(setup.paymentFeePoints).div(10000);
+    uint256 paymentTokenAmount = USDValueAmount.mul(10 ** decimals);
+    uint256 buyerFee = paymentTokenAmount.mul(setup.paymentFeePoints).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
     _sanftManager.mint(investor, saleId, tokensAmount);
-    return (payment, buyerFee);
+    return (paymentTokenAmount, buyerFee);
   }
 
   function setWithdrawToken(uint16 saleId, uint256 amount) external virtual override onlySale(saleId) returns (IERC20Min) {
