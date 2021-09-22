@@ -17,6 +17,8 @@ interface ISaleFactory {
 
   function approveSale(bytes32 setupHash) external;
 
+  function isSaleApproved(bytes32 setupHash, uint16 saleId) external view returns (bool);
+
   function revokeSale(bytes32 setupHash) external;
 
   function newSale(

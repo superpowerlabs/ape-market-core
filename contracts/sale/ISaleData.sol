@@ -57,7 +57,7 @@ interface ISaleData {
   function approveInvestors(
     uint16 saleId,
     address[] memory investors,
-    uint32[] memory amounts
+    uint32[] memory uSDValueAmounts
   ) external;
 
   function setInvest(
