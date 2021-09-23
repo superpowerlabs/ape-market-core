@@ -21,5 +21,5 @@ interface ISale {
     uint120 fullAmount,
     uint120 remainingAmount,
     uint256 requestedAmount
-  ) external returns (bool);
+  ) external returns (uint256);
 }

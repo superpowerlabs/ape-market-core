@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../nft/ISANFT.sol";
 import "./ISaleDB.sol";
+import "./IERC20Min.sol";
 
 interface ISaleData {
   event ApeWalletUpdated(address wallet);
