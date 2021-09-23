@@ -227,25 +227,39 @@ describe("Integration Test", function () {
     expect(bundle[0].remainingAmount).equal(normalize(4970, 16));
 
 
+    let currentBlockTimeStamp;
+    CL("Vesting NFT of buyer after first mile stone");
+    // list tokens
+    await saleData.connect(seller).triggerTokenListing(saleId);
+
+    // before vesting
+    nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+    bundle = await sANFT.getBundle(nft);
+    expect(await sellingToken.balanceOf(buyer.address)).equal(0);
+    expect(bundle[0].remainingAmount).equal(normalize(49203, 17));
+
+    CL("first vesting")
+    let [ids, amounts] = await sANFT.withdrawables(nft);
+    expect(ids[0]).equal(saleId);
+    expect(amounts[0]).equal(normalize(98406, 16)); // 20% vested
+
+    CL("Partial withdraw")
+    await sANFT.connect(buyer).withdraw(nft, [normalize(48406, 16)]);
+    expect(await sellingToken.balanceOf(buyer.address)).equal(normalize(48406, 16));
+    nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+    [ids, amounts] = await sANFT.withdrawables(nft);
+    expect(amounts[0]).equal(normalize(50000, 16));
+
+    CL("Full withdraw")
+    nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+    await sANFT.connect(buyer).withdraw(nft, [0]);
+    expect(await sellingToken.balanceOf(buyer.address)).equal(normalize(98406, 16));
+
     /*
-      let currentBlockTimeStamp;
-      CL("Vesting NFT of buyer after first mile stone");
-      // list tokens
-      await saleData.connect(abcOwner).triggerTokenListing(abcSaleId);
 
-      // before vesting
-      nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
-      bundle = await sANFT.getBundle(nft);
-      expect(await abc.balanceOf(buyer.address)).equal(0);
-      expect(bundle[0].remainingAmount).equal(normalize(10000));
+    await network.provider.send("evm_increaseTime", [3600])
+    await network.provider.send("evm_mine")
 
-      // move forward in time
-      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp(ethers) + 20]);
-
-      await sANFT.connect(buyer).vest(nft);
-      nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
-      bundle = await sANFT.getBundle(nft);
-      expect(await abc.balanceOf(buyer.address)).equal(normalize(5000));
       expect(bundle[0].remainingAmount).equal(normalize(5000));
       expect(await xyz.balanceOf(buyer.address)).equal(normalize(4000));
       expect(bundle[1].remainingAmount).equal(normalize(4000));
@@ -270,7 +284,7 @@ describe("Integration Test", function () {
       CL("balance is", (await tether.balanceOf(abcSale.address)).toString());
       await abcSale.connect(abcOwner).withdrawPayment(normalize(20000))
 
-      CL("Withdraw token from sale"); */
+      CL("Withdraw token from sale");  */
 
     })
   })

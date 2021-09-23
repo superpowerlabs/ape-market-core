@@ -68,13 +68,6 @@ interface ISaleData {
 
   function setWithdrawToken(uint16 saleId, uint256 amount) external returns (IERC20Min);
 
-  function isVested(
-    uint16 saleId,
-    uint120 fullAmount,
-    uint120 remainingAmount,
-    uint256 requestedAmount
-  ) external view returns (bool);
-
   function vestedAmount(
     uint16 saleId,
     uint120 fullAmount,

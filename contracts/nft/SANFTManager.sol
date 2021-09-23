@@ -93,7 +93,6 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     require(amounts.length == bundle.length, "SANFTManager: amounts inconsistent with SAs");
     bool done;
     for (uint256 i = 0; i < bundle.length; i++) {
-      if (amounts[i] > 0) {
         ISaleDB.Setup memory setup = _saleData.getSetupById(bundle[i].saleId);
         if (setup.tokenListTimestamp != 0) {
           ISale sale = ISale(_saleDB.getSaleAddressById(bundle[i].saleId));
@@ -102,7 +101,6 @@ contract SANFTManager is ISANFTManager, RegistryUser {
             done = true;
           }
         }
-      }
     }
     if (done) {
       // puts the modified SA in a new NFT and burns the existing one

@@ -93,7 +93,11 @@ contract Sale is ISale, Ownable {
     uint256 requestedAmount
   ) external virtual override onlyFromManager returns (bool) {
     ISaleData saleData = _getSaleData();
-    if (saleData.isVested(_saleId, fullAmount, remainingAmount, requestedAmount)) {
+    uint256 vestedAmount = saleData.vestedAmount(_saleId, fullAmount, remainingAmount);
+    if (requestedAmount == 0) {
+      requestedAmount = vestedAmount;
+    }
+    if (requestedAmount <= vestedAmount) {
       saleData.getSetupById(_saleId).sellingToken.transfer(saOwner, requestedAmount);
       return true;
     } else {
