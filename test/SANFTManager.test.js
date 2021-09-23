@@ -172,10 +172,9 @@ describe("SANFTManager", async function () {
       bundle = await sANFT.getBundle(nft);
       let bundle2 = await sANFT.getBundle(nft2);
 
-      assert.equal(bundle2[0].remainingAmount.toString(), normalize(30))
+      assert.equal(bundle[0].remainingAmount.toString(), normalize(30))
       // 69 because buyer payed a 1% fee
-      assert.equal(bundle[0].remainingAmount.toString(), normalize(69))
-
+      assert.equal(bundle2[0].remainingAmount.toString(), normalize(69))
     })
 
   })
