@@ -254,38 +254,35 @@ describe("Integration Test", function () {
     nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
     await sANFT.connect(buyer).withdraw(nft, [0]);
     expect(await sellingToken.balanceOf(buyer.address)).equal(normalize(98406, 16));
+    nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+    [ids, amounts] = await sANFT.withdrawables(nft);
+    expect(amounts[0]).equal(0);
 
-    /*
 
-    await network.provider.send("evm_increaseTime", [3600])
+    CL("Moving forward 50 days")
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 50])
     await network.provider.send("evm_mine")
 
-      expect(bundle[0].remainingAmount).equal(normalize(5000));
-      expect(await xyz.balanceOf(buyer.address)).equal(normalize(4000));
-      expect(bundle[1].remainingAmount).equal(normalize(4000));
+    nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+    bundle = await sANFT.getBundle(nft);
+    [ids, amounts] = await sANFT.withdrawables(nft);
+    expect(amounts[0]).equal(normalize(147609, 16)); // additional 30% vested
 
-      CL("Vesting NFT 1 of buyer after second mile stone");
-      expect(await sANFT.balanceOf(buyer.address)).equal(1);
-      nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
-      network = await ethers.provider.getNetwork();
+    CL("Moving forward 50 more days")
+    await network.provider.send("evm_increaseTime", [3600 * 24 * 50])
+    await network.provider.send("evm_mine")
 
-      await ethers.provider.send("evm_setNextBlockTimestamp", [await getTimestamp(ethers) + 1020]);
+    nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+    bundle = await sANFT.getBundle(nft);
+    [ids, amounts] = await sANFT.withdrawables(nft);
+    expect(amounts[0]).equal(normalize(393624, 16)); // all vested
 
-      await sANFT.connect(buyer).vest(nft);
-      expect(await abc.balanceOf(buyer.address)).equal(normalize(10000));
-      expect(await xyz.balanceOf(buyer.address)).equal(normalize(8000));
-      // SAs should have been burned
-
-      expect(await sANFT.balanceOf(buyer.address)).equal(0);
-
-      CL("Withdraw payment from sale");
-      await expect(abcSale.connect(xyzOwner).withdrawPayment(normalize(20000))).revertedWith("Sale: caller is not the owner");
+    /*
 
       CL("balance is", (await tether.balanceOf(abcSale.address)).toString());
       await abcSale.connect(abcOwner).withdrawPayment(normalize(20000))
 
-      CL("Withdraw token from sale");  */
-
+    */
     })
   })
 })

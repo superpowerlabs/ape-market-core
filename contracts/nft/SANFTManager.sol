@@ -96,8 +96,9 @@ contract SANFTManager is ISANFTManager, RegistryUser {
         ISaleDB.Setup memory setup = _saleData.getSetupById(bundle[i].saleId);
         if (setup.tokenListTimestamp != 0) {
           ISale sale = ISale(_saleDB.getSaleAddressById(bundle[i].saleId));
-          if (sale.vest(tokenOwner, bundle[i].fullAmount, bundle[i].remainingAmount, amounts[i])) {
-            bundle[i].remainingAmount = uint120(uint256(bundle[i].remainingAmount).sub(amounts[i]));
+          uint256 vestedAmount = sale.vest(tokenOwner, bundle[i].fullAmount, bundle[i].remainingAmount, amounts[i]);
+          if (vestedAmount > 0) {
+            bundle[i].remainingAmount = uint120(uint256(bundle[i].remainingAmount).sub(vestedAmount));
             done = true;
           }
         }
