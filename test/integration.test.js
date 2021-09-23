@@ -73,7 +73,7 @@ describe("Integration Test", function () {
     return '' + val + '0'.repeat(n)
   }
 
-  describe('Full flow', async function () {
+  describe.only('Full flow', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
@@ -258,7 +258,6 @@ describe("Integration Test", function () {
     [ids, amounts] = await sANFT.withdrawables(nft);
     expect(amounts[0]).equal(0);
 
-
     CL("Moving forward 50 days")
     await network.provider.send("evm_increaseTime", [3600 * 24 * 50])
     await network.provider.send("evm_mine")
@@ -277,12 +276,15 @@ describe("Integration Test", function () {
     [ids, amounts] = await sANFT.withdrawables(nft);
     expect(amounts[0]).equal(normalize(393624, 16)); // all vested
 
-    /*
+    CL("Withdraw payments")
+    expect(await tether.balanceOf(abcSale.address)).equal(normalize(10000,6));
+    expect(await tether.balanceOf(seller.address)).equal(0);
+    await abcSale.connect(seller).withdrawPayment(normalize(4000, 6));
+    expect(await tether.balanceOf(seller.address)).equal(normalize(4000,6));
+    await abcSale.connect(seller).withdrawPayment(0)
+    expect(await tether.balanceOf(seller.address)).equal(normalize(10000,6));
+    expect(await tether.balanceOf(apeWallet.address)).equal(normalize(300,6))
 
-      CL("balance is", (await tether.balanceOf(abcSale.address)).toString());
-      await abcSale.connect(abcOwner).withdrawPayment(normalize(20000))
-
-    */
     })
   })
 })

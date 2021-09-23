@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../nft/ISANFT.sol";
 import "./ISaleData.sol";
 import "./ISale.sol";
+import "./IERC20MIN.sol";
 import "../registry/IApeRegistry.sol";
 
 contract Sale is ISale, Ownable {
@@ -76,6 +77,9 @@ contract Sale is ISale, Ownable {
     ISaleData saleData = _getSaleData();
     _isSaleOwner(saleData);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(saleData.getSetupById(_saleId).paymentTokenId));
+    if (amount == 0) {
+      amount = paymentToken.balanceOf(address(this));
+    }
     paymentToken.transfer(_msgSender(), amount);
   }
 
