@@ -235,15 +235,6 @@ contract SaleData is ISaleData, RegistryUser {
     return setup.sellingToken;
   }
 
-  function isVested(
-    uint16 saleId,
-    uint120 fullAmount,
-    uint120 remainingAmount,
-    uint256 requestedAmount
-  ) external view virtual override returns (bool) {
-    return requestedAmount <= vestedAmount(saleId, fullAmount, remainingAmount);
-  }
-
   function vestedAmount(
     uint16 saleId,
     uint120 fullAmount,

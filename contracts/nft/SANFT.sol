@@ -89,6 +89,7 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   }
 
   function withdrawables(uint256 tokenId) external view override returns (uint16[] memory, uint256[] memory) {
+    require(_exists(tokenId), "Token does not exist");
     return _sanftmanager.withdrawables(tokenId);
   }
 
