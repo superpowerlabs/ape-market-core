@@ -8,20 +8,10 @@ import "./ISANFT.sol";
 import "../sale/ISale.sol";
 import "../sale/ISaleData.sol";
 import "../user/IProfile.sol";
+import "../sale/IERC20Min.sol";
 
 import "../registry/RegistryUser.sol";
 
-interface IERC20 {
-  function transfer(address recipient, uint256 amount) external returns (bool);
-
-  function transferFrom(
-    address sender,
-    address recipient,
-    uint256 amount
-  ) external returns (bool);
-
-  function decimals() external view returns (uint8);
-}
 
 contract SANFTManager is ISANFTManager, RegistryUser {
   using SafeMath for uint256;
@@ -32,7 +22,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   bytes32 internal constant _PROFILE = keccak256("Profile");
 
   address public apeWallet;
-  IERC20 private _feeToken;
+  IERC20Min private _feeToken;
 
   // we use a permillage to be able to charge, for example, the 2.5%. In this case the value would be 25
   uint256 public feePoints;
