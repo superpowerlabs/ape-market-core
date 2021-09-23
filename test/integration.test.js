@@ -181,65 +181,57 @@ describe("Integration Test", function () {
     expect(bundle[0].fullAmount).equal(normalize(1250));
     expect(await tether.balanceOf(apeWallet.address)).equal(normalize(300, 6));
 
-/*
-      CL("Splitting investor 2's nft");
-      nft = await sANFT.tokenOfOwnerByIndex(buyer1.address, 0);
-      bundle = await sANFT.getBundle(nft);
-      expect(bundle[0].remainingAmount).equal(normalize(20000));
-      // do the split
-      let keptAmounts = [normalize(8000)];
-      await tether.connect(buyer1).approve(sANFT.address, normalize(100));
-      await sANFT.connect(buyer1).split(nft, keptAmounts);
-      expect(await sANFT.balanceOf(buyer1.address)).equal(2);
-      nft = await sANFT.tokenOfOwnerByIndex(buyer1.address, 0);
-      // CL('nft', nft.toNumber()) // 7
-      bundle = await sANFT.getBundle(nft);
-      CL(xyzSale.address)
-      expect(bundle[0].sale).equal(xyzSale.address);
-      expect(bundle[0].remainingAmount).equal(normalize(8000));
-      nft = await sANFT.tokenOfOwnerByIndex(buyer1.address, 1);
-      // CL('nft', nft.toNumber()) // 6
 
-      bundle = await sANFT.getBundle(nft);
-      expect(bundle[0].sale).equal(xyzSale.address);
-      expect(bundle[0].remainingAmount).equal(normalize(12000));
-      // check for 100 fee collected
-      expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4100));
+    CL("Splitting buyer's nft");
+    nft = await sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+    bundle = await sANFT.getBundle(nft);
+    expect(bundle[0].fullAmount).equal(normalize(3000));
+
+    let keptAmounts = [normalize(1000)];
+    await sANFTManager.connect(buyer).split(nft, keptAmounts);
+    expect(await sANFT.balanceOf(buyer.address)).equal(3);
+    nft = await sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+
+    bundle = await sANFT.getBundle(nft);
+    expect(bundle[0].saleId).equal(saleId);
+    expect(bundle[0].remainingAmount).equal(normalize(1000));
+
+    nft = await sANFT.tokenOfOwnerByIndex(buyer.address, 2);
+    bundle = await sANFT.getBundle(nft);
+    expect(bundle[0].remainingAmount).equal(normalize(1970));
+
+    CL("Checking for split fee");
+    expect(await sANFT.balanceOf(apeWallet.address)).equal(2);
+    nft = await sANFT.tokenOfOwnerByIndex(apeWallet.address, 1);
+    bundle = await sANFT.getBundle(nft);
+    expect(bundle[0].remainingAmount).equal(normalize(30));
 
 
-      CL("Transfer one of buyer1 nft to buyer");
-      expect(await sANFT.balanceOf(buyer1.address)).equal(2);
-      expect(await sANFT.balanceOf(buyer.address)).equal(2);
-      nft = await sANFT.tokenOfOwnerByIndex(buyer1.address, 0);
-      await tether.connect(buyer1).approve(sANFT.address, normalize(100))
-      await sANFT.connect(buyer1).transferFrom(buyer1.address, buyer.address, nft)
-      expect(await sANFT.balanceOf(buyer1.address)).equal(1);
-      expect(await sANFT.balanceOf(buyer.address)).equal(3);
-      expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4100));
+    CL("Merge buyer's nft");
+    expect(await sANFT.balanceOf(buyer.address)).equal(3);
+    let nft0 = sANFT.tokenOfOwnerByIndex(buyer.address, 0);  // 1000
+    let nft1 = sANFT.tokenOfOwnerByIndex(buyer.address, 1);  // 1970
+    let nft2 = sANFT.tokenOfOwnerByIndex(buyer.address, 2);  // 2000
+    await sANFTManager.connect(buyer).merge([nft0, nft1, nft2]);
+    expect(await sANFT.balanceOf(buyer.address)).equal(1);
+    nft = await sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+    bundle = await sANFT.getBundle(nft);
+    expect(bundle[0].saleId).equal(saleId);
+    expect(bundle[0].remainingAmount).equal(normalize(49203, 17));
 
-      CL("Merge buyer's nft");
-      expect(await sANFT.balanceOf(buyer.address)).equal(3);
-      let nft0 = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
-      let nft1 = sANFT.tokenOfOwnerByIndex(buyer.address, 1);
-      let nft2 = sANFT.tokenOfOwnerByIndex(buyer.address, 2);
-      await tether.connect(buyer).approve(sANFT.address, normalize(100));
-      await sANFT.connect(buyer).merge([nft0, nft1, nft2]);
-      expect(await sANFT.balanceOf(buyer.address)).equal(1);
-      expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4200));
-      nft = await sANFT.tokenOfOwnerByIndex(buyer.address, 0);
-      bundle = await sANFT.getBundle(nft);
-      expect(bundle.length).equal(2);
-      expect(bundle[0].sale).equal(abcSale.address);
-      expect(bundle[0].remainingAmount).equal(normalize(10000));
-      expect(bundle[1].sale).equal(xyzSale.address);
-      expect(bundle[1].remainingAmount).equal(normalize(8000));
-      expect(await tether.balanceOf(apeWallet.address)).equal(normalize(4200));
+    CL("Checking for merge fee");
+    expect(await sANFT.balanceOf(apeWallet.address)).equal(3);
+    nft = await sANFT.tokenOfOwnerByIndex(apeWallet.address, 2);
+    bundle = await sANFT.getBundle(nft);
+    expect(bundle[0].saleId).equal(saleId);
+    expect(bundle[0].remainingAmount).equal(normalize(4970, 16));
 
+
+    /*
       let currentBlockTimeStamp;
       CL("Vesting NFT of buyer after first mile stone");
       // list tokens
       await saleData.connect(abcOwner).triggerTokenListing(abcSaleId);
-      await saleData.connect(xyzOwner).triggerTokenListing(xyzSaleId);
 
       // before vesting
       nft = sANFT.tokenOfOwnerByIndex(buyer.address, 0);
