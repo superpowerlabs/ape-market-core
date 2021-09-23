@@ -13,7 +13,7 @@ const config = {
   '4': {
     apeWallet: '0x90f79bf6eb2c4f870365e785982e1f101e93b906',
     operators: ['0x36C3D76f3D2Ec925Ab51a028D1C44007EFc6574a'],
-    feePoints: 300
+    feePoints: 100
   }
 }
 

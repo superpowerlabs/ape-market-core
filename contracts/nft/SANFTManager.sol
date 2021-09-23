@@ -232,6 +232,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     }
     ISANFT.SA[] memory feeBundle;
     (newBundle, feeBundle) = _applyFeesToBundle(newBundle);
+
     _createNewToken(_msgSender(), newBundle);
     _createNewToken(apeWallet, feeBundle);
   }
@@ -245,10 +246,10 @@ contract SANFTManager is ISANFTManager, RegistryUser {
       // calculates the fee
       uint256 fee = remainingAmount.mul(feePoints).div(10000);
       // this is necessary to maintain correct vested percentages
-      uint256 catToFullAmount = fullAmount.mul(feePoints).div(10000);
-      bundle[i].fullAmount = uint120(fullAmount.sub(catToFullAmount));
+      uint256 feeToFullAmount = fullAmount.mul(feePoints).div(10000);
+      bundle[i].fullAmount = uint120(fullAmount.sub(feeToFullAmount));
       bundle[i].remainingAmount = uint120(remainingAmount.sub(fee));
-      apeBundle[i].fullAmount = uint120(catToFullAmount);
+      apeBundle[i].fullAmount = uint120(feeToFullAmount);
       apeBundle[i].remainingAmount = uint120(fee);
     }
     return (bundle, apeBundle);
@@ -280,9 +281,13 @@ contract SANFTManager is ISANFTManager, RegistryUser {
       }
     }
     if (a > 0 || b > 0) {
+      // when burning an item, the last item is moved to
+      // the position of the item to be deleted, and then last item deleted.
+      // The following arangement makes that, if A is split to B, C, B will replace
+      // A and C will be at the end.
       if (a > 0) _createNewToken(_msgSender(), newBundleA);
-      if (b > 0) _createNewToken(_msgSender(), newBundleB);
       _sanft.burn(tokenId);
+      if (b > 0) _createNewToken(_msgSender(), newBundleB);
     } else {
       revert("SANFTManager; split failed");
     }
