@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IERC20MIN.sol";
+import "./IERC20Min.sol";
 
 interface ISaleDB {
   // VestingStep is used only for input.

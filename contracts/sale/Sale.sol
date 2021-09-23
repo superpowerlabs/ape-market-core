@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../nft/ISANFT.sol";
 import "./ISaleData.sol";
 import "./ISale.sol";
-import "./IERC20MIN.sol";
+import "./IERC20Min.sol";
 import "../registry/IApeRegistry.sol";
 
 contract Sale is ISale, Ownable {
