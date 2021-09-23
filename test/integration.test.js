@@ -73,7 +73,7 @@ describe("Integration Test", function () {
     return '' + val + '0'.repeat(n)
   }
 
-  describe.only('Full flow', async function () {
+  describe('Full flow', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
