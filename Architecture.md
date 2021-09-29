@@ -29,4 +29,4 @@ deploy ApeRegistry
 deploy Profile, SaleSetupHasher, SaleDB, SaleData, SaleFactory, TokenRegistry, SANFT, SANFTManager 
 register the above contracts with ApeRegistry 
 
-the following is the flow of 
+ 
