@@ -1,6 +1,6 @@
 const {expect, assert} = require("chai")
 const DeployUtils = require('../scripts/lib/DeployUtils')
-const {initEthers, signPackedData} = require('../scripts/lib/TestHelpers')
+const {initEthers, signPackedData, getTimestamp} = require('../scripts/lib/TestHelpers')
 
 describe("Profile", function () {
 
@@ -28,7 +28,7 @@ describe("Profile", function () {
 
   async function initNetworkAndDeploy() {
     profile = await deployUtils.deployContract('Profile')
-    now = Math.round(Date.now() / 1000)
+    now = await getTimestamp()
   }
 
   describe('#associateAccount', async function () {
