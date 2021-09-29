@@ -214,6 +214,7 @@ contract SaleData is ISaleData, RegistryUser {
     uint256 approved = _saleDB.getApproval(saleId, investor);
     require(usdValueAmount <= approved, "SaleData: Amount is above approved amount");
     ISaleDB.Setup memory setup = _saleDB.getSetupById(saleId);
+    require(setup.futureTokenSaleId == 0, "SaleData: Cannot invest in a swapping sale");
     require(usdValueAmount >= setup.minAmount, "SaleData: Amount is too low");
     uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(usdValueAmount));
     require(
