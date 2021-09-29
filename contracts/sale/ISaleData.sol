@@ -78,4 +78,6 @@ interface ISaleData {
   function triggerTokenListing(uint16 saleId) external;
 
   function emergencyTriggerTokenListing(uint16 saleId) external;
+
+  function setSwap(uint16 saleId, uint120 amount) external;
 }

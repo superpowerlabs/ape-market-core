@@ -8,20 +8,10 @@ import "./ISANFT.sol";
 import "../sale/ISale.sol";
 import "../sale/ISaleData.sol";
 import "../user/IProfile.sol";
+import "../sale/IERC20Min.sol";
 
 import "../registry/RegistryUser.sol";
 
-interface IERC20 {
-  function transfer(address recipient, uint256 amount) external returns (bool);
-
-  function transferFrom(
-    address sender,
-    address recipient,
-    uint256 amount
-  ) external returns (bool);
-
-  function decimals() external view returns (uint8);
-}
 
 contract SANFTManager is ISANFTManager, RegistryUser {
   using SafeMath for uint256;
@@ -32,13 +22,18 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   bytes32 internal constant _PROFILE = keccak256("Profile");
 
   address public apeWallet;
-  IERC20 private _feeToken;
+  IERC20Min private _feeToken;
 
   // we use a permillage to be able to charge, for example, the 2.5%. In this case the value would be 25
   uint256 public feePoints;
 
   modifier onlySANFT() {
     require(_msgSender() == address(_sanft), "SANFTManager: only SANFT can call this function");
+    _;
+  }
+
+  modifier onlyTokenOwner(uint256 tokenId) {
+    require(_sanft.ownerOf(tokenId) == _msgSender(), "SANFTManager: only the owner can do this operation");
     _;
   }
 
@@ -254,8 +249,8 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     return (bundle, apeBundle);
   }
 
-  function split(uint256 tokenId, uint256[] memory keptAmounts) external virtual override {
-    require(_sanft.ownerOf(tokenId) == _msgSender(), "SANFTManager: only the owner can split an NFT");
+  function split(uint256 tokenId, uint256[] memory keptAmounts) external virtual override onlyTokenOwner(tokenId) {
+
     ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
     ISANFT.SA[] memory feeBundle;
     (bundle, feeBundle) = _applyFeesToBundle(bundle);
@@ -290,5 +285,25 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     } else {
       revert("SANFTManager; split failed");
     }
+  }
+
+  function swap(uint256 tokenId, uint16 tokenSaleId) external virtual override onlyTokenOwner(tokenId) returns (bool) {
+
+    uint16 futureTokenSaleId = _saleData.getSetupById(tokenSaleId).futureTokenSaleId;
+    require(futureTokenSaleId > 0, "No swap is supported");
+    ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
+    bool swapped = false;
+    for (uint256 i = 0; i < bundle.length; i++) {
+      if (bundle[i].saleId == futureTokenSaleId) {
+        bundle[i].saleId = tokenSaleId;
+        _saleData.setSwap(tokenSaleId, bundle[i].fullAmount);
+        swapped = true;
+      }
+    }
+    if (swapped) {
+      _sanft.burn(tokenId);
+      _createNewToken(_msgSender(), bundle);
+    }
+    return swapped;
   }
 }

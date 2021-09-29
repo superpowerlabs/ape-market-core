@@ -106,7 +106,9 @@ describe("SANFTManager", async function () {
       tokenFeePoints: 500,
       extraFeePoints: 0,
       paymentFeePoints: 300,
-      saleAddress: addr0
+      saleAddress: addr0,
+      isFutureToken: true,
+      futureTokenSaleId: 0
     };
 
 
@@ -289,6 +291,54 @@ describe("SANFTManager", async function () {
       )
 
     })
+  })
+
+  describe('#swap', async function () {
+  beforeEach(async function () {
+      await initNetworkAndDeploy()
+
+      // buyer makes a second investment in sale 1
+      await tether.connect(buyer).approve(saleAddress, normalize(50, 6));
+      await saleData.connect(seller).approveInvestors(saleId, [buyer.address], [normalize(40, 6)])
+      await sale.connect(buyer).invest(40)
+
+      // deploy a new token
+      sellingToken2 = await deployUtils.deployContractBy("ERC20Token", seller, "CBA Token", "CBA")
+
+      // adjust the setup
+      saleSetup.sellingToken = sellingToken2.address
+      saleSetup.totalValue = 100000
+      saleSetup.pricingToken = 50
+      saleSetup.pricingPayment = 1
+
+      // setup the second sale
+
+      hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
+      transaction = await saleFactory.connect(operator).approveSale(hash)
+      transaction.wait()
+      saleId2 = await saleFactory.getSaleIdBySetupHash(hash)
+      await saleFactory.connect(seller).newSale(saleId2, saleSetup, [], tether.address)
+
+      saleAddress2 = await saleDB.getSaleAddressById(saleId2)
+      sale2 = new ethers.Contract(saleAddress2, saleJson.abi, ethers.provider)
+
+      const allTokensAmount = await saleData.fromValueToTokensAmount(saleId2, saleSetup.totalValue * 1.05)
+      assert.equal(allTokensAmount.toString(), '5250000000000000000000000')
+      await sellingToken2.connect(seller).approve(saleAddress2, allTokensAmount)
+      await sale2.connect(seller).launch()
+
+      // buyer invests in sale 2
+      await tether.connect(buyer).approve(saleAddress2, normalize(400, 6));
+      await saleData.connect(seller).approveInvestors(saleId2, [buyer.address], [normalize(300, 6)])
+      await sale2.connect(buyer).invest(300)
+
+      // buyer2 invests in sale 2
+      await tether.connect(buyer2).approve(saleAddress2, normalize(400, 6));
+      await saleData.connect(seller).approveInvestors(saleId2, [buyer2.address], [normalize(300, 6)])
+      await sale2.connect(buyer2).invest(300)
+
+    })
+
 
   })
 
