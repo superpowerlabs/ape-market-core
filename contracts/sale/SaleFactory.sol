@@ -83,6 +83,11 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   ) external override {
     bytes32 setupHash = _saleSetupHasher.packAndHashSaleConfiguration(setup, extraVestingSteps, paymentToken);
     require(saleId != 0 && _setupHashes[setupHash] == saleId, "SaleFactory: non approved sale or modified params");
+    if (setup.futureTokenSaleId != 0) {
+      ISaleDB.Setup memory futureTokenSetup = _saleData.getSetupById(setup.futureTokenSaleId);
+      require(futureTokenSetup.isFutureToken, "SaleFactory: futureTokenSaleId does not point to a future Token sale");
+      require(futureTokenSetup.totalValue == setup.totalValue, "SaleFactory: token value mismatch");
+    }
     Sale sale = new Sale(saleId, address(_registry));
     address addr = address(sale);
     _saleData.setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
