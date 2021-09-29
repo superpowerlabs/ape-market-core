@@ -67,6 +67,7 @@ contract Sale is ISale, Ownable {
   function invest(uint32 usdValueAmount) external virtual override {
     ISaleData saleData = _getSaleData();
     ISaleDB.Setup memory setup = saleData.getSetupById(_saleId);
+    require(setup.futureTokenSaleId == 0, "Cannot invest in swap");
     (uint256 paymentTokenAmount, uint256 buyerFee) = saleData.setInvest(_saleId, _msgSender(), usdValueAmount);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(setup.paymentTokenId));
     paymentToken.transferFrom(_msgSender(), saleData.apeWallet(), buyerFee);

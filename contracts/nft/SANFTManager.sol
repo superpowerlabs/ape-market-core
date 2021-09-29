@@ -89,6 +89,9 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     bool done;
     for (uint256 i = 0; i < bundle.length; i++) {
         ISaleDB.Setup memory setup = _saleData.getSetupById(bundle[i].saleId);
+        if (setup.isFutureToken) {
+          continue;
+        }
         if (setup.tokenListTimestamp != 0) {
           ISale sale = ISale(_saleDB.getSaleAddressById(bundle[i].saleId));
           uint256 vestedAmount = sale.vest(tokenOwner, bundle[i].fullAmount, bundle[i].remainingAmount, amounts[i]);
@@ -286,6 +289,8 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     }
   }
 
+  // tokenId:  the sa bundle that might contain future token
+  // tokeSaleId:  the sale that points to the actual token that will replace the future token
   function swap(uint256 tokenId, uint16 tokenSaleId) external virtual override onlyTokenOwner(tokenId) returns (bool) {
     uint16 futureTokenSaleId = _saleData.getSetupById(tokenSaleId).futureTokenSaleId;
     require(futureTokenSaleId > 0, "No swap is supported");
