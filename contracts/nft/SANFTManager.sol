@@ -196,8 +196,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     return (true, "NFTs are mergeable", counter);
   }
 
-  function merge(uint256[] memory tokenIds) external virtual override {
-    require(_sanft.ownerOf(tokenIds[0]) == _msgSender(), "SANFTManager: only owners can merge their NFTs");
+  function merge(uint256[] memory tokenIds) external virtual override onlyTokenOwner(tokenIds[0]) {
     (bool isMergeable, string memory message, uint256 counter) = areMergeable(tokenIds);
     require(isMergeable, string(abi.encodePacked("SANFTManager: ", message)));
     ISANFT.SA[] memory bundle;
@@ -288,7 +287,6 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   }
 
   function swap(uint256 tokenId, uint16 tokenSaleId) external virtual override onlyTokenOwner(tokenId) returns (bool) {
-
     uint16 futureTokenSaleId = _saleData.getSetupById(tokenSaleId).futureTokenSaleId;
     require(futureTokenSaleId > 0, "No swap is supported");
     ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);

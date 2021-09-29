@@ -35,6 +35,6 @@ only one instance of SaleDB, SaleData, SaleFactory, should be valid/active at an
 
 The following is the workflow of setting up the system to be ready for use.
 
-deploy ApeRegistry
-deploy Profile, SaleSetupHasher, SaleDB, SaleData, SaleFactory, TokenRegistry, SANFT, SANFTManager 
-register the above contracts with ApeRegistry 
+ - deploy ApeRegistry  
+ - deploy Profile, SaleSetupHasher, SaleDB, SaleData, SaleFactory, TokenRegistry, SANFT, SANFTManager   
+ - register the above contracts with ApeRegistry 
