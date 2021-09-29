@@ -49,7 +49,7 @@ describe("SANFTManager", async function () {
     return '' + val + '0'.repeat(n)
   }
 
-  async function initNetworkAndDeploy() {
+  async function initNetworkAndDeploy(isFutureToken = false, futureTokenSaleId = 0) {
 
 
     const results = await deployUtils.initAndDeploy({
@@ -107,8 +107,8 @@ describe("SANFTManager", async function () {
       extraFeePoints: 0,
       paymentFeePoints: 300,
       saleAddress: addr0,
-      isFutureToken: true,
-      futureTokenSaleId: 0
+      isFutureToken,
+      futureTokenSaleId
     };
 
 
@@ -199,7 +199,7 @@ describe("SANFTManager", async function () {
       saleSetup.sellingToken = sellingToken2.address
       saleSetup.totalValue = 100000
       saleSetup.pricingToken = 50
-      saleSetup.pricingPayment = 1
+      saleSetup.pricingPayment = saleId
 
       // setup the second sale
 
@@ -207,6 +207,9 @@ describe("SANFTManager", async function () {
       transaction = await saleFactory.connect(operator).approveSale(hash)
       transaction.wait()
       saleId2 = await saleFactory.getSaleIdBySetupHash(hash)
+
+
+
       await saleFactory.connect(seller).newSale(saleId2, saleSetup, [], tether.address)
 
       saleAddress2 = await saleDB.getSaleAddressById(saleId2)
@@ -263,7 +266,7 @@ describe("SANFTManager", async function () {
 
       assertThrowsMessage(
           sANFT.ownerOf(nft),
-        'ERC721: owner query for nonexistent token'
+          'ERC721: owner query for nonexistent token'
       )
       assertThrowsMessage(
           sANFT.ownerOf(nft2),
@@ -293,23 +296,26 @@ describe("SANFTManager", async function () {
     })
   })
 
-  describe('#swap', async function () {
-  beforeEach(async function () {
-      await initNetworkAndDeploy()
+  describe.only('#swap', async function () {
 
+    beforeEach(async function () {
+      await initNetworkAndDeploy(true)
+    })
+
+    it('should swap from the coupon to the final token', async function() {
       // buyer makes a second investment in sale 1
-      await tether.connect(buyer).approve(saleAddress, normalize(50, 6));
-      await saleData.connect(seller).approveInvestors(saleId, [buyer.address], [normalize(40, 6)])
-      await sale.connect(buyer).invest(40)
+
+      let tokenId = await sANFT.tokenOfOwnerByIndex(buyer.address, 0)
+      let bundle = await sANFT.getBundle(tokenId)
+      assert.equal(bundle[0].saleId, saleId)
 
       // deploy a new token
       sellingToken2 = await deployUtils.deployContractBy("ERC20Token", seller, "CBA Token", "CBA")
 
       // adjust the setup
       saleSetup.sellingToken = sellingToken2.address
-      saleSetup.totalValue = 100000
-      saleSetup.pricingToken = 50
-      saleSetup.pricingPayment = 1
+      saleSetup.isFutureToken = false
+      saleSetup.futureTokenSaleId = 1
 
       // setup the second sale
 
@@ -321,24 +327,16 @@ describe("SANFTManager", async function () {
 
       saleAddress2 = await saleDB.getSaleAddressById(saleId2)
       sale2 = new ethers.Contract(saleAddress2, saleJson.abi, ethers.provider)
-
-      const allTokensAmount = await saleData.fromValueToTokensAmount(saleId2, saleSetup.totalValue * 1.05)
-      assert.equal(allTokensAmount.toString(), '5250000000000000000000000')
-      await sellingToken2.connect(seller).approve(saleAddress2, allTokensAmount)
+      await sellingToken2.connect(seller).approve(saleAddress2, await saleData.fromValueToTokensAmount(saleId2, saleSetup.totalValue * 1.05))
       await sale2.connect(seller).launch()
 
-      // buyer invests in sale 2
-      await tether.connect(buyer).approve(saleAddress2, normalize(400, 6));
-      await saleData.connect(seller).approveInvestors(saleId2, [buyer.address], [normalize(300, 6)])
-      await sale2.connect(buyer).invest(300)
+      await sANFTManager.connect(buyer).swap(tokenId, saleId2)
 
-      // buyer2 invests in sale 2
-      await tether.connect(buyer2).approve(saleAddress2, normalize(400, 6));
-      await saleData.connect(seller).approveInvestors(saleId2, [buyer2.address], [normalize(300, 6)])
-      await sale2.connect(buyer2).invest(300)
+      let tokenId2 = await sANFT.tokenOfOwnerByIndex(buyer.address, 0)
+      let bundle1 = await sANFT.getBundle(tokenId2)
+      assert.equal(bundle1[0].saleId, saleId2)
 
     })
-
 
   })
 
