@@ -32,6 +32,11 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     _;
   }
 
+  modifier onlyTokenOwner(uint256 tokenId) {
+    require(_sanft.ownerOf(tokenId) == _msgSender(), "SANFTManager: only the owner can do this operation");
+    _;
+  }
+
   constructor(
     address registry,
     address apeWallet_,
@@ -244,8 +249,8 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     return (bundle, apeBundle);
   }
 
-  function split(uint256 tokenId, uint256[] memory keptAmounts) external virtual override {
-    require(_sanft.ownerOf(tokenId) == _msgSender(), "SANFTManager: only the owner can split an NFT");
+  function split(uint256 tokenId, uint256[] memory keptAmounts) external virtual override onlyTokenOwner(tokenId) {
+
     ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
     ISANFT.SA[] memory feeBundle;
     (bundle, feeBundle) = _applyFeesToBundle(bundle);
@@ -280,5 +285,25 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     } else {
       revert("SANFTManager; split failed");
     }
+  }
+
+  function swap(uint256 tokenId, uint16 tokenSaleId) external virtual override onlyTokenOwner(tokenId) returns (bool) {
+
+    uint16 futureTokenSaleId = _saleData.getSetupById(tokenSaleId).futureTokenSaleId;
+    require(futureTokenSaleId > 0, "No swap is supported");
+    ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
+    bool swapped = false;
+    for (uint256 i = 0; i < bundle.length; i++) {
+      if (bundle[i].saleId == futureTokenSaleId) {
+        bundle[i].saleId = tokenSaleId;
+        _saleData.setSwap(tokenSaleId, bundle[i].fullAmount);
+        swapped = true;
+      }
+    }
+    if (swapped) {
+      _sanft.burn(tokenId);
+      _createNewToken(_msgSender(), bundle);
+    }
+    return swapped;
   }
 }

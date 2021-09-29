@@ -49,6 +49,7 @@ contract SaleDB is ISaleDB, RegistryUser {
   }
 
   function getSaleAddressById(uint16 saleId) external view override returns (address) {
+    require(saleId < _nextId && saleId > 0, "saleId is out of range");
     return _setups[saleId].saleAddress;
   }
 
@@ -65,6 +66,7 @@ contract SaleDB is ISaleDB, RegistryUser {
   }
 
   function triggerTokenListing(uint16 saleId) external virtual override onlySaleData {
+    require(! _setups[saleId].isFutureToken, "Cannot list future token");
     require(_setups[saleId].tokenListTimestamp == 0, "SaleData: token already listed");
     _setups[saleId].tokenListTimestamp = uint32(block.timestamp);
   }

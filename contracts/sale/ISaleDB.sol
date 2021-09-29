@@ -36,6 +36,8 @@ interface ISaleDB {
     bool isTokenTransferable;
     // fifth 32 bytes - 12 bytes remaining
     address saleAddress; // 20 bytes
+    bool isFutureToken;
+    uint16 futureTokenSaleId;
   }
 
   function nextSaleId() external view returns (uint16);

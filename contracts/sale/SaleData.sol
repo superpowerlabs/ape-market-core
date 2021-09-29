@@ -35,6 +35,11 @@ contract SaleData is ISaleData, RegistryUser {
     _;
   }
 
+  modifier onlySANFTManager() {
+    require(_msgSender() == address(_sanftManager), "SaleData: only SANFTManager can call this function");
+    _;
+  }
+
   constructor(address registry, address apeWallet_) RegistryUser(registry) {
     updateApeWallet(apeWallet_);
   }
@@ -257,5 +262,9 @@ contract SaleData is ISaleData, RegistryUser {
     require(_daoWallet != address(0) && _msgSender() == _daoWallet, "Only the DAO can call this");
     _saleDB.triggerTokenListing(saleId);
     emit TokenForcefullyListed(saleId);
+  }
+
+  function setSwap(uint16 saleId, uint120 amount) external virtual override onlySANFTManager {
+   _saleDB.updateRemainingAmount(saleId, amount, false);
   }
 }

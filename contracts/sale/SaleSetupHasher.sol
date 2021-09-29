@@ -66,6 +66,8 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
           setup.sellingToken,
           setup.owner,
           setup.isTokenTransferable,
+          setup.isFutureToken,
+          setup.futureTokenSaleId,
           paymentToken,
           setup.vestingSteps,
           extraVestingSteps,
