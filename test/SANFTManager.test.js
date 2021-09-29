@@ -296,7 +296,7 @@ describe("SANFTManager", async function () {
     })
   })
 
-  describe.only('#swap', async function () {
+  describe('#swap', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy(true)
