@@ -6,8 +6,6 @@ const DeployUtils = require('./lib/DeployUtils')
 const Deployed = require('../config/deployed.json')
 const {
   initEthers,
-  signPackedData,
-  assertThrowsMessage,
   addr0
 } = require('../scripts/lib/TestHelpers')
 

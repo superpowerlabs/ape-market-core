@@ -1,4 +1,6 @@
+require('dotenv').config()
 require("@nomiclabs/hardhat-waffle")
+require("@nomiclabs/hardhat-etherscan")
 require('hardhat-contract-sizer')
 
 if (process.env.GAS_REPORT === 'yes') {
@@ -43,10 +45,24 @@ module.exports = {
       timeout: 1800000
     },
     rinkeby: env.rinkeby,
+    ropsten: {
+      url: `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      accounts: [
+        process.env.TESTNET_OWNER,
+        process.env.TESTNET_APE_WALLET,
+        process.env.TESTNET_OPERATOR,
+        process.env.TESTNET_TETHER_OWNER
+      ]
+    }
   },
   gasReporter: {
     currency: 'USD',
     coinmarketcap: env.coinmarketcap
+  },
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: process.env.ETHERSCAN_KEY
   }
 };
 
