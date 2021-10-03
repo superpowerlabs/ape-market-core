@@ -17,7 +17,7 @@ contract SaleDB is ISaleDB, RegistryUser {
   mapping(address => uint16) private _saleIdByAddress;
   mapping(uint16 => uint256[]) private _extraVestingSteps;
 
-  mapping(uint16 => mapping(address => uint32)) private _approvedUsdValueAmounts; 
+  mapping(uint16 => mapping(address => uint32)) private _approvedUsdValueAmounts;
   mapping(uint16 => mapping(address => uint32)) private _valuesInEscrow;
 
   modifier onlySaleData() {
@@ -66,7 +66,7 @@ contract SaleDB is ISaleDB, RegistryUser {
   }
 
   function triggerTokenListing(uint16 saleId) external virtual override onlySaleData {
-    require(! _setups[saleId].isFutureToken, "Cannot list future token");
+    require(!_setups[saleId].isFutureToken, "Cannot list future token");
     require(_setups[saleId].tokenListTimestamp == 0, "SaleData: token already listed");
     _setups[saleId].tokenListTimestamp = uint32(block.timestamp);
   }

@@ -22,13 +22,6 @@ interface ISaleData {
 
   function increaseSaleId() external;
 
-  function calculateVestedPercentage(
-    uint256 vestingSteps,
-    uint256[] memory extraVestingSteps,
-    uint256 tokenListTimestamp,
-    uint256 currentTimestamp
-  ) external pure returns (uint8);
-
   function vestedPercentage(uint16 saleId) external view returns (uint8);
 
   function setUpSale(
