@@ -89,8 +89,6 @@ class DeployUtils {
       tokenRegistry.address
     ])
 
-    console.log(
-
     await apeRegistry.updateAllContracts()
 
     let uSDT

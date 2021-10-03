@@ -12,6 +12,7 @@ import "../sale/IERC20Min.sol";
 
 import "../registry/RegistryUser.sol";
 
+
 contract SANFTManager is ISANFTManager, RegistryUser {
   using SafeMath for uint256;
 
@@ -87,18 +88,18 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     require(amounts.length == bundle.length, "SANFTManager: amounts inconsistent with SAs");
     bool done;
     for (uint256 i = 0; i < bundle.length; i++) {
-      ISaleDB.Setup memory setup = _saleData.getSetupById(bundle[i].saleId);
-      if (setup.isFutureToken) {
-        continue;
-      }
-      if (setup.tokenListTimestamp != 0) {
-        ISale sale = ISale(_saleDB.getSaleAddressById(bundle[i].saleId));
-        uint256 vestedAmount = sale.vest(tokenOwner, bundle[i].fullAmount, bundle[i].remainingAmount, amounts[i]);
-        if (vestedAmount > 0) {
-          bundle[i].remainingAmount = uint120(uint256(bundle[i].remainingAmount).sub(vestedAmount));
-          done = true;
+        ISaleDB.Setup memory setup = _saleData.getSetupById(bundle[i].saleId);
+        if (setup.isFutureToken) {
+          continue;
         }
-      }
+        if (setup.tokenListTimestamp != 0) {
+          ISale sale = ISale(_saleDB.getSaleAddressById(bundle[i].saleId));
+          uint256 vestedAmount = sale.vest(tokenOwner, bundle[i].fullAmount, bundle[i].remainingAmount, amounts[i]);
+          if (vestedAmount > 0) {
+            bundle[i].remainingAmount = uint120(uint256(bundle[i].remainingAmount).sub(vestedAmount));
+            done = true;
+          }
+        }
     }
     if (done) {
       // puts the modified SA in a new NFT and burns the existing one
@@ -251,6 +252,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   }
 
   function split(uint256 tokenId, uint256[] memory keptAmounts) external virtual override onlyTokenOwner(tokenId) {
+
     ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
     ISANFT.SA[] memory feeBundle;
     (bundle, feeBundle) = _applyFeesToBundle(bundle);

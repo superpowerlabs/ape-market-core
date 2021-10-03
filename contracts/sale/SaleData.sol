@@ -9,8 +9,6 @@ import "../nft/ISANFTManager.sol";
 import "./ITokenRegistry.sol";
 import "../registry/RegistryUser.sol";
 
-import {SaleLib} from "../libraries/SaleLib.sol";
-
 contract SaleData is ISaleData, RegistryUser {
   using SafeMath for uint256;
 
@@ -93,9 +91,39 @@ contract SaleData is ISaleData, RegistryUser {
     _saleDB.increaseSaleId();
   }
 
+  /**
+   * @dev Calculate the vesting percentage, based on values in Setup.vestingSteps and extraVestingSteps[]
+   * @param vestingSteps The vales of Setup.VestingSteps, first 11 events
+   * @param extraVestingSteps The array of extra vesting steps
+   * @param tokenListTimestamp The timestamp when token has been listed
+   * @param currentTimestamp The current timestamp (it'd be, most likely, block.timestamp)
+   */
+  function calculateVestedPercentage(
+    uint256 vestingSteps,
+    uint256[] memory extraVestingSteps,
+    uint256 tokenListTimestamp,
+    uint256 currentTimestamp
+  ) public pure override returns (uint8) {
+    for (uint256 i = extraVestingSteps.length + 1; i >= 1; i--) {
+      uint256 steps = i > 1 ? extraVestingSteps[i - 2] : vestingSteps;
+      for (uint256 k = 12; k >= 1; k--) {
+        uint256 step = steps / (10**(6 * (k - 1)));
+        if (step != 0) {
+          uint256 ts = (step / 100);
+          uint256 percentage = (step % 100) + 1;
+          if ((ts * 24 * 3600) + tokenListTimestamp <= currentTimestamp) {
+            return uint8(percentage);
+          }
+        }
+        steps %= (10**(6 * (k - 1)));
+      }
+    }
+    return 0;
+  }
+
   function vestedPercentage(uint16 saleId) public view override returns (uint8) {
     return
-      SaleLib.calculateVestedPercentage(
+      calculateVestedPercentage(
         _saleDB.getSetupById(saleId).vestingSteps,
         _saleDB.getExtraVestingStepsById(saleId),
         _saleDB.getSetupById(saleId).tokenListTimestamp,
@@ -170,11 +198,11 @@ contract SaleData is ISaleData, RegistryUser {
   function approveInvestors(
     uint16 saleId,
     address[] memory investors,
-    uint32[] memory uSDValueAmounts
+    uint32[] memory USDValueAmounts
   ) external virtual override onlySaleOwner(saleId) {
-    require(investors.length == uSDValueAmounts.length, "SaleData: amounts inconsistent with investors length");
+    require(investors.length == USDValueAmounts.length, "SaleData: amounts inconsistent with investors length");
     for (uint256 i = 0; i < investors.length; i++) {
-      _saleDB.setApproval(saleId, investors[i], uSDValueAmounts[i]);
+      _saleDB.setApproval(saleId, investors[i], USDValueAmounts[i]);
     }
   }
 
@@ -199,7 +227,7 @@ contract SaleData is ISaleData, RegistryUser {
       _saleDB.setApproval(saleId, investor, uint32(uint256(approved).sub(usdValueAmount)));
     }
     uint256 decimals = IERC20Min(paymentTokenById(setup.paymentTokenId)).decimals();
-    uint256 paymentTokenAmount = usdValueAmount.mul(10**decimals);
+    uint256 paymentTokenAmount = usdValueAmount.mul(10 ** decimals);
     uint256 buyerFee = paymentTokenAmount.mul(setup.paymentFeePoints).div(10000);
     setup.remainingAmount = uint120(uint256(setup.remainingAmount).sub(tokensAmount));
     _sanftManager.mint(investor, saleId, tokensAmount);
@@ -238,6 +266,6 @@ contract SaleData is ISaleData, RegistryUser {
   }
 
   function setSwap(uint16 saleId, uint120 amount) external virtual override onlySANFTManager {
-    _saleDB.updateRemainingAmount(saleId, amount, false);
+   _saleDB.updateRemainingAmount(saleId, amount, false);
   }
 }
