@@ -129,8 +129,7 @@ class DeployUtils {
     const deployed = require(jsonpath)
     if (this.localChain(chainId) || !deployed[chainId]
         // legacy:
-        || Array.isArray(deployed[chainId]))
-    {
+        || Array.isArray(deployed[chainId])) {
       deployed[chainId] = {
         paymentTokens: {},
         sellingTokens: {}
@@ -149,6 +148,37 @@ class DeployUtils {
   async deployERC20(owner, name, ticker) {
     return await this.deployContractBy("ERC20Token", owner, name, ticker)
   }
+
+  async initAndDeployToken(conf = {}) {
+    const ethers = this.ethers
+    const chainId = (await ethers.provider.getNetwork()).chainId
+
+    let {
+      signerIndex,
+      tokenName,
+      tokenAbbr,
+      isTether
+    } = conf
+
+    const owner = (await ethers.getSigners())[signerIndex]
+
+    let token
+    if (isTether) {
+      tokenName = 'Tether USDT'
+      tokenAbbr = 'USDT'
+      token = await this.deployContractBy("TetherMock", owner)
+    } else {
+      token = await this.deployERC20(owner, tokenName, tokenAbbr)
+    }
+    return {
+      chainId,
+      name: tokenName,
+      abbr: tokenAbbr,
+      owner: owner.address,
+      token: token.address
+    }
+  }
+
 }
 
 module.exports = DeployUtils
