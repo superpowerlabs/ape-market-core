@@ -36,25 +36,6 @@ class DeployUtils {
     return contract
   }
 
-  joinOperatorsAndValidators(operators, validators) {
-    const _operators = operators
-    const _roles = []
-    // all the operators should have role 1
-    for (let i = 0 ; i < operators.length; i++) {
-      _roles.push(1);
-    }
-    for (let i = 0; i < validators.length; i++) {
-      let k = _operators.indexOf(validators[i])
-      if (k != -1) { // if validator is also an operator
-        _roles[k] |= 1 << 1;
-      } else {
-        _operators.push(validators[i]);
-        _roles.push(1 << 1)
-      }
-    }
-    return [_operators, _roles]
-  }
-
   async initAndDeploy(conf = {}) {
     // Hardhat always runs the compile task when running scripts with its command
     // line interface.
@@ -72,7 +53,8 @@ class DeployUtils {
       apeWallet,
       operators,
       feePoints,
-      usdtOwner
+      usdtOwner,
+      forProduction
     } = conf
 
     const apeRegistry = await this.deployContract('ApeRegistry')
@@ -82,10 +64,10 @@ class DeployUtils {
     const saleSetupHasher = await this.deployContract('SaleSetupHasher')
     const saleDB = await this.deployContract('SaleDB', registryAddress)
     const saleData = await this.deployContract('SaleData', registryAddress, apeWallet)
-    const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators)
+    const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators[0])
     const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
     const sANFT = await this.deployContract('SANFT', registryAddress)
-    const sANFTManager = await this.deployContract('SANFTManager', registryAddress, apeWallet, feePoints)
+    const sANFTManager = await this.deployContract('SANFTManager', registryAddress, feePoints)
 
     await apeRegistry.register([
       'Profile',
@@ -107,10 +89,15 @@ class DeployUtils {
       tokenRegistry.address
     ])
 
+    console.log(ethers.utils.id('SANFTManager'))
+
     await apeRegistry.updateAllContracts()
 
-    // for app debugging:
-    const uSDT = await this.deployContractBy("TetherMock", usdtOwner || (await ethers.getSigners())[0])
+    let uSDT
+
+    if (!forProduction) {
+      uSDT = await this.deployContractBy("TetherMock", usdtOwner || (await ethers.getSigners())[0])
+    }
 
     return {
       apeRegistry,
@@ -144,8 +131,7 @@ class DeployUtils {
     const deployed = require(jsonpath)
     if (this.localChain(chainId) || !deployed[chainId]
         // legacy:
-        || Array.isArray(deployed[chainId]))
-    {
+        || Array.isArray(deployed[chainId])) {
       deployed[chainId] = {
         paymentTokens: {},
         sellingTokens: {}
@@ -164,6 +150,37 @@ class DeployUtils {
   async deployERC20(owner, name, ticker) {
     return await this.deployContractBy("ERC20Token", owner, name, ticker)
   }
+
+  async initAndDeployToken(conf = {}) {
+    const ethers = this.ethers
+    const chainId = (await ethers.provider.getNetwork()).chainId
+
+    let {
+      signerIndex,
+      tokenName,
+      tokenAbbr,
+      isTether
+    } = conf
+
+    const owner = (await ethers.getSigners())[signerIndex]
+
+    let token
+    if (isTether) {
+      tokenName = 'Tether USDT'
+      tokenAbbr = 'USDT'
+      token = await this.deployContractBy("TetherMock", owner)
+    } else {
+      token = await this.deployERC20(owner, tokenName, tokenAbbr)
+    }
+    return {
+      chainId,
+      name: tokenName,
+      abbr: tokenAbbr,
+      owner: owner.address,
+      token: token.address
+    }
+  }
+
 }
 
 module.exports = DeployUtils

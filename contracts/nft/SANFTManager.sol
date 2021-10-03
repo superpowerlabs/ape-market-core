@@ -21,7 +21,6 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   bytes32 internal constant _SALE_DB = keccak256("SaleDB");
   bytes32 internal constant _PROFILE = keccak256("Profile");
 
-  address public apeWallet;
   IERC20Min private _feeToken;
 
   // we use a permillage to be able to charge, for example, the 2.5%. In this case the value would be 25
@@ -39,10 +38,9 @@ contract SANFTManager is ISANFTManager, RegistryUser {
 
   constructor(
     address registry,
-    address apeWallet_,
     uint256 feePoints_
   ) RegistryUser(registry) {
-    updatePayments(apeWallet_, feePoints_);
+    updatePayments(feePoints_);
   }
 
   ISANFT private _sanft;
@@ -69,8 +67,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     }
   }
 
-  function updatePayments(address apeWallet_, uint256 feePoints_) public virtual override onlyOwner {
-    apeWallet = apeWallet_;
+  function updatePayments(uint256 feePoints_) public virtual override onlyOwner {
     feePoints = feePoints_;
   }
 
@@ -230,7 +227,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     (newBundle, feeBundle) = _applyFeesToBundle(newBundle);
 
     _createNewToken(_msgSender(), newBundle);
-    _createNewToken(apeWallet, feeBundle);
+    _createNewToken(_saleData.apeWallet(), feeBundle);
   }
 
   function _applyFeesToBundle(ISANFT.SA[] memory bundle) internal view returns (ISANFT.SA[] memory, ISANFT.SA[] memory) {
@@ -256,7 +253,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     ISANFT.SA[] memory bundle = _sanft.getBundle(tokenId);
     ISANFT.SA[] memory feeBundle;
     (bundle, feeBundle) = _applyFeesToBundle(bundle);
-    _createNewToken(apeWallet, feeBundle);
+    _createNewToken(_saleData.apeWallet(), feeBundle);
     require(keptAmounts.length == bundle.length, "SANFTManager: length of SAs does not match split");
     ISANFT.SA[] memory newBundleA = new ISANFT.SA[](keptAmounts.length);
     ISANFT.SA[] memory newBundleB = new ISANFT.SA[](keptAmounts.length);
