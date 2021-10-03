@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./ISaleSetupHasher.sol";
 import "./ISaleFactory.sol";
 import "./ISaleDB.sol";
 import "./Sale.sol";
 import "../registry/RegistryUser.sol";
 
+import {SaleLib} from "../libraries/SaleLib.sol";
+
 contract SaleFactory is ISaleFactory, RegistryUser {
   bytes32 internal constant _SALE_DATA = keccak256("SaleData");
-  bytes32 internal constant _SALE_SETUP_HASHER = keccak256("SaleSetupHasher");
   bytes32 internal constant _SALE_DB = keccak256("SaleDB");
 
   mapping(bytes32 => uint16) private _setupHashes;
@@ -27,7 +27,6 @@ contract SaleFactory is ISaleFactory, RegistryUser {
   }
 
   ISaleData private _saleData;
-  ISaleSetupHasher private _saleSetupHasher;
   ISaleDB private _saleDB;
 
   function getSaleIdBySetupHash(bytes32 hash) external view virtual override returns (uint16) {
@@ -38,10 +37,6 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     address addr = _get(_SALE_DATA);
     if (addr != address(_saleData)) {
       _saleData = ISaleData(addr);
-    }
-    addr = _get(_SALE_SETUP_HASHER);
-    if (addr != address(_saleSetupHasher)) {
-      _saleSetupHasher = ISaleSetupHasher(addr);
     }
     addr = _get(_SALE_DB);
     if (addr != address(_saleDB)) {
@@ -81,7 +76,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     uint256[] memory extraVestingSteps,
     address paymentToken
   ) external override {
-    bytes32 setupHash = _saleSetupHasher.packAndHashSaleConfiguration(setup, extraVestingSteps, paymentToken);
+    bytes32 setupHash = SaleLib.packAndHashSaleConfiguration(setup, extraVestingSteps, paymentToken);
     require(saleId != 0 && _setupHashes[setupHash] == saleId, "SaleFactory: non approved sale or modified params");
     if (setup.futureTokenSaleId != 0) {
       ISaleDB.Setup memory futureTokenSetup = _saleData.getSetupById(setup.futureTokenSaleId);
