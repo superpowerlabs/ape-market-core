@@ -67,7 +67,7 @@ class DeployUtils {
     const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators[0])
     const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
     const sANFT = await this.deployContract('SANFT', registryAddress)
-    const sANFTManager = await this.deployContract('SANFTManager', registryAddress, apeWallet, feePoints)
+    const sANFTManager = await this.deployContract('SANFTManager', registryAddress, feePoints)
 
     await apeRegistry.register([
       'Profile',
@@ -88,6 +88,8 @@ class DeployUtils {
       sANFTManager.address,
       tokenRegistry.address
     ])
+
+    console.log(ethers.utils.id('SANFTManager'))
 
     await apeRegistry.updateAllContracts()
 

@@ -16,7 +16,7 @@ for (let contract in addresses) {
   } else if (contract === 'SaleFactory') {
     args = addresses.ApeRegistry + ' ' + '0xB298a3987001d4318847488CBcC534221915bAe1'
   } else if (contract === 'SANFTManager') {
-    args = addresses.ApeRegistry + ' ' + config['3'].apeWallet + ' ' + 100
+    args = addresses.ApeRegistry + ' ' + 100
   }
   console.log('\n')
   console.log(contract)

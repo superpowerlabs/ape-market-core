@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 interface ISANFTManager {
-  function updatePayments(address apeWallet_, uint256 feePoints_) external;
+  function updatePayments(uint256 feePoints_) external;
 
   function mint(
     address receiver,
