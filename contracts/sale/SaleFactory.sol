@@ -20,10 +20,8 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     _;
   }
 
-  constructor(address registry, address[] memory operators) RegistryUser(registry) {
-    for (uint256 i = 0; i < operators.length; i++) {
-      setOperator(operators[i], true);
-    }
+  constructor(address registry, address operator) RegistryUser(registry) {
+    setOperator(operator, true);
   }
 
   ISaleData private _saleData;

@@ -1,3 +1,4 @@
+require('dotenv').config()
 const path = require('path')
 const {execSync} = require('child_process')
 const addresses = require('../deployedToRopsten.json')
@@ -13,9 +14,11 @@ for (let contract in addresses) {
   } else if (contract === 'SaleData') {
     args = addresses.ApeRegistry + ' ' + config['3'].apeWallet
   } else if (contract === 'SaleFactory') {
-    arguments = '--constructor-args arguments.js'
+    args = addresses.ApeRegistry + ' ' + '0xB298a3987001d4318847488CBcC534221915bAe1'
   } else if (contract === 'SANFTManager') {
     args = addresses.ApeRegistry + ' ' + config['3'].apeWallet + ' ' + 100
   }
+  console.log('\n')
+  console.log(contract)
   console.log(`npx hardhat verify --show-stack-traces --network ropsten ${arguments} ${addresses[contract]} ${args} `)
 }

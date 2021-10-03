@@ -20,41 +20,51 @@ async function main() {
 
   const deployUtils = new DeployUtils(ethers)
   const chainId = await deployUtils.currentChainId()
-  let data = await deployUtils.initAndDeploy({
-    operators: [operator.address],
-    apeWallet: apeWallet.address,
-    usdtOwner
-  })
 
-  const aBC = await deployUtils.deployERC20(usdtOwner, 'Abc Token', 'ABC')
-  const mNO = await deployUtils.deployERC20(usdtOwner, 'Mno Token', 'MNO')
-  const xYZ = await deployUtils.deployERC20(usdtOwner, 'Xyz Token', 'XYZ')
+  if (process.env.DEPLOY_SINGLE_CONTRACT) {
+    // if you use this option, be sure that the file exists
+    const data = require('../env.singleContract')
+    console.log(data)
+    const newContract = await deployUtils.deployContract(data.name, ...data.params)
+  } else {
 
-  await data.uSDT.connect(usdtOwner).transfer(apeWallet.address, 1e11)
+    let data = await deployUtils.initAndDeploy({
+      operators: [operator.address],
+      apeWallet: apeWallet.address,
+      usdtOwner
+    })
 
-  data = Object.assign(data, {
-    aBC,
-    mNO,
-    xYZ
-  })
+    const aBC = await deployUtils.deployERC20(usdtOwner, 'Abc Token', 'ABC')
+    const mNO = await deployUtils.deployERC20(usdtOwner, 'Mno Token', 'MNO')
+    const xYZ = await deployUtils.deployERC20(usdtOwner, 'Xyz Token', 'XYZ')
 
-  for (let i in data) {
-    data[i] = data[i].address ? data[i].address : data[i]
+    await data.uSDT.connect(usdtOwner).transfer(apeWallet.address, 1e11)
+
+    data = Object.assign(data, {
+      aBC,
+      mNO,
+      xYZ,
+      operator
+    })
+
+    for (let i in data) {
+      data[i] = data[i].address ? data[i].address : data[i]
+    }
+    console.log(data)
+
+    const extraData = {
+      paymentTokens: {},
+      sellingTokens: {}
+    }
+    for (let k of 'uSDT'.split(',')) {
+      extraData.paymentTokens[k.toUpperCase()] = data[k]
+    }
+    for (let k of 'aBC,mNO,xYZ'.split(',')) {
+      extraData.sellingTokens[k.toUpperCase()] = data[k]
+    }
+
+    await deployUtils.saveConfig(chainId, data, extraData)
   }
-  console.log(data)
-
-  const extraData = {
-    paymentTokens: {},
-    sellingTokens: {}
-  }
-  for (let k of 'uSDT'.split(',')) {
-    extraData.paymentTokens[k.toUpperCase()] = data[k]
-  }
-  for (let k of 'aBC,mNO,xYZ'.split(',')) {
-    extraData.sellingTokens[k.toUpperCase()] = data[k]
-  }
-
-  await deployUtils.saveConfig(chainId, data, extraData)
 }
 
 
