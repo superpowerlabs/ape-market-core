@@ -89,8 +89,6 @@ class DeployUtils {
       tokenRegistry.address
     ])
 
-    console.log(ethers.utils.id('SANFTManager'))
-
     await apeRegistry.updateAllContracts()
 
     let uSDT

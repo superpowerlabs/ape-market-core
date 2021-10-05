@@ -60,11 +60,11 @@ describe("SaleData", async function () {
       }
       let [steps, message] = await saleSetupHasher.validateAndPackVestingSteps(schedule)
 
-      assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044530), 0);
-      assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (20 * 24 * 3600)), 2);
-      assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (70 * 24 * 3600)), 7);
-      assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (115 * 24 * 3600)), 11);
-      assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (1000 * 24 * 3600)), 100);
+      assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044530), 0);
+      assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (20 * 24 * 3600)), 2);
+      assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (70 * 24 * 3600)), 7);
+      assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (115 * 24 * 3600)), 11);
+      assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (1000 * 24 * 3600)), 100);
 
     })
 
@@ -79,8 +79,8 @@ describe("SaleData", async function () {
         ]
       let [steps, message] = await saleSetupHasher.validateAndPackVestingSteps(schedule)
 
-      assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542), 30);
-      assert.equal(await saleData.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (365 * 24 * 3600)), 100);
+      assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542), 30);
+      assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (365 * 24 * 3600)), 100);
 
     })
 
