@@ -2,12 +2,13 @@ require('dotenv').config()
 require("@nomiclabs/hardhat-waffle")
 require("@nomiclabs/hardhat-etherscan")
 require('hardhat-contract-sizer')
+const requireOrMock = require('require-or-mock')
 
 if (process.env.GAS_REPORT === 'yes') {
   require("hardhat-gas-reporter");
 }
 
-const env = require('./allEnvs').envJson
+const env = require(requireOrMock('env.json', true, {rinkeby: {url: ''}}))
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
