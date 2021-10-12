@@ -20,6 +20,7 @@ contract ApeRegistry is IApeRegistry, Ownable {
     require(contractHashes.length == addrs.length, "ApeRegistry: contractHashes and addresses are inconsistent");
     bool changesDone;
     for (uint256 i = 0; i < contractHashes.length; i++) {
+      changesDone = false;
       bytes32 contractHash = contractHashes[i];
       bool exists = _registry[contractHash] != address(0);
       if (addrs[i] == address(0)) {
@@ -39,7 +40,9 @@ contract ApeRegistry is IApeRegistry, Ownable {
         }
         changesDone = true;
       }
-      emit RegistryUpdated(contractHashes[i], addrs[i]);
+      if (changesDone) {
+        emit RegistryUpdated(contractHashes[i], addrs[i]);
+      }
     }
   }
 
