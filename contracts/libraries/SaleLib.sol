@@ -29,20 +29,18 @@ library SaleLib {
     {"waitTime":210,"percentage":21},{"waitTime":220,"percentage":22},{"waitTime":230,"percentage":23},
     {"waitTime":240,"percentage":24},{"waitTime":250,"percentage":25},{"waitTime":260,"percentage":26},
     {"waitTime":270,"percentage":27},{"waitTime":280,"percentage":28},{"waitTime":290,"percentage":29},
-    {"waitTime":300,"percentage":30},{"waitTime":310,"percentage":31},{"waitTime":320,"percentage":32},
-    {"waitTime":330,"percentage":33},{"waitTime":340,"percentage":34},{"waitTime":350,"percentage":100}
+    {"waitTime":300,"percentage":30},{"waitTime":310,"percentage":31},{"waitTime":320,"percentage":32}
   ]
 
-  Saving it in a mapping(uint => VestingStep) would cost a lot of gas.
+  Saving it in a mapping(uint => VestingStep) would cost a lot of gas, with the risk of going out of gas.
 
   The idea is to pack steps in uint256. In the case above, we would get
-  the following array, which would cost only 4 words.
+  the following array, which would cost only 3 words.
 
     [
       "11010010009009008008007007006006005005004004003003002002001001000",
       "22021021020020019019018018017017016016015015014014013013012012011",
-      "33032032031031030030029029028028027027026026025025024024023023022",
-      "35099034033"
+      "32031031030030029029028028027027026026025025024024023023022"
     ]
 
   For better optimization, the first element of the array is saved in the sale
