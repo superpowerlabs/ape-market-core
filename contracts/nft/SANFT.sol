@@ -105,4 +105,5 @@ contract SANFT is ISANFT, RegistryUser, ERC721, ERC721Enumerable {
   function getBundle(uint256 tokenId) external view override returns (SA[] memory) {
     return _bundles[tokenId];
   }
+
 }

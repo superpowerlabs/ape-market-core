@@ -15,8 +15,7 @@ interface ISANFTManager {
     view
     returns (
       bool,
-      string memory,
-      uint256
+      string memory
     );
 
   function merge(uint256[] memory tokenIds) external;
