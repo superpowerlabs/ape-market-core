@@ -2,12 +2,13 @@ require('dotenv').config()
 require("@nomiclabs/hardhat-waffle")
 require("@nomiclabs/hardhat-etherscan")
 require('hardhat-contract-sizer')
+const requireOrMock = require('require-or-mock')
 
 if (process.env.GAS_REPORT === 'yes') {
   require("hardhat-gas-reporter");
 }
 
-const env = require('./allEnvs').envJson
+const env = requireOrMock('env.json')
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -45,7 +46,7 @@ module.exports = {
       timeout: 1800000
     },
     rinkeby: env.rinkeby,
-    ropsten: {
+    ropsten: process.env.TESTNET_OWNER ? {
       url: `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [
         process.env.TESTNET_OWNER,
@@ -53,6 +54,8 @@ module.exports = {
         process.env.TESTNET_OPERATOR,
         process.env.TESTNET_TETHER_OWNER
       ]
+    } : {
+      url: ''
     }
   },
   gasReporter: {

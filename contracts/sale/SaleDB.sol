@@ -18,7 +18,6 @@ contract SaleDB is ISaleDB, RegistryUser {
   mapping(uint16 => uint256[]) private _extraVestingSteps;
 
   mapping(uint16 => mapping(address => uint32)) private _approvedUsdValueAmounts; 
-  mapping(uint16 => mapping(address => uint32)) private _valuesInEscrow;
 
   modifier onlySaleData() {
     require(_msgSender() == _saleDataAddress, "SaleBD: only SaleData can call this function");
