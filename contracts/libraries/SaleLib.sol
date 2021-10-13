@@ -71,7 +71,7 @@ library SaleLib {
     pure
     returns (uint256[] memory, string memory)
   {
-    // the number 11 is because we not that we can pack at most 11 steps in a single uint256
+    // the number 11 is because we can pack at most 11 steps in a single uint256
     uint256 len = vestingStepsArray.length / 11;
     if (vestingStepsArray.length % 11 > 0) len++;
     uint256[] memory steps = new uint256[](len);
@@ -138,7 +138,7 @@ library SaleLib {
     // the function reverts
     for (uint256 i = extraVestingSteps.length + 1; i >= 1; i--) {
       uint256 steps = i > 1 ? extraVestingSteps[i - 2] : vestingSteps;
-      // the number 12 is because we know that there are at most 11 steps
+      // the number 12 is because there are at most 11 steps
       // in any single uint256. Must add 1 to avoid a revert, like above
       for (uint256 k = 12; k >= 1; k--) {
         uint256 step = steps / (10**(6 * (k - 1)));
