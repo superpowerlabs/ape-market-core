@@ -10,7 +10,6 @@ import "hardhat/console.sol";
 
 contract RegistryUser is IRegistryUser, Ownable {
   IApeRegistry internal _registry;
-  //  address internal _owner;
 
   modifier onlyRegistry() {
     require(
