@@ -63,9 +63,9 @@ library SaleLib {
       for (uint256 k = 12; k >= 1; k--) {
         uint256 step = steps / (10**(6 * (k - 1)));
         if (step != 0) {
-          uint256 ts = (step / 100);
+          uint256 days_ = (step / 100);
           uint256 percentage = (step % 100) + 1;
-          if ((ts * 24 * 3600) + tokenListTimestamp <= currentTimestamp) {
+          if ((days_ * 1 days) + tokenListTimestamp <= currentTimestamp) {
             return uint8(percentage);
           }
         }

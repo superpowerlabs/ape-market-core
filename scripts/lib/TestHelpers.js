@@ -9,7 +9,8 @@ const TestHelpers = {
   async assertThrowsMessage(promise, message) {
     try {
       await promise
-      throw new Error('It did not throw')
+      console.log('It did not throw')
+      assert.isTrue(false)
     } catch (e) {
       const shouldBeTrue = e.message.indexOf(message) > -1
       if (!shouldBeTrue) {

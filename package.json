@@ -35,6 +35,6 @@
     "lint": "prettier --write 'contracts/**/*.sol' && solhint 'contracts/**/*.sol'"
   },
   "dependencies": {
-    "require-or-mock": "^0.1.2"
+    "require-or-mock": "^0.2.0"
   }
 }
