@@ -6,11 +6,10 @@ import "./IApeRegistry.sol";
 import "./IRegistryUser.sol";
 
 // for debugging only
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 contract RegistryUser is IRegistryUser, Ownable {
   IApeRegistry internal _registry;
-  //  address internal _owner;
 
   modifier onlyRegistry() {
     require(
