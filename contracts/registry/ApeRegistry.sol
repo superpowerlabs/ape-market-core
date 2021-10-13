@@ -27,7 +27,6 @@ contract ApeRegistry is IApeRegistry, Ownable {
           delete _registry[contractHash];
           for (uint256 j = 0; j < _contractsList.length; j++) {
             if (_contractsList[j] == contractHash) {
-//              delete _contractsList[j];
               _contractsList[j] = _contractsList[_contractsList.length - 1];
               _contractsList.pop();
               break;
