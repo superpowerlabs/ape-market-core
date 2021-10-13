@@ -60,6 +60,7 @@ describe("SaleData", async function () {
       }
       // console.log(JSON.stringify(schedule))
       let [steps, message] = await saleSetupHasher.validateAndPackVestingSteps(schedule)
+
       // console.log(JSON.stringify(steps.map(e => e.toString()), null, 2))
       assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044530), 0);
       assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542 + (20 * 24 * 3600)), 2);
