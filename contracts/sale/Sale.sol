@@ -9,9 +9,11 @@ import "./ISaleData.sol";
 import "./ISale.sol";
 import "./IERC20Min.sol";
 import "../registry/IApeRegistry.sol";
+import "../libraries/SafeERC20Min.sol";
 
 contract Sale is ISale, Ownable {
   using SafeMath for uint256;
+  using SafeERC20Min for IERC20Min;
 
   bytes32 internal constant _SALE_DATA = keccak256("SaleData");
   bytes32 internal constant _SANFT_MANAGER = keccak256("SANFTManager");
@@ -50,7 +52,7 @@ contract Sale is ISale, Ownable {
     ISaleData saleData = _getSaleData();
     _isSaleOwner(saleData);
     (IERC20Min sellingToken, uint256 amount) = saleData.setLaunchOrExtension(_saleId, 0);
-    sellingToken.transferFrom(_msgSender(), address(this), amount);
+    sellingToken.safeTransferFrom(_msgSender(), address(this), amount);
   }
 
   // Sale creator calls this function to extend a sale.
@@ -59,7 +61,7 @@ contract Sale is ISale, Ownable {
     ISaleData saleData = _getSaleData();
     _isSaleOwner(saleData);
     (IERC20Min sellingToken, uint256 extraAmount) = saleData.setLaunchOrExtension(_saleId, extraValue);
-    sellingToken.transferFrom(_msgSender(), address(this), extraAmount);
+    sellingToken.safeTransferFrom(_msgSender(), address(this), extraAmount);
   }
 
   // Invest amount into the sale.
@@ -70,8 +72,8 @@ contract Sale is ISale, Ownable {
     require(setup.futureTokenSaleId == 0, "Cannot invest in swap");
     (uint256 paymentTokenAmount, uint256 buyerFee) = saleData.setInvest(_saleId, _msgSender(), usdValueAmount);
     IERC20Min paymentToken = IERC20Min(saleData.paymentTokenById(setup.paymentTokenId));
-    paymentToken.transferFrom(_msgSender(), saleData.apeWallet(), buyerFee);
-    paymentToken.transferFrom(_msgSender(), address(this), paymentTokenAmount);
+    paymentToken.safeTransferFrom(_msgSender(), saleData.apeWallet(), buyerFee);
+    paymentToken.safeTransferFrom(_msgSender(), address(this), paymentTokenAmount);
   }
 
   function withdrawPayment(uint256 amount) external virtual override {

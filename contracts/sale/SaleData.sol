@@ -220,7 +220,7 @@ contract SaleData is ISaleData, RegistryUser {
   ) public view virtual override returns (uint256) {
     if (_saleDB.getSetupById(saleId).tokenListTimestamp == 0) return 0;
     uint256 vested = vestedPercentage(saleId);
-    return uint256(remainingAmount).sub(vested == 100 ? 0 : uint256(fullAmount).mul(100 - vested).div(100));
+    return uint256(remainingAmount).sub(uint256(fullAmount).mul(100 - vested).div(100));
   }
 
   function triggerTokenListing(uint16 saleId) external virtual override onlySaleOwner(saleId) {
