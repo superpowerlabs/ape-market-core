@@ -15,8 +15,18 @@ import "./IRegistryUser.sol";
 contract ApeRegistry is IApeRegistry, Ownable {
   mapping(bytes32 => address) internal _registry;
   bytes32[] internal _contractsList;
+  address public multiSigOwner;
 
-  function register(bytes32[] memory contractHashes, address[] memory addrs) external override onlyOwner {
+  modifier onlyMultiSigOwner() {
+    require(_msgSender() == multiSigOwner, "ApeRegistry: not the owner");
+    _;
+  }
+
+  function setMultiSigOwner(address addr) external override onlyOwner {
+    multiSigOwner = addr;
+  }
+
+  function register(bytes32[] memory contractHashes, address[] memory addrs) external override onlyMultiSigOwner {
     require(contractHashes.length == addrs.length, "ApeRegistry: contractHashes and addresses are inconsistent");
     bool changesDone;
     for (uint256 i = 0; i < contractHashes.length; i++) {
@@ -47,7 +57,7 @@ contract ApeRegistry is IApeRegistry, Ownable {
     }
   }
 
-  function updateContracts(uint256 initialIndex, uint256 limit) public override onlyOwner {
+  function updateContracts(uint256 initialIndex, uint256 limit) public override onlyMultiSigOwner {
     IRegistryUser registryUser;
     for (uint256 j = initialIndex; j < limit; j++) {
       if (_contractsList[j] != 0) {
@@ -57,12 +67,16 @@ contract ApeRegistry is IApeRegistry, Ownable {
     }
   }
 
-  function updateAllContracts() external override onlyOwner {
+  function updateAllContracts() external override onlyMultiSigOwner {
     // this could go out of gas
     updateContracts(0, _contractsList.length);
   }
 
   function get(bytes32 contractHash) external view override returns (address) {
     return _registry[contractHash];
+  }
+
+  function setMultiSigOwner(address addr) {
+
   }
 }

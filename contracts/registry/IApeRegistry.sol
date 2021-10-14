@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 interface IApeRegistry {
   event RegistryUpdated(bytes32 contractHash, address addr);
 
+  function setMultiSigOwner(address addr) external;
+
   function register(bytes32[] memory contractHashes, address[] memory addrs) external;
 
   function get(bytes32 contractHash) external view returns (address);
