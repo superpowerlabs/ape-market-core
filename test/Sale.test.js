@@ -92,6 +92,7 @@ describe("Sale", async function () {
       saleAddress: addr0,
       isFutureToken: false,
       futureTokenSaleId: 0,
+      tokenFeeInvestorPoints: 100
     };
 
 

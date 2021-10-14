@@ -107,6 +107,7 @@ describe("SANFT", async function () {
       saleAddress: addr0,
       isFutureToken: false,
       futureTokenSaleId: 0,
+      tokenFeeInvestorPoints: 100
     };
 
     hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)

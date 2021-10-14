@@ -22,9 +22,6 @@ contract SANFTManager is ISANFTManager, RegistryUser {
 
   IERC20Min private _feeToken;
 
-  // we use a permillage to be able to charge, for example, the 2.5%. In this case the value would be 25
-  uint256 public feePoints;
-
   modifier onlySANFT() {
     require(_msgSender() == address(_sanft), "SANFTManager: only SANFT can call this function");
     _;
@@ -35,9 +32,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     _;
   }
 
-  constructor(address registry, uint256 feePoints_) RegistryUser(registry) {
-    updatePayments(feePoints_);
-  }
+  constructor(address registry) RegistryUser(registry) {}
 
   ISANFT private _sanft;
   ISaleData private _saleData;
@@ -61,10 +56,6 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     if (addr != address(_saleDB)) {
       _saleDB = ISaleDB(addr);
     }
-  }
-
-  function updatePayments(uint256 feePoints_) public virtual override onlyOwner {
-    feePoints = feePoints_;
   }
 
   /**
@@ -121,13 +112,13 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   function _createNewToken(address owner, ISANFT.SA[] memory bundle) internal {
     uint256 nextId = _sanft.nextTokenId();
     // cleaning empty SAs
-    uint size;
+    uint256 size;
     for (uint256 i = 0; i < bundle.length; i++) {
       if (bundle[i].remainingAmount > 0) {
         size++;
       }
     }
-    uint j;
+    uint256 j;
     ISANFT.SA[] memory finalBundle = new ISANFT.SA[](size);
     for (uint256 i = 0; i < bundle.length; i++) {
       if (bundle[i].remainingAmount != 0) {
@@ -138,7 +129,10 @@ contract SANFTManager is ISANFTManager, RegistryUser {
       if (i == 0) {
         _sanft.mint(owner, finalBundle[i].saleId, finalBundle[i].fullAmount, finalBundle[i].remainingAmount);
       } else {
-        _sanft.addSAToBundle(nextId, ISANFT.SA(finalBundle[i].saleId, finalBundle[i].fullAmount, finalBundle[i].remainingAmount));
+        _sanft.addSAToBundle(
+          nextId,
+          ISANFT.SA(finalBundle[i].saleId, finalBundle[i].fullAmount, finalBundle[i].remainingAmount)
+        );
       }
     }
   }
@@ -168,16 +162,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     _sanft.mint(receiver, saleId, uint120(amount), uint120(amount));
   }
 
-  function areMergeable(uint256[] memory tokenIds)
-  public
-  view
-  virtual
-  override
-  returns (
-    bool,
-    string memory
-  )
-  {
+  function areMergeable(uint256[] memory tokenIds) public view virtual override returns (bool, string memory) {
     if (tokenIds.length < 2) return (false, "Cannot merge a single NFT");
     address tokenOwner = _sanft.ownerOf(tokenIds[0]);
     for (uint256 i = 0; i < tokenIds.length; i++) {
@@ -228,13 +213,14 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   function _applyFeesToBundle(ISANFT.SA[] memory bundle) internal view returns (ISANFT.SA[] memory, ISANFT.SA[] memory) {
     ISANFT.SA[] memory apeBundle = new ISANFT.SA[](bundle.length);
     for (uint256 i = 0; i < bundle.length; i++) {
+      ISaleDB.Setup memory setup = _saleData.getSetupById(bundle[i].saleId);
       apeBundle[i].saleId = bundle[i].saleId;
       uint256 fullAmount = uint256(bundle[i].fullAmount);
       uint256 remainingAmount = uint256(bundle[i].remainingAmount);
       // calculates the fee
-      uint256 fee = remainingAmount.mul(feePoints).div(10000);
+      uint256 fee = remainingAmount.mul(setup.tokenFeeInvestorPoints).div(10000);
       // this is necessary to maintain correct vested percentages
-      uint256 feeToFullAmount = fullAmount.mul(feePoints).div(10000);
+      uint256 feeToFullAmount = fullAmount.mul(setup.tokenFeeInvestorPoints).div(10000);
       bundle[i].fullAmount = uint120(fullAmount.sub(feeToFullAmount));
       bundle[i].remainingAmount = uint120(remainingAmount.sub(fee));
       apeBundle[i].fullAmount = uint120(feeToFullAmount);

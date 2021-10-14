@@ -57,19 +57,19 @@ async function main() {
   console.log("transferring usdt done")
 
   saleVestingSchedule = [
-      {
-        waitTime: 0,
-        percentage: 20
-      },
-      {
-        waitTime: 30,
-        percentage: 50
-      },
-      {
-        waitTime: 90,
-        percentage: 100
-      }
-    ]
+    {
+      waitTime: 0,
+      percentage: 20
+    },
+    {
+      waitTime: 30,
+      percentage: 50
+    },
+    {
+      waitTime: 90,
+      percentage: 100
+    }
+  ]
 
   let saleData = await getContractFromRegistry("SaleData", SaleDataJson.abi, owner)
   let saleSetupHasher = await getContractFromRegistry("SaleSetupHasher", SaleSetupHasherJson.abi, owner)
@@ -80,75 +80,81 @@ async function main() {
   console.log("Hash packed")
 
   saleSetup = {
-      owner: seller.address,
-      minAmount: 30,
-      capAmount: 20000,
-      tokenListTimestamp: 0,
-      remainingAmount: 0,
-      pricingToken: 1,
-      pricingPayment: 2,
-      paymentTokenId: 0,
-      vestingSteps: schedule[0],
-      sellingToken: sellingToken.address,
-      totalValue: 50000,
-      tokenIsTransferable: true,
-      tokenFeePoints: 500,
-      extraFeePoints: 0,
-      paymentFeePoints: 300,
-      saleAddress: addr0
-    };
+    owner: seller.address,
+    minAmount: 30,
+    capAmount: 20000,
+    tokenListTimestamp: 0,
+    remainingAmount: 0,
+    pricingToken: 1,
+    pricingPayment: 2,
+    paymentTokenId: 0,
+    vestingSteps: schedule[0],
+    sellingToken: sellingToken.address,
+    totalValue: 50000,
+    tokenIsTransferable: true,
+    tokenFeePoints: 500,
+    extraFeePoints: 0,
+    paymentFeePoints: 300,
+    saleAddress: addr0,
+    isFutureToken: false,
+    futureTokenSaleId: 0,
+    tokenFeeInvestorPoints: 100
+  };
 
-    hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
+  hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
 
-    saleFactory = await getContractFromRegistry("SaleFactory", SaleFactoryJson.abi, owner)
+  saleFactory = await getContractFromRegistry("SaleFactory", SaleFactoryJson.abi, owner)
 
-    transaction = await saleFactory.connect(operator).approveSale(hash)
+  transaction = await saleFactory.connect(operator).approveSale(hash)
 
-    await transaction.wait()
+  await transaction.wait()
 
-    saleSetup = {
-      owner: seller.address,
-      minAmount: 30,
-      capAmount: 20000,
-      tokenListTimestamp: 0,
-      remainingAmount: 0,
-      pricingToken: 1,
-      pricingPayment: 2,
-      paymentTokenId: 0,
-      vestingSteps: schedule[0],
-      sellingToken: sellingToken.address,
-      totalValue: 50000,
-      tokenIsTransferable: true,
-      tokenFeePoints: 500,
-      extraFeePoints: 0,
-      paymentFeePoints: 300,
-      saleAddress: addr0
-    };
+  saleSetup = {
+    owner: seller.address,
+    minAmount: 30,
+    capAmount: 20000,
+    tokenListTimestamp: 0,
+    remainingAmount: 0,
+    pricingToken: 1,
+    pricingPayment: 2,
+    paymentTokenId: 0,
+    vestingSteps: schedule[0],
+    sellingToken: sellingToken.address,
+    totalValue: 50000,
+    tokenIsTransferable: true,
+    tokenFeePoints: 500,
+    extraFeePoints: 0,
+    paymentFeePoints: 300,
+    saleAddress: addr0,
+    isFutureToken: false,
+    futureTokenSaleId: 0,
+    tokenFeeInvestorPoints: 100
+  };
 
-    transaction = await saleFactory.connect(operator).approveSale(hash)
+  transaction = await saleFactory.connect(operator).approveSale(hash)
 
-    await transaction.wait()
+  await transaction.wait()
 
-    saleId = await saleFactory.getSaleIdBySetupHash(hash)
+  saleId = await saleFactory.getSaleIdBySetupHash(hash)
 
-    await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
-        .emit(saleFactory, "NewSale")
+  await expect(saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address))
+      .emit(saleFactory, "NewSale")
 
-    saleDB = await getContractFromRegistry("SaleDB", SaleDBJson.abi, owner)
-    saleAddress = await saleDB.getSaleAddressById(saleId)
-    sale = new ethers.Contract(saleAddress, SaleJson.abi, ethers.provider)
-    assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
+  saleDB = await getContractFromRegistry("SaleDB", SaleDBJson.abi, owner)
+  saleAddress = await saleDB.getSaleAddressById(saleId)
+  sale = new ethers.Contract(saleAddress, SaleJson.abi, ethers.provider)
+  assert.isTrue(await saleDB.getSaleIdByAddress(saleAddress) > 0)
 
-    await sellingToken.connect(seller).approve(saleAddress, await saleData.fromValueToTokensAmount(saleId, saleSetup.totalValue * 1.05))
-    await sale.connect(seller).launch()
+  await sellingToken.connect(seller).approve(saleAddress, await saleData.fromValueToTokensAmount(saleId, saleSetup.totalValue * 1.05))
+  await sale.connect(seller).launch()
 
-    await tether.connect(buyer).approve(saleAddress, normalize(400, 6));
-    await saleData.connect(seller).approveInvestors(saleId, [buyer.address], [normalize(200, 6)])
-    await sale.connect(buyer).invest(200)
+  await tether.connect(buyer).approve(saleAddress, normalize(400, 6));
+  await saleData.connect(seller).approveInvestors(saleId, [buyer.address], [normalize(200, 6)])
+  await sale.connect(buyer).invest(200)
 
-    saNFT = await getContractFromRegistry("SANFT", SANFTJson.abi, owner)
+  saNFT = await getContractFromRegistry("SANFT", SANFTJson.abi, owner)
 
-    console.log((await saNFT.balanceOf(buyer.address)).toNumber())
+  console.log((await saNFT.balanceOf(buyer.address)).toNumber())
 }
 
 
