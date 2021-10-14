@@ -60,7 +60,11 @@ contract MultiSigOwner is IMultiSigOwner, Context {
   ) public override onlyValidOrder(orderTimestamp) onlySigner {
     require(signers.length == addRemoves.length, "MultiSigOwner: arrays are inconsistent");
     for (uint256 i = 0; i < signers.length; i++) {
-      require(addRemoves[i] ? !_signer[signers[i]] : _signer[signers[i]], "MultiSigOwner: signer already active");
+      if (addRemoves[i]) {
+        require(!_signer[signers[i]], "MultiSigOwner: signer already active");
+      } else {
+        require(_signer[signers[i]], "MultiSigOwner: signer not found");
+      }
     }
     bytes32 order = keccak256(abi.encodePacked(signers, addRemoves, orderTimestamp));
     if (_orderIsReadyForExecution(order)) {

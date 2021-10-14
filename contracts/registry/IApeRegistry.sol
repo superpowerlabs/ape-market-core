@@ -5,8 +5,6 @@ interface IApeRegistry {
   event RegistryUpdated(bytes32 contractHash, address addr);
   event ChangePushedToSubscribers();
 
-  function setMultiSigOwner(address addr) external;
-
   function register(bytes32[] memory contractHashes, address[] memory addrs) external;
 
   function get(bytes32 contractHash) external view returns (address);

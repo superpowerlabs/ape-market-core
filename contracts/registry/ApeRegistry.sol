@@ -13,25 +13,11 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IApeRegistry.sol";
 import "./IRegistryUser.sol";
+import "../access/OwnedByMultiSigOwner.sol";
 
-contract ApeRegistry is IApeRegistry, Ownable {
+contract ApeRegistry is IApeRegistry, OwnedByMultiSigOwner {
   mapping(bytes32 => address) internal _registry;
   bytes32[] internal _contractsList;
-  address public multiSigOwner;
-  bool public requiresMultiSigOwner;
-
-  modifier onlyMultiSigOwner() {
-    if (requiresMultiSigOwner) {
-      require(_msgSender() == multiSigOwner, "ApeRegistry: not the multi sig owner");
-    } else {
-      require(_msgSender() == owner(), "ApeRegistry: not the owner");
-    }
-    _;
-  }
-
-  function setMultiSigOwner(address addr) external override onlyOwner {
-    multiSigOwner = addr;
-  }
 
   function register(bytes32[] memory contractHashes, address[] memory addrs) external override onlyMultiSigOwner {
     require(contractHashes.length == addrs.length, "ApeRegistry: contractHashes and addresses are inconsistent");
@@ -62,11 +48,11 @@ contract ApeRegistry is IApeRegistry, Ownable {
         emit RegistryUpdated(contractHashes[i], addrs[i]);
       }
     }
-    if (changesDone && !requiresMultiSigOwner) {
+    if (changesDone && !_requiresMultiSigOwner) {
       // at this initial step, there is no risk of going out of gas
       updateAllContracts();
       // after setting the following, only the multiSigOwner can make changes
-      requiresMultiSigOwner = true;
+      _requiresMultiSigOwner = true;
     }
   }
 

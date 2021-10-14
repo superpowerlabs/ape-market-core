@@ -49,10 +49,6 @@ describe("MultiSigRegistryOwner", async function () {
       await initNetworkAndDeploy()
     })
 
-    it("should verify that ApeRegistry#requiresMultiSigOwner", async function () {
-      assert.isTrue(await apeRegistry.requiresMultiSigOwner());
-    })
-
     it("should verify that the signers are correctly set up", async function () {
       const signersList = await multiSigRegistryOwner.getSigners()
       assert.isTrue(!!~signersList.indexOf(signer1.address))
