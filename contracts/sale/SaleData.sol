@@ -189,8 +189,9 @@ contract SaleData is ISaleData, RegistryUser {
     require(setup.futureTokenSaleId == 0, "SaleData: Cannot invest in a swapping sale");
     require(usdValueAmount >= setup.minAmount, "SaleData: Amount is too low");
     uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(usdValueAmount));
+    uint256 feeOnRemainingAmount = uint256(setup.remainingAmount).mul(setup.tokenFeePoints).div(10000);
     require(
-      tokensAmount <= uint256(setup.remainingAmount).div(1 + uint256(setup.tokenFeePoints).div(10000)), //remainingAmountWithoutFee,
+      tokensAmount <= uint256(setup.remainingAmount).sub(feeOnRemainingAmount),
       "SaleData: Not enough tokens available"
     );
     if (usdValueAmount == approved) {
