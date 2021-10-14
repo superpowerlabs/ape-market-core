@@ -1,5 +1,6 @@
 const path = require('path')
 const fs = require('fs-extra')
+const {expect, assert} = require("chai")
 
 const configPath = path.resolve(__dirname, '../../config')
 const config = require(configPath)
@@ -53,7 +54,9 @@ class DeployUtils {
       apeWallet,
       operators,
       usdtOwner,
-      forProduction
+      forProduction,
+      signersList,
+      validity
     } = conf
 
     const apeRegistry = await this.deployContract('ApeRegistry')
@@ -67,8 +70,9 @@ class DeployUtils {
     const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
     const sANFT = await this.deployContract('SANFT', registryAddress)
     const sANFTManager = await this.deployContract('SANFTManager', registryAddress)
+    const multiSigRegistryOwner = await this.deployContract('MultiSigRegistryOwner', registryAddress, signersList, validity)
 
-    await apeRegistry.register([
+    await expect(await apeRegistry.register([
       'Profile',
       'SaleSetupHasher',
       'SaleDB',
@@ -86,9 +90,10 @@ class DeployUtils {
       sANFT.address,
       sANFTManager.address,
       tokenRegistry.address
-    ])
+    ])).emit(apeRegistry, "ChangePushedToSubscribers")
 
-    await apeRegistry.updateAllContracts()
+    // after the first setup, only the multiSig owner can change it
+    await apeRegistry.setMultiSigOwner(multiSigRegistryOwner.address)
 
     let uSDT
 
@@ -106,6 +111,7 @@ class DeployUtils {
       sANFT,
       sANFTManager,
       tokenRegistry,
+      multiSigRegistryOwner,
       apeWallet,
       operators,
       uSDT

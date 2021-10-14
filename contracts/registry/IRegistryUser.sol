@@ -2,7 +2,5 @@
 pragma solidity ^0.8.0;
 
 interface IRegistryUser {
-  function updateRegistry(address addr) external;
-
   function updateRegisteredContracts() external;
 }

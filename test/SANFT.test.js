@@ -2,11 +2,8 @@ const {expect, assert} = require("chai")
 const DeployUtils = require('../scripts/lib/DeployUtils')
 const {
   initEthers,
-  assertThrowsMessage,
   addr0,
-  getTimestamp,
-  increaseBlockTimestampBy,
-  formatBundle
+  increaseBlockTimestampBy
 } = require('../scripts/lib/TestHelpers')
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')

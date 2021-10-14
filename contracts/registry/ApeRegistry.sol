@@ -3,10 +3,12 @@ pragma solidity ^0.8.0;
 
 /**
  * @title ApeRegistry
- * @version 1.0.0
+ * @version 1.1.0
  * @author Francesco Sullo <francesco@sullo.co>
  * @dev A registry for all Ape contracts
  */
+
+import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IApeRegistry.sol";
@@ -16,9 +18,14 @@ contract ApeRegistry is IApeRegistry, Ownable {
   mapping(bytes32 => address) internal _registry;
   bytes32[] internal _contractsList;
   address public multiSigOwner;
+  bool public requiresMultiSigOwner;
 
   modifier onlyMultiSigOwner() {
-    require(_msgSender() == multiSigOwner, "ApeRegistry: not the owner");
+    if (requiresMultiSigOwner) {
+      require(_msgSender() == multiSigOwner, "ApeRegistry: not the multi sig owner");
+    } else {
+      require(_msgSender() == owner(), "ApeRegistry: not the owner");
+    }
     _;
   }
 
@@ -55,28 +62,35 @@ contract ApeRegistry is IApeRegistry, Ownable {
         emit RegistryUpdated(contractHashes[i], addrs[i]);
       }
     }
+    if (changesDone && !requiresMultiSigOwner) {
+      // at this initial step, there is no risk of going out of gas
+      updateAllContracts();
+      // after setting the following, only the multiSigOwner can make changes
+      requiresMultiSigOwner = true;
+    }
   }
 
   function updateContracts(uint256 initialIndex, uint256 limit) public override onlyMultiSigOwner {
     IRegistryUser registryUser;
+    bool done;
     for (uint256 j = initialIndex; j < limit; j++) {
       if (_contractsList[j] != 0) {
         registryUser = IRegistryUser(_registry[_contractsList[j]]);
         registryUser.updateRegisteredContracts();
+        done = true;
       }
+    }
+    if (done) {
+      emit ChangePushedToSubscribers();
     }
   }
 
-  function updateAllContracts() external override onlyMultiSigOwner {
+  function updateAllContracts() public override onlyMultiSigOwner {
     // this could go out of gas
     updateContracts(0, _contractsList.length);
   }
 
   function get(bytes32 contractHash) external view override returns (address) {
     return _registry[contractHash];
-  }
-
-  function setMultiSigOwner(address addr) {
-
   }
 }

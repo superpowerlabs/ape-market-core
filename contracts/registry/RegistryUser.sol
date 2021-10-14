@@ -27,12 +27,6 @@ contract RegistryUser is IRegistryUser, Ownable {
     return _registry.get(contractHash);
   }
 
-  function updateRegistry(address addr) external override onlyOwner {
-    // This is an emergency function. In theory,
-    // there should not be any reason to update the registry
-    _registry = IApeRegistry(addr);
-  }
-
   // This must be overwritten by passive users.
   function updateRegisteredContracts() external virtual override {}
 }

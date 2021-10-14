@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 interface IApeRegistry {
   event RegistryUpdated(bytes32 contractHash, address addr);
+  event ChangePushedToSubscribers();
 
   function setMultiSigOwner(address addr) external;
 
