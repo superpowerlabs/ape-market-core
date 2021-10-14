@@ -38,6 +38,7 @@ interface ISaleDB {
     address saleAddress; // 20 bytes
     bool isFutureToken;
     uint16 futureTokenSaleId;
+    uint16 tokenFeeInvestorPoints; // << the fee in sellingToken due by the investor
   }
 
   function nextSaleId() external view returns (uint16);

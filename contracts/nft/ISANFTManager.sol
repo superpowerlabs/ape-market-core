@@ -2,21 +2,13 @@
 pragma solidity ^0.8.0;
 
 interface ISANFTManager {
-  function updatePayments(uint256 feePoints_) external;
-
   function mint(
     address receiver,
     uint16 saleId,
     uint256 amount
   ) external;
 
-  function areMergeable(uint256[] memory tokenIds)
-    external
-    view
-    returns (
-      bool,
-      string memory
-    );
+  function areMergeable(uint256[] memory tokenIds) external view returns (bool, string memory);
 
   function merge(uint256[] memory tokenIds) external;
 
