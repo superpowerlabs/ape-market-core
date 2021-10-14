@@ -95,7 +95,9 @@ async function main() {
       tokenFeePoints: 500,
       extraFeePoints: 0,
       paymentFeePoints: 300,
-      saleAddress: addr0
+      saleAddress: addr0,
+      isFutureToken: false,
+      futureTokenSaleId: 0
     };
 
     hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
@@ -122,7 +124,9 @@ async function main() {
       tokenFeePoints: 500,
       extraFeePoints: 0,
       paymentFeePoints: 300,
-      saleAddress: addr0
+      saleAddress: addr0,
+      isFutureToken: false,
+      futureTokenSaleId: 0
     };
 
     transaction = await saleFactory.connect(operator).approveSale(hash)
@@ -141,6 +145,7 @@ async function main() {
 
     await sellingToken.connect(seller).approve(saleAddress, await saleData.fromValueToTokensAmount(saleId, saleSetup.totalValue * 1.05))
     await sale.connect(seller).launch()
+    console.log("Sale launched")
 
     await tether.connect(buyer).approve(saleAddress, normalize(400, 6));
     await saleData.connect(seller).approveInvestors(saleId, [buyer.address], [normalize(200, 6)])
