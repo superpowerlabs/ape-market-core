@@ -95,7 +95,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
       }
     }
     if (done) {
-      // puts the modified SA in a new NFT and burns the existing one
+      // puts the modified SA in a new NFT, if not emptied, and burns the existing one
       _createNewToken(_sanft.ownerOf(tokenId), bundle);
       _sanft.burn(tokenId);
     } else {
@@ -120,15 +120,25 @@ contract SANFTManager is ISANFTManager, RegistryUser {
 
   function _createNewToken(address owner, ISANFT.SA[] memory bundle) internal {
     uint256 nextId = _sanft.nextTokenId();
-    bool minted;
+    // cleaning empty SAs
+    uint size;
     for (uint256 i = 0; i < bundle.length; i++) {
       if (bundle[i].remainingAmount > 0) {
-        if (!minted) {
-          _sanft.mint(owner, bundle[i].saleId, bundle[i].fullAmount, bundle[i].remainingAmount);
-          minted = true;
-        } else {
-          _sanft.addSAToBundle(nextId, ISANFT.SA(bundle[i].saleId, bundle[i].fullAmount, bundle[i].remainingAmount));
-        }
+        size++;
+      }
+    }
+    uint j;
+    ISANFT.SA[] memory finalBundle = new ISANFT.SA[](size);
+    for (uint256 i = 0; i < bundle.length; i++) {
+      if (bundle[i].remainingAmount != 0) {
+        finalBundle[j++] = bundle[i];
+      }
+    }
+    for (uint256 i = 0; i < finalBundle.length; i++) {
+      if (i == 0) {
+        _sanft.mint(owner, finalBundle[i].saleId, finalBundle[i].fullAmount, finalBundle[i].remainingAmount);
+      } else {
+        _sanft.addSAToBundle(nextId, ISANFT.SA(finalBundle[i].saleId, finalBundle[i].fullAmount, finalBundle[i].remainingAmount));
       }
     }
   }
@@ -159,45 +169,34 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   }
 
   function areMergeable(uint256[] memory tokenIds)
-    public
-    view
-    virtual
-    override
-    returns (
-      bool,
-      string memory,
-      uint256
-    )
+  public
+  view
+  virtual
+  override
+  returns (
+    bool,
+    string memory
+  )
   {
-    if (tokenIds.length < 2) return (false, "Cannot merge a single NFT", 0);
+    if (tokenIds.length < 2) return (false, "Cannot merge a single NFT");
     address tokenOwner = _sanft.ownerOf(tokenIds[0]);
     for (uint256 i = 0; i < tokenIds.length; i++) {
-      if (_sanft.ownerOf(tokenIds[i]) != tokenOwner) return (false, "All NFTs must be owned by same owner", 0);
+      if (_sanft.ownerOf(tokenIds[i]) != tokenOwner) return (false, "All NFTs must be owned by same owner");
     }
-    uint256 counter;
-    ISANFT.SA[] memory bundle;
     for (uint256 i = 0; i < tokenIds.length; i++) {
       for (uint256 w = 0; w < tokenIds.length; w++) {
-        if (w != i && tokenIds[w] == tokenIds[i]) return (false, "NFT cannot be merged with itself", 0);
-      }
-      bundle = _sanft.getBundle(tokenIds[i]);
-      for (uint256 j = 0; j < bundle.length; j++) {
-        if (bundle[j].remainingAmount != 0) {
-          counter++;
-          break;
-        }
+        if (w != i && tokenIds[w] == tokenIds[i]) return (false, "NFT cannot be merged with itself");
       }
     }
-    if (counter == 1) return (false, "Not enough not empty SAs", 0);
-    return (true, "NFTs are mergeable", counter);
+    return (true, "NFTs are mergeable");
   }
 
   function merge(uint256[] memory tokenIds) external virtual override onlyTokenOwner(tokenIds[0]) {
-    (bool isMergeable, string memory message, uint256 counter) = areMergeable(tokenIds);
+    (bool isMergeable, string memory message) = areMergeable(tokenIds);
     require(isMergeable, string(abi.encodePacked("SANFTManager: ", message)));
     ISANFT.SA[] memory bundle;
     uint256 index = 0;
-    ISANFT.SA[] memory newBundle = new ISANFT.SA[](counter);
+    ISANFT.SA[] memory newBundle = new ISANFT.SA[](tokenIds.length);
     for (uint256 i = 0; i < tokenIds.length; i++) {
       bundle = _sanft.getBundle(tokenIds[i]);
       for (uint256 j = 0; j < bundle.length; j++) {
@@ -271,7 +270,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     if (a > 0 || b > 0) {
       // when burning an item, the last item is moved to
       // the position of the item to be deleted, and then last item deleted.
-      // The following arangement makes that, if A is split to B, C, B will replace
+      // The following arrangement makes that, if A is split to B, C, B will replace
       // A and C will be at the end.
       if (a > 0) _createNewToken(_msgSender(), newBundleA);
       _sanft.burn(tokenId);

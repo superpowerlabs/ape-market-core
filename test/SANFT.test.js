@@ -189,6 +189,33 @@ describe("SANFT", async function () {
 
       assert.equal((await sANFT.withdrawables(nft2))[1][0].toString(), (await saleData.fromValueToTokensAmount(saleId, expected)).toString())
 
+      assert.equal(await sANFT.balanceOf(buyer.address), 1)
+
+      let nft3 = await sANFT.tokenOfOwnerByIndex(buyer.address, 0)
+      assert.isTrue(nft3.toNumber() > 0)
+
+    })
+
+    it("should not mint a new SA if withdrawing everything", async function () {
+
+      await saleData.connect(seller).triggerTokenListing(saleId)
+      let vestedPercentage = await saleData.vestedPercentage(saleId)
+      expect(vestedPercentage).equal(20)
+
+      await increaseBlockTimestampBy(100 * 24 * 3600)
+
+      let nft = await sANFT.tokenOfOwnerByIndex(buyer.address, 0);
+      let allTokens = await saleData.fromValueToTokensAmount(saleId, 200)
+
+      let bundle = await sANFT.getBundle(nft)
+      let [saleIds, withdrawables] = await sANFT.withdrawables(nft)
+
+      assert.equal(allTokens.toString(), withdrawables[0].toString())
+
+      await sANFT.connect(buyer).withdraw(nft, [allTokens])
+
+      assert.equal((await sANFT.balanceOf(buyer.address)).toNumber(), 0)
+
     })
 
   })
