@@ -155,7 +155,6 @@ async function main() {
   saNFT = await getContractFromRegistry("SANFT", SANFTJson.abi, owner)
 
   console.log((await saNFT.balanceOf(buyer.address)).toNumber())
-
 }
 
 
