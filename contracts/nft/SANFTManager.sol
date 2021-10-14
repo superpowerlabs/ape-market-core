@@ -112,13 +112,13 @@ contract SANFTManager is ISANFTManager, RegistryUser {
   function _createNewToken(address owner, ISANFT.SA[] memory bundle) internal {
     uint256 nextId = _sanft.nextTokenId();
     // cleaning empty SAs
-    uint size;
+    uint256 size;
     for (uint256 i = 0; i < bundle.length; i++) {
       if (bundle[i].remainingAmount > 0) {
         size++;
       }
     }
-    uint j;
+    uint256 j;
     ISANFT.SA[] memory finalBundle = new ISANFT.SA[](size);
     for (uint256 i = 0; i < bundle.length; i++) {
       if (bundle[i].remainingAmount != 0) {
@@ -129,7 +129,10 @@ contract SANFTManager is ISANFTManager, RegistryUser {
       if (i == 0) {
         _sanft.mint(owner, finalBundle[i].saleId, finalBundle[i].fullAmount, finalBundle[i].remainingAmount);
       } else {
-        _sanft.addSAToBundle(nextId, ISANFT.SA(finalBundle[i].saleId, finalBundle[i].fullAmount, finalBundle[i].remainingAmount));
+        _sanft.addSAToBundle(
+          nextId,
+          ISANFT.SA(finalBundle[i].saleId, finalBundle[i].fullAmount, finalBundle[i].remainingAmount)
+        );
       }
     }
   }
@@ -159,16 +162,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
     _sanft.mint(receiver, saleId, uint120(amount), uint120(amount));
   }
 
-  function areMergeable(uint256[] memory tokenIds)
-  public
-  view
-  virtual
-  override
-  returns (
-    bool,
-    string memory
-  )
-  {
+  function areMergeable(uint256[] memory tokenIds) public view virtual override returns (bool, string memory) {
     if (tokenIds.length < 2) return (false, "Cannot merge a single NFT");
     address tokenOwner = _sanft.ownerOf(tokenIds[0]);
     for (uint256 i = 0; i < tokenIds.length; i++) {
