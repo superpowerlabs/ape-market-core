@@ -173,7 +173,6 @@ library SaleLib {
           setup.owner,
           setup.isTokenTransferable,
           setup.isFutureToken,
-          setup.futureTokenSaleId,
           paymentToken,
           setup.vestingSteps,
           extraVestingSteps,
@@ -187,7 +186,9 @@ library SaleLib {
             uint256(setup.tokenFeePoints),
             uint256(setup.totalValue),
             uint256(setup.paymentFeePoints),
-            uint256(setup.extraFeePoints)
+            uint256(setup.extraFeePoints),
+            uint256(setup.futureTokenSaleId),
+            uint256(setup.tokenFeeInvestorPoints)
           ]
         )
       );

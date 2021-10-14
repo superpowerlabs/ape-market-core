@@ -108,7 +108,8 @@ describe("SANFTManager", async function () {
       paymentFeePoints: 300,
       saleAddress: addr0,
       isFutureToken,
-      futureTokenSaleId
+      futureTokenSaleId,
+      tokenFeeInvestorPoints: 100
     };
 
 
@@ -183,6 +184,8 @@ describe("SANFTManager", async function () {
 
   describe('#merge', async function () {
 
+    let sale1tokenFeeInvestorPoints
+
 
     beforeEach(async function () {
       await initNetworkAndDeploy()
@@ -201,14 +204,15 @@ describe("SANFTManager", async function () {
       saleSetup.pricingToken = 50
       saleSetup.pricingPayment = saleId
 
+      sale1tokenFeeInvestorPoints = saleSetup.tokenFeeInvestorPoints
+      saleSetup.tokenFeeInvestorPoints = 200
+
       // setup the second sale
 
       hash = await saleSetupHasher.packAndHashSaleConfiguration(saleSetup, [], tether.address)
       transaction = await saleFactory.connect(operator).approveSale(hash)
       transaction.wait()
       saleId2 = await saleFactory.getSaleIdBySetupHash(hash)
-
-
 
       await saleFactory.connect(seller).newSale(saleId2, saleSetup, [], tether.address)
 
@@ -246,10 +250,11 @@ describe("SANFTManager", async function () {
       assert.equal(message, 'NFTs are mergeable')
 
       let sumAmountSale1 = bundle1[0].remainingAmount.add(bundle2[0].remainingAmount)
-      let fee1 = sumAmountSale1.mul(await sANFTManager.feePoints()).div(10000)
+
+      let fee1 = sumAmountSale1.mul(sale1tokenFeeInvestorPoints).div(10000)
 
       let sumAmountSale2 = bundle3[0].remainingAmount
-      let fee2 = sumAmountSale2.mul(await sANFTManager.feePoints()).div(10000)
+      let fee2 = sumAmountSale2.mul(saleSetup.tokenFeeInvestorPoints).div(10000)
 
       await sANFTManager.connect(buyer).merge([nft, nft2, nft3])
 
