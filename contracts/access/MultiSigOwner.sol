@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
  * @dev A multisig owner to manage contracts
  */
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "./IMultiSigOwner.sol";

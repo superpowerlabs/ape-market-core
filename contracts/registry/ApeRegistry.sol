@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
  * @dev A registry for all Ape contracts
  */
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IApeRegistry.sol";
