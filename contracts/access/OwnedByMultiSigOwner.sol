@@ -14,7 +14,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IOwnedByMultiSigOwner.sol";
 
 contract OwnedByMultiSigOwner is IOwnedByMultiSigOwner, Ownable {
-
   address public multiSigOwner;
   bool internal _requiresMultiSigOwner;
 
@@ -30,5 +29,4 @@ contract OwnedByMultiSigOwner is IOwnedByMultiSigOwner, Ownable {
   function setMultiSigOwner(address addr) external override onlyOwner {
     multiSigOwner = addr;
   }
-
 }

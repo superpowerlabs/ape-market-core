@@ -43,7 +43,7 @@ describe("MultiSigRegistryOwner", async function () {
 
   }
 
-  describe('initial setting', async function () {
+  describe('#constructor', async function () {
 
     beforeEach(async function () {
       await initNetworkAndDeploy()

@@ -42,9 +42,11 @@ contract MultiSigRegistryOwner is IMultiSigRegistryOwner, MultiSigOwner {
     }
   }
 
-  function getOrderHash(bytes32[] memory contractHashes,
+  function getOrderHash(
+    bytes32[] memory contractHashes,
     address[] memory addresses,
-    uint256 orderTimestamp) public override pure returns (bytes32) {
+    uint256 orderTimestamp
+  ) public pure override returns (bytes32) {
     return keccak256(abi.encodePacked(contractHashes, addresses, orderTimestamp));
   }
 

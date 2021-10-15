@@ -21,9 +21,11 @@ interface IMultiSigRegistryOwner {
     uint256 orderTimestamp
   ) external;
 
-  function getOrderHash(bytes32[] memory contractHashes,
+  function getOrderHash(
+    bytes32[] memory contractHashes,
     address[] memory addresses,
-    uint256 orderTimestamp) external pure returns (bytes32);
+    uint256 orderTimestamp
+  ) external pure returns (bytes32);
 
   // function that do not require more than one signer
 
