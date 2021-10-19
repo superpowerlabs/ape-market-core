@@ -44,7 +44,7 @@ library SaleLib {
     ]
 
   For better optimization, the first element of the array is saved in the sale
-  setup struct (ISaleDB.Setup)), because it is mandatory. The remaining 3
+  setup struct (ISaleDB.Setup)), because it is mandatory. The remaining 2
   elements would be saved in the _extraVestingSteps array.
 
   Look at the first uint256 in the array above. It can be seen as
