@@ -15,13 +15,15 @@ import "./IOwnedByMultiSigOwner.sol";
 
 contract OwnedByMultiSigOwner is IOwnedByMultiSigOwner, Ownable {
   address public multiSigOwner;
+
+  // must be set after the initial set up
   bool internal _requiresMultiSigOwner;
 
   modifier onlyMultiSigOwner() {
     if (_requiresMultiSigOwner) {
-      require(_msgSender() == multiSigOwner, "ApeRegistry: not the multi sig owner");
+      require(_msgSender() != address(0) && _msgSender() == multiSigOwner, "OwnedByMultiSigOwner: not the multi sig owner");
     } else {
-      require(_msgSender() == owner(), "ApeRegistry: not the owner");
+      require(_msgSender() == owner(), "OwnedByMultiSigOwner: not the owner");
     }
     _;
   }
