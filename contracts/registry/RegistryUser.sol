@@ -20,6 +20,8 @@ contract RegistryUser is IRegistryUser, Ownable {
   }
 
   constructor(address addr) {
+    // we do not check in addr == address(0) because the deployment is
+    // done by a script and the registry's address can never be zero
     _registry = IApeRegistry(addr);
   }
 

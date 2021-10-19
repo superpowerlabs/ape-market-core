@@ -37,6 +37,9 @@ contract TokenRegistry is ITokenRegistry, RegistryUser {
   }
 
   function register(address addr) public override returns (uint8) {
+    // we do not check in addr == address(0) because this function can
+    // be only called by the SaleData contract. The address has already
+    // been verified somewhere else, here it is just stored
     require(_saleDataAddress == _msgSender(), "TokenRegistry: only SaleData can call this");
     _addressesById[_nextId] = addr;
     _idByAddress[addr] = _nextId;
