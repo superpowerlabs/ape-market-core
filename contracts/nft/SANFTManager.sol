@@ -86,7 +86,7 @@ contract SANFTManager is ISANFTManager, RegistryUser {
       }
     }
     if (done) {
-      // puts the modified SA in a new NFT, if not emptied, and burns the existing one
+      // puts the modified SA in a new NFT and burns the existing one
       _createNewToken(_sanft.ownerOf(tokenId), bundle);
       _sanft.burn(tokenId);
     } else {

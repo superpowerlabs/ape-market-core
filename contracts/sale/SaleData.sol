@@ -8,10 +8,11 @@ import "./ISaleFactory.sol";
 import "../nft/ISANFTManager.sol";
 import "./ITokenRegistry.sol";
 import "../registry/RegistryUser.sol";
+import "../access/OwnedByMultiSigOwner.sol";
 
 import {SaleLib} from "../libraries/SaleLib.sol";
 
-contract SaleData is ISaleData, RegistryUser {
+contract SaleData is ISaleData, RegistryUser, OwnedByMultiSigOwner {
   using SafeMath for uint256;
 
   bytes32 internal constant _SANFT_MANAGER = keccak256("SANFTManager");
@@ -74,9 +75,13 @@ contract SaleData is ISaleData, RegistryUser {
     return _apeWallet;
   }
 
-  function updateApeWallet(address apeWallet_) public override onlyOwner {
+  function updateApeWallet(address apeWallet_) public override onlyMultiSigOwner {
     _apeWallet = apeWallet_;
     emit ApeWalletUpdated(apeWallet_);
+    if (!_requiresMultiSigOwner) {
+      // after first execution it requires a multi sig owner
+      _requiresMultiSigOwner = true;
+    }
   }
 
   function updateDAOWallet(address daoWallet_) public override {
@@ -190,10 +195,7 @@ contract SaleData is ISaleData, RegistryUser {
     require(usdValueAmount >= setup.minAmount, "SaleData: Amount is too low");
     uint256 tokensAmount = fromValueToTokensAmount(saleId, uint32(usdValueAmount));
     uint256 feeOnRemainingAmount = uint256(setup.remainingAmount).mul(setup.tokenFeePoints).div(10000);
-    require(
-      tokensAmount <= uint256(setup.remainingAmount).sub(feeOnRemainingAmount),
-      "SaleData: Not enough tokens available"
-    );
+    require(tokensAmount <= uint256(setup.remainingAmount).sub(feeOnRemainingAmount), "SaleData: Not enough tokens available");
     if (usdValueAmount == approved) {
       _saleDB.deleteApproval(saleId, investor);
     } else {
