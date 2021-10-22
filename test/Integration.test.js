@@ -5,7 +5,7 @@ const DeployUtils = require('../scripts/lib/DeployUtils')
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe("Integration Test", function () {
+describe.only("Integration Test", function () {
 
   let Profile
   let profile

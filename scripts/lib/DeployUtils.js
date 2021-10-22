@@ -1,6 +1,20 @@
 const path = require('path')
 const fs = require('fs-extra')
 const {expect, assert} = require("chai")
+const {Contract} = require('@ethersproject/contracts')
+
+const ABIs = {
+  ApeRegistry: require('../../artifacts/contracts/registry/ApeRegistry.sol/ApeRegistry.json').abi,
+  Profile: require('../../artifacts/contracts/user/Profile.sol/Profile.json').abi,
+  SaleSetupHasher: require('../../artifacts/contracts/sale/SaleSetupHasher.sol/SaleSetupHasher.json').abi,
+  SaleDB: require('../../artifacts/contracts/sale/SaleDB.sol/SaleDB.json').abi,
+  SaleData: require('../../artifacts/contracts/sale/SaleData.sol/SaleData.json').abi,
+  SaleFactory: require('../../artifacts/contracts/sale/SaleFactory.sol/SaleFactory.json').abi,
+  TokenRegistry: require('../../artifacts/contracts/sale/TokenRegistry.sol/TokenRegistry.json').abi,
+  SANFT: require('../../artifacts/contracts/nft/SANFT.sol/SANFT.json').abi,
+  SANFTManager: require('../../artifacts/contracts/nft/SANFTManager.sol/SANFTManager.json').abi,
+  MultiSigRegistryOwner: require('../../artifacts/contracts/registry/MultiSigRegistryOwner.sol/MultiSigRegistryOwner.json').abi
+}
 
 const configPath = path.resolve(__dirname, '../../config')
 const config = require(configPath)
@@ -43,6 +57,8 @@ class DeployUtils {
 
     const ethers = this.ethers
     const chainId = (await ethers.provider.getNetwork()).chainId
+    // console.log(await ethers.provider.getNetwork())
+
     conf = Object.assign(config[chainId], conf)
 
     if (conf == null) {
@@ -54,25 +70,81 @@ class DeployUtils {
       apeWallet,
       operators,
       usdtOwner,
-      forProduction,
       signersList,
       validity
     } = conf
 
-    const apeRegistry = await this.deployContract('ApeRegistry')
-    const registryAddress = apeRegistry.address
+    let apeRegistry,
+      profile,
+      saleSetupHasher,
+      saleDB,
+      saleData,
+      saleFactory,
+      tokenRegistry,
+      sANFT,
+      sANFTManager,
+      multiSigRegistryOwner
 
-    const profile = await this.deployContract('Profile')
-    const saleSetupHasher = await this.deployContract('SaleSetupHasher')
-    const saleDB = await this.deployContract('SaleDB', registryAddress)
-    const saleData = await this.deployContract('SaleData', registryAddress, apeWallet)
-    const saleFactory = await this.deployContract('SaleFactory', registryAddress, operators[0])
-    const tokenRegistry = await this.deployContract('TokenRegistry', registryAddress)
-    const sANFT = await this.deployContract('SANFT', registryAddress)
-    const sANFTManager = await this.deployContract('SANFTManager', registryAddress)
-    const multiSigRegistryOwner = await this.deployContract('MultiSigRegistryOwner', registryAddress, signersList, validity)
+    if (process.env.PREVIOUSLY_DEPLOYED && chainId !== 1337) {
+      const addr = process.env.PREVIOUSLY_DEPLOYED.split(',')
+      if (addr[0]) {
+        console.log('ApeRegistry previously deployed')
+        apeRegistry = new Contract(addr[0], ABIs.ApeRegistry, ethers.provider)
+      }
+      if (addr[1]) {
+        console.log('Profile previously deployed')
+        profile = new Contract(addr[1], ABIs.Profile, ethers.provider)
+      }
+      if (addr[2]) {
+        console.log('SaleSetupHasher previously deployed')
+        saleSetupHasher = new Contract(addr[2], ABIs.SaleSetupHasher, ethers.provider)
+      }
+      if (addr[3]) {
+        console.log('SaleDB previously deployed')
+        saleDB = new Contract(addr[3], ABIs.SaleDB, ethers.provider)
+      }
+      if (addr[4]) {
+        console.log('SaleData previously deployed')
+        saleData = new Contract(addr[4], ABIs.SaleData, ethers.provider)
+      }
+      if (addr[5]) {
+        console.log('SaleFactory previously deployed')
+        saleFactory = new Contract(addr[5], ABIs.SaleFactory, ethers.provider)
+      }
+      if (addr[6]) {
+        console.log('TokenRegistry previously deployed')
+        tokenRegistry = new Contract(addr[6], ABIs.TokenRegistry, ethers.provider)
+      }
+      if (addr[7]) {
+        console.log('SANFT previously deployed')
+        sANFT = new Contract(addr[7], ABIs.SANFT, ethers.provider)
+      }
+      if (addr[8]) {
+        console.log('SANFTManager previously deployed')
+        sANFTManager = new Contract(addr[8], ABIs.SANFTManager, ethers.provider)
+      }
+      if (addr[9]) {
+        console.log('MultiSigRegistryOwner previously deployed')
+        multiSigRegistryOwner = new Contract(addr[9], ABIs.MultiSigRegistryOwner, ethers.provider)
+      }
+    }
 
-    await expect(await apeRegistry.register([
+    apeRegistry = apeRegistry || await this.deployContract('ApeRegistry')
+    let registryAddress = apeRegistry.address
+
+    profile = profile || await this.deployContract('Profile')
+    saleSetupHasher = saleSetupHasher || await this.deployContract('SaleSetupHasher')
+    saleDB = saleDB || await this.deployContract('SaleDB', registryAddress)
+    saleData = saleData || await this.deployContract('SaleData', registryAddress, apeWallet)
+    saleFactory = saleFactory || await this.deployContract('SaleFactory', registryAddress, operators[0])
+    tokenRegistry = tokenRegistry || await this.deployContract('TokenRegistry', '0xaa3F71De0479fB0c7B47bE6ab03f411BA8F48163')
+    sANFT = sANFT || await this.deployContract('SANFT', '0xaa3F71De0479fB0c7B47bE6ab03f411BA8F48163')
+    sANFTManager = sANFTManager || await this.deployContract('SANFTManager', '0xaa3F71De0479fB0c7B47bE6ab03f411BA8F48163')
+    multiSigRegistryOwner = multiSigRegistryOwner || await this.deployContract('MultiSigRegistryOwner', '0xaa3F71De0479fB0c7B47bE6ab03f411BA8F48163', signersList, validity)
+
+    const signers = await ethers.getSigners()
+
+    await expect(await apeRegistry.connect(signers[0]).register([
       'Profile',
       'SaleSetupHasher',
       'SaleDB',
@@ -90,14 +162,16 @@ class DeployUtils {
       sANFT.address,
       sANFTManager.address,
       tokenRegistry.address
-    ])).emit(apeRegistry, "ChangePushedToSubscribers")
+    ], {
+      gasLimit: '500000'
+    })).emit(apeRegistry, "ChangePushedToSubscribers")
 
     // after the first setup, only the multiSig owner can change it
     await apeRegistry.setMultiSigOwner(multiSigRegistryOwner.address)
 
     let uSDT
 
-    if (!forProduction) {
+    if (usdtOwner) {
       uSDT = await this.deployContractBy("TetherMock", usdtOwner || (await ethers.getSigners())[0])
     }
 

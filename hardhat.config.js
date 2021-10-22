@@ -52,6 +52,19 @@ module.exports = {
         process.env.TESTNET_OWNER,
         process.env.TESTNET_APE_WALLET,
         process.env.TESTNET_OPERATOR,
+        // process.env.TESTNET_TETHER_OWNER
+      ]
+    } : {
+      url: ''
+    },
+    bscTestnet: process.env.TESTNET_OWNER ? {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      chainId: 97,
+      gasPrice: 20000000000,
+      accounts: [
+        process.env.TESTNET_OWNER,
+        process.env.TESTNET_APE_WALLET,
+        process.env.TESTNET_OPERATOR,
         process.env.TESTNET_TETHER_OWNER
       ]
     } : {

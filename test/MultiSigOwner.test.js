@@ -24,7 +24,7 @@ describe("MultiSigOwner", async function () {
       signer2.address,
       signer3.address
     ]
-    validity = 24 * 3600
+    validity = 86400 // 1 day
 
     multiSigOwner = await deployUtils.deployContract('MultiSigOwnerMock', signersList, validity)
 
