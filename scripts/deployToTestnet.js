@@ -31,7 +31,7 @@ async function main() {
   } else {
 
     let data = Object.assign(
-        await deployUtils.initAndDeploy({
+        await deployUtils.initAndDeployTestnet({
           operators: [operator.address],
           apeWallet: apeWallet.address,
           usdtOwner
@@ -40,12 +40,21 @@ async function main() {
         }
     )
 
+    let aBC, mNO, xYZ
+    if (process.env.PREVIOUS_TESTNET_TOKENS) {
+      [usdt, aBC, mNO, xYZ] = process.env.PREVIOUS_TESTNET_TOKENS.split(',')
+    }
+
+    // console.log(usdtOwner)
+
     if (usdtOwner) {
       // if it is undefined, we already deployed it
-      const aBC = await deployUtils.deployERC20(usdtOwner, 'Abc Token', 'ABC')
-      const mNO = await deployUtils.deployERC20(usdtOwner, 'Mno Token', 'MNO')
-      const xYZ = await deployUtils.deployERC20(usdtOwner, 'Xyz Token', 'XYZ')
-      await data.uSDT.connect(usdtOwner).transfer(apeWallet.address, 1e11)
+      aBC = aBC || await deployUtils.deployERC20(usdtOwner, 'Abc Token', 'ABC')
+      mNO = mNO || await deployUtils.deployERC20(usdtOwner, 'Mno Token', 'MNO')
+      xYZ = xYZ || await deployUtils.deployERC20(usdtOwner, 'Xyz Token', 'XYZ')
+      await data.uSDT.connect(usdtOwner).transfer(apeWallet.address, 1e11, {
+        gasLimit: 60000
+      })
       data = Object.assign(data, {
         aBC,
         mNO,
