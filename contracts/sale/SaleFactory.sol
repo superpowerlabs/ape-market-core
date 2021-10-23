@@ -83,7 +83,7 @@ contract SaleFactory is ISaleFactory, RegistryUser {
       require(futureTokenSetup.isFutureToken, "SaleFactory: futureTokenSaleId does not point to a future Token sale");
       require(futureTokenSetup.totalValue == setup.totalValue, "SaleFactory: token value mismatch");
     }
-    Sale sale = new Sale(saleId, address(_registry));
+    Sale sale = new Sale(saleId, address(registry));
     address addr = address(sale);
     _saleData.setUpSale(saleId, addr, setup, extraVestingSteps, paymentToken);
     delete _setupHashes[setupHash];

@@ -75,8 +75,7 @@ describe("SaleData", async function () {
         }, {
         waitTime: 365,
         percentage: 100
-      }
-        ]
+      }]
       let [steps, message] = await saleSetupHasher.validateAndPackVestingSteps(schedule)
 
       assert.equal(await saleSetupHasher.calculateVestedPercentage(steps[0], steps.slice(1), 1628044542, 1628044542), 30);

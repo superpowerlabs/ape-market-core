@@ -50,6 +50,7 @@ contract ApeRegistry is IApeRegistry, OwnedByMultiSigOwner {
     }
     if (changesDone && !_requiresMultiSigOwner) {
       // at this initial step, there is no risk of going out of gas
+      // currently, it requires almost 900,000 gas
       updateAllContracts();
       // after setting the following, only the multiSigOwner can make changes
       _requiresMultiSigOwner = true;

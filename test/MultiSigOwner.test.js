@@ -2,7 +2,8 @@ const {assert, expect} = require("chai")
 const DeployUtils = require('../scripts/lib/DeployUtils')
 const {
   assertThrowsMessage,
-  getTimestamp
+  getTimestamp,
+  increaseBlockTimestampBy
 } = require('../scripts/lib/TestHelpers')
 
 describe("MultiSigOwner", async function () {
@@ -24,7 +25,7 @@ describe("MultiSigOwner", async function () {
       signer2.address,
       signer3.address
     ]
-    validity = 24 * 3600
+    validity = 86400 // 1 day
 
     multiSigOwner = await deployUtils.deployContract('MultiSigOwnerMock', signersList, validity)
 
@@ -81,6 +82,16 @@ describe("MultiSigOwner", async function () {
 
       const currentValidity = await multiSigOwner.validity()
       assert.equal(newValidity, currentValidity)
+    })
+
+    it("should throw if going after validity", async function () {
+      const orderTimestamp = (await getTimestamp()) - 3600 // one hour ago
+      const newValidity = 3600 // one hour
+      await multiSigOwner.connect(signer1).updateValidity(newValidity, orderTimestamp)
+      await increaseBlockTimestampBy(100000)
+      await assertThrowsMessage(
+          multiSigOwner.connect(signer3).updateValidity(newValidity, orderTimestamp)
+          , "order expired")
     })
 
   })

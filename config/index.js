@@ -2,7 +2,6 @@
 
 const config = {
 
-
   '1': {
     tetherAddress: '0xdac17f958d2ee523a2206206994597c13d831ec7'
   },
@@ -22,7 +21,23 @@ const config = {
   },
   '3': {
     apeWallet: '0x90f79bf6eb2c4f870365e785982e1f101e93b906',
-    operators: ['0xB298a3987001d4318847488CBcC534221915bAe1']
+    operators: ['0xB298a3987001d4318847488CBcC534221915bAe1'],
+    signersList: [
+      '0xF8716f616a70B70E37d9D5b4547A2d8a92a75Cd0',
+      '0xB298a3987001d4318847488CBcC534221915bAe1',
+      '0x8f1474dccAefBf1E322264819e858b7221E4a8cA'
+    ],
+    validity: 24 * 3600
+  },
+  '97': {
+    apeWallet: '0x90f79bf6eb2c4f870365e785982e1f101e93b906',
+    operators: ['0xB298a3987001d4318847488CBcC534221915bAe1'],
+    signersList: [
+      '0xF8716f616a70B70E37d9D5b4547A2d8a92a75Cd0',
+      '0xB298a3987001d4318847488CBcC534221915bAe1',
+      '0x8f1474dccAefBf1E322264819e858b7221E4a8cA'
+    ],
+    validity: 24 * 3600
   }
 }
 

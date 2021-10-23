@@ -9,11 +9,11 @@ import "./IRegistryUser.sol";
 //import "hardhat/console.sol";
 
 contract RegistryUser is IRegistryUser, Ownable {
-  IApeRegistry internal _registry;
+  IApeRegistry public registry;
 
   modifier onlyRegistry() {
     require(
-      _msgSender() == address(_registry),
+      _msgSender() == address(registry),
       string(abi.encodePacked("RegistryUser: only ApeRegistry can call this function"))
     );
     _;
@@ -22,11 +22,11 @@ contract RegistryUser is IRegistryUser, Ownable {
   constructor(address addr) {
     // we do not check in addr == address(0) because the deployment is
     // done by a script and the registry's address can never be zero
-    _registry = IApeRegistry(addr);
+    registry = IApeRegistry(addr);
   }
 
   function _get(bytes32 contractHash) internal view returns (address) {
-    return _registry.get(contractHash);
+    return registry.get(contractHash);
   }
 
   // This must be overwritten by passive users.

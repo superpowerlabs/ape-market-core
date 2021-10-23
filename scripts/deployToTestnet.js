@@ -5,6 +5,7 @@
 // Runtime Environment's members available in the global scope.
 const hre = require('hardhat');
 const DeployUtils = require('./lib/DeployUtils')
+const data = require('../env.singleContract');
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -24,28 +25,43 @@ async function main() {
   if (process.env.DEPLOY_SINGLE_CONTRACT) {
     // if you use this option, be sure that the file exists
     const data = require('../env.singleContract')
-    console.log(data)
+    // console.log(data)
     const newContract = await deployUtils.deployContract(data.name, ...data.params)
+    console.info(data.name + ' deployed')
   } else {
 
-    let data = await deployUtils.initAndDeploy({
-      operators: [operator.address],
-      apeWallet: apeWallet.address,
-      usdtOwner
-    })
+    let data = Object.assign(
+        await deployUtils.initAndDeployTestnet({
+          operators: [operator.address],
+          apeWallet: apeWallet.address,
+          usdtOwner
+        }), {
+          operator
+        }
+    )
 
-    const aBC = await deployUtils.deployERC20(usdtOwner, 'Abc Token', 'ABC')
-    const mNO = await deployUtils.deployERC20(usdtOwner, 'Mno Token', 'MNO')
-    const xYZ = await deployUtils.deployERC20(usdtOwner, 'Xyz Token', 'XYZ')
+    let aBC, mNO, xYZ
+    if (process.env.PREVIOUS_TESTNET_TOKENS) {
+      [usdt, aBC, mNO, xYZ] = process.env.PREVIOUS_TESTNET_TOKENS.split(',')
+    }
 
-    await data.uSDT.connect(usdtOwner).transfer(apeWallet.address, 1e11)
+    // console.log(usdtOwner)
 
-    data = Object.assign(data, {
-      aBC,
-      mNO,
-      xYZ,
-      operator
-    })
+    if (usdtOwner) {
+      // if it is undefined, we already deployed it
+      aBC = aBC || await deployUtils.deployERC20(usdtOwner, 'Abc Token', 'ABC')
+      mNO = mNO || await deployUtils.deployERC20(usdtOwner, 'Mno Token', 'MNO')
+      xYZ = xYZ || await deployUtils.deployERC20(usdtOwner, 'Xyz Token', 'XYZ')
+      await data.uSDT.connect(usdtOwner).transfer(apeWallet.address, 1e11, {
+        gasLimit: 60000
+      })
+      data = Object.assign(data, {
+        aBC,
+        mNO,
+        xYZ,
+        operator
+      })
+    }
 
     for (let i in data) {
       data[i] = data[i].address ? data[i].address : data[i]
