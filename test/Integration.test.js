@@ -103,7 +103,7 @@ describe("Integration Test", function () {
       ]
 
     CL('validateAndPackVestingSteps')
-    let [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
+    let schedule = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
 
     saleSetup = {
       owner: seller.address,
@@ -117,7 +117,7 @@ describe("Integration Test", function () {
       vestingSteps: schedule[0],
       sellingToken: sellingToken.address,
       totalValue: 50000,
-      tokenIsTransferable: true,
+      isTokenTransferable: true,
       tokenFeePoints: 500,
       extraFeePoints: 0,
       paymentFeePoints: 300,

@@ -75,7 +75,7 @@ async function main() {
   let saleSetupHasher = await getContractFromRegistry("SaleSetupHasher", SaleSetupHasherJson.abi, owner)
 
   console.log("Packing Hash")
-  const [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
+  const schedule = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
 
   console.log("Hash packed")
 
@@ -91,7 +91,7 @@ async function main() {
     vestingSteps: schedule[0],
     sellingToken: sellingToken.address,
     totalValue: 50000,
-    tokenIsTransferable: true,
+    isTokenTransferable: true,
     tokenFeePoints: 500,
     extraFeePoints: 0,
     paymentFeePoints: 300,
@@ -121,7 +121,7 @@ async function main() {
     vestingSteps: schedule[0],
     sellingToken: sellingToken.address,
     totalValue: 50000,
-    tokenIsTransferable: true,
+    isTokenTransferable: true,
     tokenFeePoints: 500,
     extraFeePoints: 0,
     paymentFeePoints: 300,

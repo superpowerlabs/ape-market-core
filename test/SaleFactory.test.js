@@ -255,7 +255,7 @@ describe("SaleFactory", async function () {
     beforeEach(async function () {
       await initNetworkAndDeploy()
 
-      const [saleVestingSchedule, msg] = await saleSetupHasher.validateAndPackVestingSteps([
+      const saleVestingSchedule = await saleSetupHasher.validateAndPackVestingSteps([
         {
           waitTime: 10,
           percentage: 50
@@ -278,7 +278,7 @@ describe("SaleFactory", async function () {
         vestingSteps: saleVestingSchedule[0],
         sellingToken: sellingToken.address,
         totalValue: 50000,
-        tokenIsTransferable: true,
+        isTokenTransferable: true,
         tokenFeePoints: 500,
         extraFeePoints: 0,
         paymentFeePoints: 300,

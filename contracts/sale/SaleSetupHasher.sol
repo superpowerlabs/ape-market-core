@@ -11,7 +11,7 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
     external
     pure
     override
-    returns (uint256[] memory, string memory)
+    returns (uint256[] memory)
   {
     return SaleLib.validateAndPackVestingSteps(vestingStepsArray);
   }
@@ -29,7 +29,7 @@ contract SaleSetupHasher is ISaleSetupHasher, FakeRegistryUser {
     ISaleDB.Setup memory setup,
     uint256[] memory extraVestingSteps,
     address paymentToken
-  ) public pure override returns (bytes32) {
+  ) external pure override returns (bytes32) {
     return SaleLib.packAndHashSaleConfiguration(setup, extraVestingSteps, paymentToken);
   }
 }
