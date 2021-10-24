@@ -69,7 +69,7 @@ library SaleLib {
   function validateAndPackVestingSteps(ISaleDB.VestingStep[] memory vestingStepsArray)
     internal
     pure
-    returns (uint256[] memory, string memory)
+    returns (uint256[] memory)
   {
     // the number 11 is because we can pack at most 11 steps in a single uint256
     uint256 len = vestingStepsArray.length / 11;
@@ -100,7 +100,7 @@ library SaleLib {
     if (vestingStepsArray[vestingStepsArray.length - 1].percentage != 100) {
       revert("Vest percentage should end at 100");
     }
-    return (steps, "Success");
+    return steps;
   }
 
   /**
@@ -168,7 +168,7 @@ library SaleLib {
     return
       keccak256(
         abi.encodePacked(
-          "\x19\x00", /* EIP-191 */
+          "\x19\x01", /* EIP-191 */
           setup.sellingToken,
           setup.owner,
           setup.isTokenTransferable,

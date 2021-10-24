@@ -59,7 +59,7 @@ contract Profile is IProfile, Ownable, FakeRegistryUser {
     return
       keccak256(
         abi.encodePacked(
-          "\x19\x00", /* EIP-191 */
+          "\x19\x01", /* EIP-191 */
           addr1,
           addr2,
           timestamp

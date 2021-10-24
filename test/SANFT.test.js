@@ -83,7 +83,7 @@ describe("SANFT", async function () {
       }
     ]
 
-    const [schedule, msg] = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
+    const schedule = await saleSetupHasher.validateAndPackVestingSteps(saleVestingSchedule)
 
     saleSetup = {
       owner: seller.address,
@@ -97,7 +97,7 @@ describe("SANFT", async function () {
       vestingSteps: schedule[0],
       sellingToken: sellingToken.address,
       totalValue: 50000,
-      tokenIsTransferable: true,
+      isTokenTransferable: true,
       tokenFeePoints: 500,
       extraFeePoints: 0,
       paymentFeePoints: 300,

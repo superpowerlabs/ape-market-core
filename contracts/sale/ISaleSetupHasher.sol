@@ -7,7 +7,7 @@ interface ISaleSetupHasher {
   function validateAndPackVestingSteps(ISaleDB.VestingStep[] memory vestingStepsArray)
     external
     pure
-    returns (uint256[] memory, string memory);
+    returns (uint256[] memory);
 
   function calculateVestedPercentage(
     uint256 vestingSteps,
