@@ -65,8 +65,7 @@ module.exports = {
         process.env.TESTNET_OWNER,
         process.env.TESTNET_APE_WALLET,
         process.env.TESTNET_OPERATOR,
-        process.env.TESTNET_TETHER_OWNER
-      ]
+        process.env.TESTNET_TETHER_OWNER      ]
     } : {
       url: ''
     }
@@ -78,7 +77,8 @@ module.exports = {
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: process.env.ETHERSCAN_KEY
+    apiKey: process.env.BSCSCAN_KEY
+    //ETHERSCAN_KEY
   }
 };
 

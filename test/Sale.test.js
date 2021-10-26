@@ -4,9 +4,14 @@ const {signPackedData, assertThrowsMessage, addr0} = require('../scripts/lib/Tes
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
+// This test has been run against BSC Testnet with
+// it.only("should launch a sale" . . .
+
 describe("Sale", async function () {
 
   const deployUtils = new DeployUtils(ethers)
+
+  process.env.VERBOSE_LOG = true
 
   let apeRegistry
       , profile
@@ -24,14 +29,13 @@ describe("Sale", async function () {
       , tether
       , saleSetup
       , owner
-      , validator
       , operator
       , apeWallet
       , seller
 
 
   before(async function () {
-    [owner, validator, operator, apeWallet, seller] = await ethers.getSigners()
+    [owner, apeWallet, operator, seller] = await ethers.getSigners()
   })
 
   async function getTimestamp() {
@@ -43,6 +47,8 @@ describe("Sale", async function () {
   }
 
   async function initNetworkAndDeploy() {
+
+    sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
 
     const results = await deployUtils.initAndDeploy({
       apeWallet: apeWallet.address,
@@ -59,8 +65,6 @@ describe("Sale", async function () {
     sANFTManager = results.sANFTManager
     tokenRegistry = results.tokenRegistry
     tether = results.uSDT
-
-    sellingToken = await deployUtils.deployContractBy("ERC20Token", seller, "Abc Token", "ABC")
 
     const saleVestingSchedule = await saleSetupHasher.validateAndPackVestingSteps([
       {
@@ -102,28 +106,35 @@ describe("Sale", async function () {
     saleId = await saleFactory.getSaleIdBySetupHash(hash)
     await saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address)
     saleAddress = await saleDB.getSaleAddressById(saleId)
+    console.log('saleAddress', saleAddress)
     sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
 
   }
 
   describe('#newSale', async function () {
 
+    this.timeout(500000)
+
     beforeEach(async function () {
+      // console.log('Init')
       await initNetworkAndDeploy()
     })
 
     it("should launch a sale", async function () {
 
+// console.log('Launch')
+
       const [amount, fee] = await saleData.getTokensAmountAndFeeByValue(saleId, saleSetup.totalValue)
 
       await sellingToken.connect(seller).approve(saleAddress, amount.add(fee))
 
-      await expect(sale.connect(seller).launch())
+      await expect(sale.connect(seller).launch({
+        gasLimit: 400000
+      }))
           .emit(saleData, 'SaleLaunched')
           .withArgs(saleId, saleSetup.totalValue, amount);
 
       expect(await sellingToken.balanceOf(sale.address)).equal(amount.add(fee));
-
 
     })
 

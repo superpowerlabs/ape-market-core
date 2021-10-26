@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 import "./ISaleFactory.sol";
 import "./ISaleDB.sol";
@@ -77,7 +77,8 @@ contract SaleFactory is ISaleFactory, RegistryUser {
     address paymentToken
   ) external override {
     bytes32 setupHash = SaleLib.packAndHashSaleConfiguration(setup, extraVestingSteps, paymentToken);
-    require(saleId != 0 && _setupHashes[setupHash] == saleId, "SaleFactory: non approved sale or modified params");
+    require(saleId != 0, "SaleFactory: sale not approved");
+    require(_setupHashes[setupHash] == saleId, "SaleFactory: modified sale params");
     if (setup.futureTokenSaleId != 0) {
       ISaleDB.Setup memory futureTokenSetup = _saleData.getSetupById(setup.futureTokenSaleId);
       require(futureTokenSetup.isFutureToken, "SaleFactory: futureTokenSaleId does not point to a future Token sale");
