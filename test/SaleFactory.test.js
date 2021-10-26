@@ -312,7 +312,6 @@ describe("SaleFactory", async function () {
       await assertThrowsMessage(
           saleFactory.newSale(saleId, saleSetup, [], tether.address),
           'SaleFactory: non approved sale or modified params')
-
     })
 
     it("should throw if trying to create a sale with a modified setup", async function () {

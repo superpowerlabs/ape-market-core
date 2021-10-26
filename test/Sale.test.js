@@ -11,7 +11,7 @@ describe("Sale", async function () {
 
   const deployUtils = new DeployUtils(ethers)
 
-  process.env.VERBOSE_LOG = true
+  // process.env.VERBOSE_LOG = true
 
   let apeRegistry
       , profile
@@ -106,7 +106,7 @@ describe("Sale", async function () {
     saleId = await saleFactory.getSaleIdBySetupHash(hash)
     await saleFactory.connect(seller).newSale(saleId, saleSetup, [], tether.address)
     saleAddress = await saleDB.getSaleAddressById(saleId)
-    console.log('saleAddress', saleAddress)
+    // console.log('saleAddress', saleAddress)
     sale = new ethers.Contract(saleAddress, saleJson.abi, ethers.provider)
 
   }
