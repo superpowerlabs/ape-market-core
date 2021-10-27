@@ -4,7 +4,7 @@ const {assertThrowsMessage, addr0} = require('../scripts/lib/TestHelpers')
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe("SaleFactory", async function () {
+describe.only("SaleFactory", async function () {
 
   const deployUtils = new DeployUtils(ethers)
 

@@ -15,6 +15,9 @@ for (let contract in addresses) {
     args = addresses.ApeRegistry + ' ' + config['3'].apeWallet
   } else if (contract === 'SaleFactory') {
     args = addresses.ApeRegistry + ' ' + '0xB298a3987001d4318847488CBcC534221915bAe1'
+  } else if (contract === 'MultiSigRegistryOwner') {
+    continue
+    // args = addresses.ApeRegistry + ' ' + '0xB298a3987001d4318847488CBcC534221915bAe1'
   } else if (contract === 'SANFTManager') {
     args = addresses.ApeRegistry + ' ' + 100
   }
