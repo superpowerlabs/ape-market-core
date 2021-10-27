@@ -4,7 +4,7 @@ const {assertThrowsMessage, addr0} = require('../scripts/lib/TestHelpers')
 
 const saleJson = require('../artifacts/contracts/sale/Sale.sol/Sale.json')
 
-describe("SaleFactory", async function () {
+describe.only("SaleFactory", async function () {
 
   const deployUtils = new DeployUtils(ethers)
 
@@ -312,7 +312,6 @@ describe("SaleFactory", async function () {
       await assertThrowsMessage(
           saleFactory.newSale(saleId, saleSetup, [], tether.address),
           'SaleFactory: non approved sale or modified params')
-
     })
 
     it("should throw if trying to create a sale with a modified setup", async function () {

@@ -44,8 +44,8 @@ class DeployUtils {
   }
 
   async deployContractBy(contractName, owner, ...args) {
-    consoleLog("Deploying", contractName, ...args)
     const Contract = await this.ethers.getContractFactory(contractName)
+    consoleLog("Deploying", contractName, ...args)
     const contract = await Contract.connect(owner).deploy(...args)
     await contract.deployed()
     consoleLog("Deployed at", contract.address)
@@ -238,30 +238,30 @@ class DeployUtils {
 
     const signers = await ethers.getSigners()
 
-    // await expect(await apeRegistry.connect(signers[0]).register([
-    //   'Profile',
-    //   'SaleSetupHasher',
-    //   'SaleDB',
-    //   'SaleData',
-    //   'SaleFactory',
-    //   'SANFT',
-    //   'SANFTManager',
-    //   'TokenRegistry'
-    // ].map(n => ethers.utils.id(n)), [
-    //   profile.address,
-    //   saleSetupHasher.address,
-    //   saleDB.address,
-    //   saleData.address,
-    //   saleFactory.address,
-    //   sANFT.address,
-    //   sANFTManager.address,
-    //   tokenRegistry.address
-    // ], {
-    //   gasLimit: '1000000'
-    // })).emit(apeRegistry, "ChangePushedToSubscribers")
-    //
-    // // after the first setup, only the multiSig owner can change it
-    // await apeRegistry.connect(signers[0]).setMultiSigOwner(multiSigRegistryOwner.address)
+    await expect(await apeRegistry.connect(signers[0]).register([
+      'Profile',
+      'SaleSetupHasher',
+      'SaleDB',
+      'SaleData',
+      'SaleFactory',
+      'SANFT',
+      'SANFTManager',
+      'TokenRegistry'
+    ].map(n => ethers.utils.id(n)), [
+      profile.address,
+      saleSetupHasher.address,
+      saleDB.address,
+      saleData.address,
+      saleFactory.address,
+      sANFT.address,
+      sANFTManager.address,
+      tokenRegistry.address
+    ], {
+      gasLimit: '1000000'
+    })).emit(apeRegistry, "ChangePushedToSubscribers")
+
+    // after the first setup, only the multiSig owner can change it
+    await apeRegistry.connect(signers[0]).setMultiSigOwner(multiSigRegistryOwner.address)
 
     const previousTokens = previous('TOKENS')
     if (process.env[previousTokens]) {
